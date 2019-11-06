@@ -19,7 +19,10 @@ setuptools.setup(
     description="ArenaData Cluster Manager Client",
     url="https://github.com/arenadata/adcm",
     packages=setuptools.find_packages(),
-    install_requires=['pyyaml', 'coreapi', 'ipython', 'gitpython', 'docker', 'jinja2'],
+    install_requires=[
+        'pyyaml', 'coreapi', 'ipython', 'gitpython', 'docker', 'jinja2',
+        'version_utils'
+    ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
