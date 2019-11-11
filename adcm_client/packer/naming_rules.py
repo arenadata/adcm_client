@@ -18,7 +18,7 @@ class RestrictedSymbol(Exception):
         self.errors = errors
 
 
-def add_build_id(path, reponame, edition):
+def add_build_id(path, reponame, edition, master_brances: list):
     def write_version(file, old_version, new_version):
         with open(file, 'r+') as config:
             data = config.read()
@@ -41,12 +41,12 @@ def add_build_id(path, reponame, edition):
         except IndexError:
             branch = git.rev_parse('--abbrev-ref', 'HEAD')
 
-    if branch == 'master':
+    if branch in master_brances:
         branch = '-1'
     elif git.describe('--all').split('/')[1] == 'pr':
         branch = '-rc' + branch + '.' + strftime("%Y%m%d%H%M%S", gmtime())
     else:
-        branch = '-' + branch
+        branch = '-' + branch.replace("-", "_")
 
     if version is None:
         raise NoVersionFound('No version detected').with_traceback(sys.exc_info()[2])
