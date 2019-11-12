@@ -13,7 +13,7 @@ import setuptools
 
 setuptools.setup(
     name="adcm_client",
-    version="2019.10.31.17",
+    version="2019.11.12.12",
     author="Anton Chevychalov",
     author_email="cab@arenadata.io",
     description="ArenaData Cluster Manager Client",
