@@ -45,7 +45,7 @@ def _pack(reponame, repopaths, tarpath, spec: SpecFile, **kwargs):
         tar_except = edition.get('exclude', [])
 
         # naming rules
-        tarname = add_build_id(repopath, reponame, name, kwargs['master_brances'])
+        tarname = add_build_id(repopath, reponame, name, kwargs['master_branches'])
 
         stream = BytesIO()
         tar = tarfile.open(fileobj=stream, mode='w|gz')
