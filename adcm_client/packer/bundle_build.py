@@ -32,20 +32,24 @@ def _prepare_ws(reponame, workspace, src_path, spec: SpecFile):
 
 
 def _prepare_result_dir(workspace, tarball_path):
-    tarpath = tarball_path if tarball_path else workspace
-    os.makedirs(tarpath, exist_ok=True)
-    return tarpath
+    if tarball_path:
+        os.makedirs(tarball_path, exist_ok=True)
+        return tarball_path
+    else:
+        return workspace
+    
 
 
-def _pack(reponame, repopaths, tarpath, spec: SpecFile):
+def _pack(reponame, repopaths, tarpaths, spec: SpecFile, **kwargs):
     tarballs = {}
     for edition in spec.data['editions']:
         name = edition.get('name')
+        tarpath = tarpaths[name] if isinstance(tarpaths, dict) else tarpaths
         repopath = repopaths[name]
         tar_except = edition.get('exclude', [])
 
         # naming rules
-        tarname = add_build_id(repopath, reponame, name)
+        tarname = add_build_id(repopath, reponame, name, kwargs['master_branches'])
 
         stream = BytesIO()
         tar = tarfile.open(fileobj=stream, mode='w|gz')
@@ -62,10 +66,15 @@ def _pack(reponame, repopaths, tarpath, spec: SpecFile):
 
 
 def _clean_ws(path):
-    remove_tree(path)
+    if isinstance(path, dict):
+        for i in path.values():
+            remove_tree(i)
+    else:
+        remove_tree(path)
 
-
-def build(reponame, repopath, workspace='/tmp', tarball_path=None, loglevel='ERROR', clean_ws=True):
+def build(reponame, repopath,
+    workspace='/tmp', tarball_path=None, loglevel='ERROR',
+    clean_ws=True, master_branches=['master'], autotest=False):
     """Moves sources to workspace inside of temporary directory. \
     Some operations over sources cant be proceed concurent(for exemple in pytest with xdist \
     plugin) that why each thread need is own tmp dir with sources. \
@@ -94,10 +103,13 @@ def build(reponame, repopath, workspace='/tmp', tarball_path=None, loglevel='ERR
     spec = SpecFile(os.path.join(repopath, 'spec.yaml'))
     spec.normalize_spec()
     ws_tepm_dir, work_dir_paths = _prepare_ws(reponame, workspace, repopath, spec)
-    tarpath = _prepare_result_dir(workspace, tarball_path)
+    if autotest:
+        tarpath = _prepare_result_dir(work_dir_paths, tarball_path)
+    else:
+        tarpath = _prepare_result_dir(workspace, tarball_path)
     spec_processing(spec, work_dir_paths, workspace)
 
-    out = _pack(reponame, work_dir_paths, tarpath, spec)
+    out = _pack(reponame, work_dir_paths, tarpath, spec, master_branches=master_branches)
     if clean_ws:
         _clean_ws(ws_tepm_dir)
 
