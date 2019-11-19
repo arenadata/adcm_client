@@ -16,7 +16,7 @@ import requests
 
 try:
     # pylint: disable=unused-import
-    from pytest import allure
+    from pytest import allure  # noqa: F401
     # pylint: disable=unused-import
     import pytest
     IS_ALLURE = True
