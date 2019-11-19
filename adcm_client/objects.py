@@ -65,6 +65,7 @@ class Bundle(BaseAPIObject):
     name = None
     description = None
     version = None
+    edition = None
 
     def provider_prototype(self) -> "ProviderPrototype":
         return self._child_obj(ProviderPrototype)
