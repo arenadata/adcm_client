@@ -300,7 +300,7 @@ class _BaseObject(BaseAPIObject):
                 for k, v in gv.items():
                     config[gk][k] = v
             else:
-                config[gk] = v
+                config[gk] = gv
         self.config_set(config)
 
     def config_prototype(self):
@@ -782,7 +782,7 @@ class ADCM(BaseAPIObject):
                 for k, v in gv.items():
                     config[gk][k] = v
             else:
-                config[gk] = v
+                config[gk] = gv
         self.config_set(config)
 
     def config_prototype(self):
