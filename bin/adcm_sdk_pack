@@ -24,9 +24,10 @@ if __name__ == "__main__":
                         default='/tmp')
     parser.add_argument('-c', '--dont-clean-ws', help='remove temporary files from ws',
                         action="store_false")
-    parser.add_argument('-m', '--master-branches', nargs='+', help='non default master branches', default=['master'])
+    parser.add_argument('-m', '--master-branches', nargs='+',
+                        help='non default master branches', default=['master'])
     args = parser.parse_args()
     build(args.name, args.path,
-        workspace=args.workspace, tarball_path=args.tarpath,
-        loglevel='INFO', clean_ws=args.dont_clean_ws,
-        master_branches=args.master_branches)
+          workspace=args.workspace, tarball_path=args.tarpath,
+          loglevel='INFO', clean_ws=args.dont_clean_ws,
+          master_branches=args.master_branches)

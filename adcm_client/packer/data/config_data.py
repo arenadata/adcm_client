@@ -59,13 +59,13 @@ class ConfigData:  # pylint: disable=too-many-instance-attributes
 
     def _from_data(self, key, **kwargs):
         try:
-            value = [entry.get(key) for entry in self.data if (entry.get('type') == 'cluster' or
-                                                               entry.get('type') == 'provider' or
-                                                               entry.get('type') == 'host')]
+            value = [entry.get(key) for entry in self.data
+                     if (entry.get('type') == 'cluster'
+                         or entry.get('type') == 'provider'  # noqa: W503
+                         or entry.get('type') == 'host')]  # noqa: W503
         except (TypeError, AttributeError):
-            value = [entry[1].get(key) for entry in self.data.items() if (entry[0] == 'cluster' or
-                                                                          entry[0] == 'host' or
-                                                                          entry[0] == 'provider')]
+            value = [entry[1].get(key) for entry in self.data.items()
+                     if (entry[0] == 'cluster' or entry[0] == 'host' or entry[0] == 'provider')]
         for idx, _ in enumerate(value):
             if value[idx]:
                 value[0] = value[idx]

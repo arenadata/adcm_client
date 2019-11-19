@@ -11,9 +11,16 @@
 # limitations under the License.
 import setuptools
 
+test_deps = [
+    'pytest',
+]
+extras = {
+    'test': test_deps,
+}
+
 setuptools.setup(
     name="adcm_client",
-    version="2019.11.12.12",
+    version="2019.11.19.11",
     author="Anton Chevychalov",
     author_email="cab@arenadata.io",
     description="ArenaData Cluster Manager Client",
@@ -23,6 +30,8 @@ setuptools.setup(
         'pyyaml', 'coreapi', 'ipython', 'gitpython', 'docker', 'jinja2',
         'version_utils'
     ],
+    tests_require=test_deps,
+    extras_require=extras,
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
