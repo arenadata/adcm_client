@@ -10,11 +10,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # pylint: disable=R0901, R0904
-from adcm_client.wrappers.api import ADCMApiWrapper
-from adcm_client.util import stream
+import logging
 from contextlib import contextmanager
-from .base import strip_none_keys, BaseAPIObject, BaseAPIListObject, ObjectNotFound, ADCMApiError
+
+from adcm_client.util import stream
+from adcm_client.wrappers.api import ADCMApiWrapper
 from version_utils import rpm
+
+from .base import (ADCMApiError, BaseAPIListObject, BaseAPIObject,
+                   ObjectNotFound, strip_none_keys)
 
 # If we are running the client from tests with Allure we expected that code
 # to trace steps in Allure UI.
@@ -25,6 +29,10 @@ try:
     import allure
 except ImportError:
     ALLURE = False
+
+# Init logger
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
 
 
 # That is trick which is allmost the same that in _allure.py::StepContext
@@ -699,7 +707,7 @@ class Task(BaseAPIObject):
         if status == "failed":
             for job in self.job_list(status="failed"):
                 for file in job.log_files:
-                    print(self._api.client.get(file["url"])["content"])
+                    logger.error(self._api.client.get(file["url"])["content"])
             raise TaskFailed
 
         return status
