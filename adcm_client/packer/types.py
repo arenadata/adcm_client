@@ -1,3 +1,4 @@
+import codecs
 import os
 
 import docker
@@ -40,7 +41,7 @@ def splitter(*args, **kwargs):
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(args[0]))
     for file in kwargs['files']:
         tmpl = env.get_template(file)
-        with open(os.path.join(args[0], (os.path.splitext(file)[0])), 'w') as f:
+        with codecs.open(os.path.join(args[0], (os.path.splitext(file)[0])), 'w', 'utf-8') as f:
             f.write(tmpl.render(kwargs['edition']))
 
 
