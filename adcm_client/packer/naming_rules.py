@@ -51,7 +51,6 @@ def add_build_id(path, reponame, edition, master_branches: list):
     bundle = ConfigData(catalog=path, branch='origin/master')
     version = bundle.get_data('version', 'catalog', explict_raw=True)
 
-
     if version is None:
         raise NoVersionFound('No version detected').with_traceback(sys.exc_info()[2])
     if '-' in version:
