@@ -9,7 +9,8 @@ import yaml
 def python_mod_req(source_path, workspace, **kwargs):
     with open(os.path.join(source_path, kwargs['requirements']), 'r') as stream:
         client = docker.from_env()
-        image = client.images.pull("arenadata/adcm:latest")
+        image_name = "arenadata/adcm:latest" if not kwargs.get('image') else kwargs['image']
+        image = client.images.pull(image_name)
         data = yaml.safe_load(stream)
         command = '/bin/sh -c "pip freeze"'
         pmod_before = client.containers.run(image, command, remove=True).decode("utf-8").split()
