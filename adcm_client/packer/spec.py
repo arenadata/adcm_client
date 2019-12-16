@@ -70,7 +70,7 @@ def spec_processing(spec: SpecFile, path, workspace):
         for x in edition['preprocessors']:
             if x.get('script'):
                 command = [x['script']]
-                command.extend(x.get('args'))
+                command.extend(x.get('args', []))
                 logging.info(check_output(command, cwd=path[edition['name']]).decode("utf-8"))
             else:
                 jinja_values = {'edition': edition['name']}
