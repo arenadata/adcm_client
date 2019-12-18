@@ -2,6 +2,7 @@ import sys
 from time import gmtime, strftime
 
 from git import Repo
+from git.exc import InvalidGitRepositoryError
 
 from .data.config_data import ConfigData
 
@@ -27,26 +28,28 @@ def add_build_id(path, reponame, edition, master_branches: list):
             config.truncate()
             config.write(data)
 
-    git = Repo(path).git
-    bundle = ConfigData(git=git, catalog=path, branch='origin/master')
+    try:
+        git = Repo(path).git
+        if git.describe('--all').split('/')[0] == 'tags':
+            tag = git.describe('--all')
+            branch = [out.split('/')[2] for out in git.branch('-a', '--contains', tag).splitlines()
+                      if 'origin' in out][0]
+        else:
+            try:
+                branch = git.describe('--all').split('/')[2]
+            except IndexError:
+                branch = git.rev_parse('--abbrev-ref', 'HEAD')
+        if branch in master_branches:
+            branch = '-1'
+        elif git.describe('--all').split('/')[1] == 'pr':
+            branch = '-rc' + branch + '.' + strftime("%Y%m%d%H%M%S", gmtime())
+        else:
+            branch = '-' + branch.replace("-", "_")
+    except InvalidGitRepositoryError:
+        branch = ''
+
+    bundle = ConfigData(catalog=path, branch='origin/master')
     version = bundle.get_data('version', 'catalog', explict_raw=True)
-
-    if git.describe('--all').split('/')[0] == 'tags':
-        tag = git.describe('--all')
-        branch = [out.split('/')[2] for out in git.branch('-a', '--contains', tag).splitlines()
-                  if 'origin' in out][0]
-    else:
-        try:
-            branch = git.describe('--all').split('/')[2]
-        except IndexError:
-            branch = git.rev_parse('--abbrev-ref', 'HEAD')
-
-    if branch in master_branches:
-        branch = '-1'
-    elif git.describe('--all').split('/')[1] == 'pr':
-        branch = '-rc' + branch + '.' + strftime("%Y%m%d%H%M%S", gmtime())
-    else:
-        branch = '-' + branch.replace("-", "_")
 
     if version is None:
         raise NoVersionFound('No version detected').with_traceback(sys.exc_info()[2])
@@ -56,6 +59,6 @@ def add_build_id(path, reponame, edition, master_branches: list):
 
     if edition is None or edition == "None":
         edition = "ce"
-
-    write_version(bundle.file, version, version + branch)
+    if branch:
+        write_version(bundle.file, version, version + branch)
     return str(reponame) + '_v' + str(version) + branch + '_' + edition + '.tgz'
