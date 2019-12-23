@@ -67,12 +67,14 @@ class SpecFile:
 
 def spec_processing(spec: SpecFile, path, workspace):
     for edition in spec.data['editions']:
-        for x in edition['preprocessors']:
-            if x.get('script'):
-                command = [x['script']]
-                if x.get('args'): command.extend(x['args'])  # pylint: disable=multiple-statements
-                logging.info(check_output(command, cwd=path[edition['name']]).decode("utf-8"))
-            else:
-                jinja_values = {'edition': edition['name']}
-                get_type_func(x['type'])(path[edition['name']], workspace,
-                                         edition=jinja_values, **x)
+        if edition.get('preprocessors'):
+            for x in edition['preprocessors']:
+                if x.get('script'):
+                    command = [x['script']]
+                    if x.get('args'):
+                        command.extend(x['args'])
+                    logging.info(check_output(command, cwd=path[edition['name']]).decode("utf-8"))
+                else:
+                    jinja_values = {'edition': edition['name']}
+                    get_type_func(x['type'])(path[edition['name']], workspace,
+                                             edition=jinja_values, **x)
