@@ -31,7 +31,8 @@ def python_mod_req(source_path, workspace, **kwargs):
         if data.get('python_mod'):
             command += ' pip install ' + ' '.join(req_modules) + \
                        ' --no-deps -t ' + source_path + '/pmod ;'
-            command += ' chown -R %s %s/pmod"' % (os.getuid(), source_path)
+            command += ' chown -R %s %s/pmod' % (os.getuid(), source_path)
+        command += '"'
         volumes = {
             workspace: {'bind': workspace, 'mode': 'rw'}
         }
