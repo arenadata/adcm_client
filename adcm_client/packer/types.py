@@ -15,11 +15,14 @@ def python_mod_req(source_path, workspace, **kwargs):
         command = '/bin/sh -c "pip freeze"'
         pmod_before = client.containers.run(image, command, remove=True).decode("utf-8").split()
 
+        
         command = '/bin/sh -c "'
         if data.get('system_pkg'):
             command += 'apk add ' + ' '.join(data.get('system_pkg')) + ' >/dev/null ;'
-        if data.get('python_mod'):
+        try:
             command += ' pip install ' + ' '.join(data.get('python_mod')) + ' >/dev/null ;'
+        except TypeError:
+            raise KeyError("python_mod is mandatory")
         command += ' pip freeze"'
         pmod_after = client.containers.run(image, command, remove=True).decode("utf-8").split()
 
@@ -28,11 +31,9 @@ def python_mod_req(source_path, workspace, **kwargs):
         command = '/bin/sh -c "'
         if data.get('system_pkg'):
             command += 'apk add ' + ' '.join(data.get('system_pkg')) + ' >/dev/null ;'
-        if data.get('python_mod'):
-            command += ' pip install ' + ' '.join(req_modules) + \
+        command += ' pip install ' + ' '.join(req_modules) + \
                        ' --no-deps -t ' + source_path + '/pmod ;'
-            command += ' chown -R %s %s/pmod' % (os.getuid(), source_path)
-        command += '"'
+        command += ' chown -R %s %s/pmod"' % (os.getuid(), source_path)
         volumes = {
             workspace: {'bind': workspace, 'mode': 'rw'}
         }
