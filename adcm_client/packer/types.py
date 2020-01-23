@@ -63,6 +63,7 @@ def _get_prepared_container(pkgs: list, image: Image, client: DockerClient) -> "
 
 
 def _copy_pkgs_files(source_path, dirs, image: Image, volumes: dict, client: DockerClient):
+    dirs = list(dict.fromkeys(dirs))  # filter on keys of duplicate elements
     command = '/bin/sh -c "mkdir %s/pmod; cp -r %s %s/pmod ;' % (source_path,
                                                                  ' '.join(dirs),
                                                                  source_path)
