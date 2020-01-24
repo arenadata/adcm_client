@@ -75,10 +75,10 @@ def _get_prepared_image(pkgs, image: Image, client: DockerClient) -> "Image":
     container = _get_prepared_container(pkgs, image, client)
     container.wait()
 
-    prepared_image_name = list(
+    prepared_image_name = [
         image.tags[0].split(':')[0],
         ''.join(random.sample(string.ascii_lowercase, 5))
-    )
+    ]
 
     return container.commit(repository=prepared_image_name[0],
                             tag=prepared_image_name[1])
