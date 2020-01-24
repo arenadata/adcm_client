@@ -79,9 +79,10 @@ def _get_prepared_image(pkgs, image: Image, client: DockerClient) -> "Image":
         image.tags[0].split(':')[0],
         ''.join(random.sample(string.ascii_lowercase, 5))
     ]
-
-    return container.commit(repository=prepared_image_name[0],
-                            tag=prepared_image_name[1])
+    prepared_image = container.commit(repository=prepared_image_name[0],
+                                      tag=prepared_image_name[1])
+    container.remove()
+    return prepared_image
 
 
 def python_mod_req(source_path, workspace, **kwargs):
