@@ -126,6 +126,12 @@ class Bundle(BaseAPIObject):
             raise IncorrectPrototypeType
         return prototype.cluster(**args)
 
+    def license(self):
+        return self._subcall("license", "read")
+
+    def license_accept(self):
+        self._subcall("license", "accept", "update")
+
 
 class BundleList(BaseAPIListObject):
     _ENTRY_CLASS = Bundle
