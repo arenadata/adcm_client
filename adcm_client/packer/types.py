@@ -19,42 +19,76 @@ class NoModulesToInstall(Exception):
         self.errors = errors
 
 
-def _get_top_dirs(module: str, image: Image, client: DockerClient) -> "list":
+def _get_top_dirs(image: Image, prepared_image: Image, client: DockerClient) -> "list":
     """Returns a list of paths to all top level folders
      and files of python module that must be installed in image
-    :param module: module name
-    :type module: str
-    :param image: image name
+    :param image: image without intaled modules
     :type image: Image
+    :param prepared_image: image with intaled modules
+    :type prepared_image: Image
     :param d_client: docker client
     :type d_client: DockerClient
     :return: list of path on image fs to module files
     :rtype: list
     """
+    # list of packages from image without installed python modules
+    default_module_list = _get_modules_list(image, client)
 
-    data = yaml.safe_load(
+    # list of packages from image with installed installed modules
+    modified_module_list = _get_modules_list(prepared_image, client)
+
+    # list of packages tham must be installed
+    modules = list(map(
+        lambda x: x.split('==')[0],
+        set(modified_module_list).difference(default_module_list)
+    ))
+
+    modules_data = yaml.safe_load_all(
         client.containers.run(
-            image,
-            'pip show -f %s' % module,
+            prepared_image,
+            'pip show -f %s' % ' '.join(modules),
             remove=True
         ).decode("utf-8")
     )
-
-    return [os.path.join(data['Location'], i) for i in list(
-        dict.fromkeys(
-            map(
-                lambda x: x.split('/')[0],
-                data['Files'].split()
-            )
-        )) if i not in ['..', '.']]
+    return list(chain.from_iterable(map(
+        lambda x: [os.path.join(x['Location'], i) for i in list(
+            dict.fromkeys(
+                map(
+                    lambda x: x.split('/')[0],
+                    x['Files'].split()
+                )
+            )) if i not in ['..', '.']],
+        modules_data
+    )))
 
 
 def _get_modules_list(image: Image, client: DockerClient) -> "list":
+    """Run pip freeze in docker container from given image.
+    Returns output as a list.
+
+    :param image: image name
+    :type image: Image
+    :param client: docker client
+    :type client: DockerClient
+    :return: list of installed python pkgs in given inamge freeze format
+    :rtype: list
+    """
     return client.containers.run(
         image, '/bin/sh -c "pip freeze"', remove=True).decode("utf-8").split()
 
 
 def _get_prepared_container(pkgs: list, image: Image, client: DockerClient) -> "Container":
+    """Install python pkgs to container from given image
+
+    :param pkgs: List of python packages
+    :type pkgs: list
+    :param image: image name
+    :type image: Image
+    :param client: docker client
+    :type client: DockerClient
+    :return: container with installed python packages
+    :rtype: Container
+    """
     command = '/bin/sh -c "'
     if pkgs.get('system_pkg'):
         command += 'apk add ' + ' '.join(pkgs.get('system_pkg')) + ' >/dev/null ;'
@@ -62,16 +96,34 @@ def _get_prepared_container(pkgs: list, image: Image, client: DockerClient) -> "
     return client.containers.run(image, command, detach=True)
 
 
-def _copy_pkgs_files(source_path, dirs, image: Image, volumes: dict, client: DockerClient):
+def _copy_pkgs_files(path, dirs, image: Image, volumes: dict, client: DockerClient):
+    """Copy list of dirs from container from given image to path.
+
+    :param path: path where to copy
+    :type path: str
+    :param dirs: paths what need to be copied
+    :type dirs: list
+    :param image: image that contains needed paths
+    :type image: Image
+    :param volumes: volumes that must be mounted to container.
+    :type volumes: dict
+    :param client: docker client
+    :type client: DockerClient
+    """
     dirs = list(dict.fromkeys(dirs))  # filter on keys of duplicate elements
-    command = '/bin/sh -c "mkdir %s/pmod; cp -r %s %s/pmod ;' % (source_path,
+    command = '/bin/sh -c "mkdir %s/pmod; cp -r %s %s/pmod ;' % (path,
                                                                  ' '.join(dirs),
-                                                                 source_path)
-    command += ' chown -R %s %s/pmod"' % (os.getuid(), source_path)
+                                                                 path)
+    command += ' chown -R %s %s/pmod"' % (os.getuid(), path)
     client.containers.run(image, command, volumes=volumes, remove=True)
 
 
 def _get_prepared_image(pkgs, image: Image, client: DockerClient) -> "Image":
+    """Install pgks to container from given image and commits container to a new image
+
+    :return: returns image with installed required python packages
+    :rtype: Image
+    """
     container = _get_prepared_container(pkgs, image, client)
     container.wait()
 
@@ -90,30 +142,34 @@ def python_mod_req(source_path, workspace, **kwargs):
         pkgs = yaml.safe_load(file)
         if pkgs.get('python_mod'):
             client = from_env()
+            # choose image where to install python pkgs
+            # by default adcm:latest but i think this may be bad practice
+            # better to use adcm_min_version of bundle
             image_name = "arenadata/adcm:latest" if not kwargs.get('image') else kwargs['image']
             image = client.images.pull(image_name)
+            # clean up flag
             rm_prepared_image = True
+
+            # prepared image is an image with intalled python packages
+            # that need to be packed in bundle
+            # for debug purposes there may be an prepared_image variable received from spec.yaml
             if kwargs.get('prepared_image'):
                 try:
-                    rm_prepared_image = False
                     prepared_image = client.images.get(kwargs['prepared_image'])
+                    rm_prepared_image = False
                 except ImageNotFound:
                     prepared_image = _get_prepared_image(pkgs, image, client)
             else:
                 prepared_image = _get_prepared_image(pkgs, image, client)
 
-            default_module_list = _get_modules_list(image, client)
-            dirs = list(chain.from_iterable(
-                [_get_top_dirs(module, prepared_image, client)
-                 for module in map(
-                     lambda x: x.split('==')[0],
-                     [var for var in _get_modules_list(prepared_image, client)
-                      if var not in default_module_list])]
-            ))
+            # list of all highlevel dirs of python pkgs that must be packed
+            dirs = _get_top_dirs(image, prepared_image, client)
 
+            # volume that contains workspace
             volumes = {
                 workspace: {'bind': workspace, 'mode': 'rw'}
             }
+
             _copy_pkgs_files(source_path, dirs, prepared_image, volumes, client)
 
             if rm_prepared_image:
