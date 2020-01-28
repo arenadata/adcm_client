@@ -16,7 +16,7 @@ def compare_helper(version, except_list):
     if version is None:
         except_list.extend([
             'spec.yaml', 'pylintrc', '.[0-9a-zA-Z]*', '*pycache*',
-            'README.md', '*test*', '*requirements*', '*gz', '*md'])
+            'README.md', '*test*', '*requirements*', '*.gz', '*.md'])
 
         def v_None(sub: DirEntry):
             for n in except_list:
