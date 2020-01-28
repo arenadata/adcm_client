@@ -54,7 +54,7 @@ def _get_top_dirs(image: Image, prepared_image: Image, client: DockerClient) -> 
         lambda x: [os.path.join(x['Location'], i) for i in list(
             dict.fromkeys(
                 map(
-                    lambda x: x.split('/')[0],
+                    lambda y: os.path.normpath(y).split(os.sep)[0],
                     x['Files'].split()
                 )
             )) if i not in ['..', '.']],
