@@ -196,7 +196,6 @@ class ServicePrototype(Prototype):
     shared = None
     display_name = None
     required = None
-    shared = None
     components = None
     exports = None
     imports = None
@@ -647,8 +646,10 @@ class Action(BaseAPIObject):
     url = None
     subs = None
 
-    def config(self):
-        raise NotImplementedError
+    _config = None
+
+    def config(self, kwargs):
+        self._config = kwargs
 
     def log_files(self):
         raise NotImplementedError
@@ -661,6 +662,8 @@ class Action(BaseAPIObject):
 
     def run(self, **args) -> "Task":
         with allure_step("Run action {}".format(self.name)):
+            if self._config is not None:
+                args['config'] = self._config
             data = self._subcall("run", "create", **args)
             return Task(self._api, task_id=data["id"])
 
