@@ -645,11 +645,13 @@ class Action(BaseAPIObject):
     type = None
     url = None
     subs = None
+    config = None
 
-    _config = None
-
-    def config(self, kwargs):
-        self._config = kwargs
+    def _get_config(self):
+        config = {}
+        for item in self.config['config']:
+            config[item['name']] = item['value']
+        return config
 
     def log_files(self):
         raise NotImplementedError
@@ -662,8 +664,9 @@ class Action(BaseAPIObject):
 
     def run(self, **args) -> "Task":
         with allure_step("Run action {}".format(self.name)):
-            if self._config is not None:
-                args['config'] = self._config
+            config = self._get_config()
+            for key, value in config.items():
+                args['config'].setdefault(key, value)
             data = self._subcall("run", "create", **args)
             return Task(self._api, task_id=data["id"])
 

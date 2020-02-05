@@ -61,7 +61,7 @@ class PagingEnds(Exception):
     """There are no more data in paginated mode."""
 
 
-class Paging():
+class Paging:
     def __init__(self, paged_object, limit=50, **args):
         self._paged_object = paged_object
         self._limit = limit
@@ -123,7 +123,7 @@ def _find_endpoint(api, path):
     return result
 
 
-class EndPoint():
+class EndPoint:
     def __init__(self, api, idname, path, path_args=None, awailable_filters=None):
         if idname is None:
             raise NotImplementedError
@@ -237,7 +237,6 @@ class BaseAPIObject:
         self._endpoint = EndPoint(api, self.IDNAME, path, path_args, self.FILTERS)
         self._api = api
 
-        self._api = api
         self._client = api.objects
 
         self._data = self._endpoint.search_one(**args)
