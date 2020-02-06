@@ -568,10 +568,14 @@ class Component(BaseAPIObject):
     description = None
     constraint = None
     params = None
+    component_prototype_id = None
 
     @property
     def service_id(self):
         return self._endpoint.path_args["service_id"]
+
+    def prototype(self):
+        return Prototype(api=self._api, id=self.component_prototype_id)
 
 
 class ComponentList(BaseAPIListObject):
