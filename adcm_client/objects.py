@@ -664,17 +664,20 @@ class Action(BaseAPIObject):
 
     def run(self, **args) -> "Task":
         with allure_step("Run action {}".format(self.name)):
-            config = self._get_config()
 
-            if 'config' in args:
-                pass
-            elif 'config_diff' in args:
-                for key, value in config.items():
-                    args['config_diff'].setdefault(key, value)
-                args['config'] = args.pop('config_diff')
-            else:
-                if config:
-                    args['config'] = config
+            if 'config' in args and 'config_diff' in args:
+                raise TypeError("only one argument is expected 'config' or 'config_diff'")
+
+            if 'config' not in args:
+                args['config'] = self._get_config()
+
+                if 'config_diff' in args:
+                    config_diff = args.pop('config_diff')
+                    for key, value in config_diff.items():
+                        args['config'][key] = value
+
+            if not args['config']:
+                args.pop('config')
 
             data = self._subcall("run", "create", **args)
             return Task(self._api, task_id=data["id"])
