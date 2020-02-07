@@ -665,8 +665,17 @@ class Action(BaseAPIObject):
     def run(self, **args) -> "Task":
         with allure_step("Run action {}".format(self.name)):
             config = self._get_config()
-            for key, value in config.items():
-                args['config'].setdefault(key, value)
+
+            if 'config' in args:
+                pass
+            elif 'config_diff' in args:
+                for key, value in config.items():
+                    args['config_diff'].setdefault(key, value)
+                args['config'] = args.pop('config_diff')
+            else:
+                if config:
+                    args['config'] = config
+
             data = self._subcall("run", "create", **args)
             return Task(self._api, task_id=data["id"])
 
