@@ -676,9 +676,6 @@ class Action(BaseAPIObject):
                     for key, value in config_diff.items():
                         args['config'][key] = value
 
-            if not args['config']:
-                args.pop('config')
-
             data = self._subcall("run", "create", **args)
             return Task(self._api, task_id=data["id"])
 
