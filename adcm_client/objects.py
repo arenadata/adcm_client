@@ -568,6 +568,7 @@ class Component(BaseAPIObject):
     description = None
     constraint = None
     params = None
+    prototype_id = None
 
     @property
     def service_id(self):
