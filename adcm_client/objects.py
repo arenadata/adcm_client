@@ -196,7 +196,6 @@ class ServicePrototype(Prototype):
     shared = None
     display_name = None
     required = None
-    shared = None
     components = None
     exports = None
     imports = None
@@ -647,9 +646,13 @@ class Action(BaseAPIObject):
     type = None
     url = None
     subs = None
+    config = None
 
-    def config(self):
-        raise NotImplementedError
+    def _get_config(self):
+        config = {}
+        for item in self.config['config']:
+            config[item['name']] = item['value']
+        return config
 
     def log_files(self):
         raise NotImplementedError
@@ -662,6 +665,18 @@ class Action(BaseAPIObject):
 
     def run(self, **args) -> "Task":
         with allure_step("Run action {}".format(self.name)):
+
+            if 'config' in args and 'config_diff' in args:
+                raise TypeError("only one argument is expected 'config' or 'config_diff'")
+
+            if 'config' not in args:
+                args['config'] = self._get_config()
+
+                if 'config_diff' in args:
+                    config_diff = args.pop('config_diff')
+                    for key, value in config_diff.items():
+                        args['config'][key] = value
+
             data = self._subcall("run", "create", **args)
             return Task(self._api, task_id=data["id"])
 
