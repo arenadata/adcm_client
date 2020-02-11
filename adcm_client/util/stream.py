@@ -18,17 +18,15 @@ from adcm_client.packer.bundle_build import build
 
 
 def file(path, **args):
-    stream = None
     if os.path.isdir(path):
-        stream = list(build(repopath=path, **args).values())
+        return list(build(repopath=path, **args).values())
     else:
         stream = io.BytesIO()
         try:
             stream.write(gzip.open(path, 'rb').read())
         except OSError:
             stream.write(io.open(path, 'rb').read())
-        stream.seek(0)
-    return stream
+        return [stream.seek(0)]
 
 
 def web(url):

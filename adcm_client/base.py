@@ -37,6 +37,10 @@ def strip_none_keys(args):
     return {k: v for k, v in args.items() if v is not None}
 
 
+class TooManyArguments(Exception):
+    pass
+
+
 class NoSuchEndpoint(Exception):
     pass
 
