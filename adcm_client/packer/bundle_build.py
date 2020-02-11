@@ -40,7 +40,6 @@ def _prepare_result_dir(workspace, tarball_path):
 
 
 def _pack(reponame, repopaths, tarpaths, spec: SpecFile, **kwargs):
-    tarballs = dict()
     for edition in spec.data['editions']:
         name = edition.get('name')
         tarpath = tarpaths[name] if isinstance(tarpaths, dict) else tarpaths
@@ -58,8 +57,7 @@ def _pack(reponame, repopaths, tarpaths, spec: SpecFile, **kwargs):
         tar.close()
         stream.seek(0)
         # saving tarball
-        tarballs.update({os.path.join(tarpath, tarname): stream})
-    return tarballs
+        yield os.path.join(tarpath, tarname), stream
 
 
 def _clean_ws(path):
@@ -115,7 +113,13 @@ def build(reponame=None, repopath=None, workspace='/tmp',  # pylint: disable=R09
     tarpath = _prepare_result_dir(workspace, tarball_path)
     spec_processing(spec, work_dir_paths, workspace)
 
-    out = _pack(reponame, work_dir_paths, tarpath, spec, master_branches=master_branches)
+    out = dict(
+        _pack(
+            reponame,
+            work_dir_paths,
+            tarpath,
+            spec,
+            master_branches=master_branches))
 
     if clean_ws:
         _clean_ws(ws_tepm_dir)

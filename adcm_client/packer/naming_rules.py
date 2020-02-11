@@ -62,14 +62,15 @@ def add_build_id(path, reponame, edition, master_branches: list):
     bundle = ConfigData(catalog=path, branch='origin/master')
     version = bundle.get_data('version', 'catalog', explict_raw=True)
 
-    if version is None:
-        raise NoVersionFound('No version detected').with_traceback(sys.exc_info()[2])
-    if '-' in version:
-        raise RestrictedSymbol('Version contains restricted symbol \
-            "-" in position %s' % version.index('-')).with_traceback(sys.exc_info()[2])
-
     if edition is None or edition == "None":
         edition = "ce"
+
+    if version is None:
+        raise NoVersionFound('No version detected').with_traceback(sys.exc_info()[2])
+    if not isinstance(version, int):
+        if '-' in version:
+            raise RestrictedSymbol('Version contains restricted symbol \
+                "-" in position %s' % version.index('-')).with_traceback(sys.exc_info()[2])
     if branch:
         write_version(bundle.file, version, version + branch)
     return str(reponame) + '_v' + str(version) + branch + '_' + edition + '.tgz'
