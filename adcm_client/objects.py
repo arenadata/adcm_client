@@ -937,8 +937,16 @@ class ADCMClient:
         return self.bundle(bundle_id=data['id'])
 
     @allure_step('Upload bundle from "{1}"')
-    def upload_from_fs(self, dirname) -> Bundle:
-        return self._upload(stream.file(dirname))
+    def upload_from_fs(self, dirname, **args) -> BundleList:
+        streams = stream.file(dirname, **args)
+        result = None
+        if isinstance(streams, list):
+            for st in streams:
+                result = BundleList(self._api, id=self._upload(st).id) if result is None \
+                    else result.append(BundleList(self._api, id=self._upload(st).id))
+        else:
+            result = BundleList(self._api, id=self._upload(streams).id)
+        return result
 
     @allure_step('Upload bundle from "{1}"')
     def upload_from_url(self, url) -> Bundle:
