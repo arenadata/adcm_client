@@ -67,10 +67,10 @@ def add_build_id(path, reponame, edition, master_branches: list):
 
     if version is None:
         raise NoVersionFound('No version detected').with_traceback(sys.exc_info()[2])
-    if not isinstance(version, int):
+    if isinstance(version, str):
         if '-' in version:
             raise RestrictedSymbol('Version contains restricted symbol \
                 "-" in position %s' % version.index('-')).with_traceback(sys.exc_info()[2])
-    if branch:
-        write_version(bundle.file, version, version + branch)
+        if branch:
+            write_version(bundle.file, version, version + branch)
     return str(reponame) + '_v' + str(version) + branch + '_' + edition + '.tgz'
