@@ -18,7 +18,7 @@ from adcm_client.wrappers.api import ADCMApiWrapper
 from version_utils import rpm
 
 from .base import (ADCMApiError, BaseAPIListObject, BaseAPIObject,
-                   ObjectNotFound, strip_none_keys)
+                   ObjectNotFound, TooManyArguments, strip_none_keys)
 
 # If we are running the client from tests with Allure we expected that code
 # to trace steps in Allure UI.
@@ -937,15 +937,18 @@ class ADCMClient:
         return self.bundle(bundle_id=data['id'])
 
     @allure_step('Upload bundle from "{1}"')
-    def upload_from_fs(self, dirname, **args) -> BundleList:
+    def upload_from_fs(self, dirname, **args) -> Bundle:
         streams = stream.file(dirname, **args)
-        result = None
-        if isinstance(streams, list):
-            for st in streams:
-                result = BundleList(self._api, id=self._upload(st).id) if result is None \
-                    else result.append(BundleList(self._api, id=self._upload(st).id))
-        else:
-            result = BundleList(self._api, id=self._upload(streams).id)
+        if len(streams) > 1:
+            raise TooManyArguments('Build more then one bundle from dir')
+        return self._upload(streams[0])
+
+    @allure_step('Upload bundles from "{1}"')
+    def upload_from_fs_all(self, dirname, **args) -> BundleList:
+        streams = stream.file(dirname, **args)
+        result = BundleList(self._api, empty_bundlelist='not_existing_bundle')
+        for st in streams:
+            result.append(self._upload(st))
         return result
 
     @allure_step('Upload bundle from "{1}"')
