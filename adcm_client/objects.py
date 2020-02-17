@@ -940,12 +940,15 @@ class ADCMClient:
     def upload_from_fs(self, dirname, **args) -> Bundle:
         streams = stream.file(dirname, **args)
         if len(streams) > 1:
-            raise TooManyArguments('Build more then one bundle from dir')
+            raise TooManyArguments('upload_bundle_from_fs is not capable with building multiple \
+                bundle editions from one dir. Use upload_from_fs_all instead.')
         return self._upload(streams[0])
 
     @allure_step('Upload bundles from "{1}"')
     def upload_from_fs_all(self, dirname, **args) -> BundleList:
         streams = stream.file(dirname, **args)
+        # Create empty bundle list by filtering on wittingly nonexisting field
+        # and value.
         result = BundleList(self._api, empty_bundlelist='not_existing_bundle')
         for st in streams:
             result.append(self._upload(st))
