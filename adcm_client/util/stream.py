@@ -26,7 +26,8 @@ def file(path, **args):
             stream.write(gzip.open(path, 'rb').read())
         except OSError:
             stream.write(io.open(path, 'rb').read())
-        return [stream.seek(0)]
+        stream.seek(0)
+        return [stream]
 
 
 def web(url):
