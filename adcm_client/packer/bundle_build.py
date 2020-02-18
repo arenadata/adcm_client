@@ -40,7 +40,6 @@ def _prepare_result_dir(workspace, tarball_path):
 
 
 def _pack(reponame, repopaths, tarpaths, spec: SpecFile, **kwargs):
-    tarballs = {}
     for edition in spec.data['editions']:
         name = edition.get('name')
         tarpath = tarpaths[name] if isinstance(tarpaths, dict) else tarpaths
@@ -56,12 +55,9 @@ def _pack(reponame, repopaths, tarpaths, spec: SpecFile, **kwargs):
         logging.info("#######\n Edition %s \n#######", name)
         logging.info("#######\n Packed files list:\n%s\n#######", "\n".join(tar.getnames()))
         tar.close()
+        stream.seek(0)
         # saving tarball
-        tarballs.update({name: os.path.join(tarpath, tarname)})
-        with open(tarballs[name], 'wb') as file:
-            stream.seek(0)
-            file.write(stream.read())
-    return {'tarballs': tarballs}
+        yield os.path.join(tarpath, tarname), stream
 
 
 def _clean_ws(path):
@@ -72,9 +68,9 @@ def _clean_ws(path):
         remove_tree(path)
 
 
-def build(reponame, repopath,  # pylint: disable=W0102, R0913
-          workspace='/tmp', tarball_path=None, loglevel='ERROR',
-          clean_ws=True, master_branches=['master'], autotest=False):
+def build(reponame=None, repopath=None, workspace='/tmp',  # pylint: disable=R0913
+          tarball_path=None, loglevel='ERROR',
+          clean_ws=True, master_branches=None, **args):
     """Moves sources to workspace inside of temporary directory. \
     Some operations over sources cant be proceed concurent(for exemple in pytest with xdist \
     plugin) that why each thread need is own tmp dir with sources. \
@@ -82,12 +78,13 @@ def build(reponame, repopath,  # pylint: disable=W0102, R0913
     necessery to share same workspace with every used container.
     Proceed spec file.
     Writes build number to bundle config file.
-    Recursively add files to tarball.
+    Recursively add files to bytes stream.
+    Cleanup tmp dirs.
 
-    :param reponame: arenadata repository name. Used for naming aftifact and tmp dir.
-    :type reponame: str
     :param repopath: Where bundle sources are
     :type repopath: str
+    :param reponame: arenadata repository name. Used for naming aftifact and tmp dir.
+    :type reponame: str
     :param workspace: where build operations will be performed, defaults to /tmp.
     :type workspace: str, optional
     :param tarball_path: where to copy builded bundle, defaults to None.
@@ -95,21 +92,35 @@ def build(reponame, repopath,  # pylint: disable=W0102, R0913
     :type tarball_path: str, optional
     :param loglevel: lower or equal to INFO will be stdout
     :type loglevel: str, optional
-    :return: return a dict. Keys:
-        tarball - path to aftifact
+    :return: return a dict.
+    Keys - path and name of tarball to save.
+    Value - stream of bytes.
     :rtype: dict
     """
+    if not master_branches:
+        master_branches = ['master']
+    if not repopath:
+        raise ValueError('path to source should be defined')
+    if not reponame:
+        reponame = os.path.basename(os.path.realpath(repopath))
+
     logging.basicConfig(stream=sys.stdout, level=getattr(logging, loglevel))
     spec = SpecFile(os.path.join(repopath, 'spec.yaml'))
     spec.normalize_spec()
+
     ws_tepm_dir, work_dir_paths = _prepare_ws(reponame, workspace, repopath, spec)
-    if autotest:
-        tarpath = _prepare_result_dir(work_dir_paths, tarball_path)
-    else:
-        tarpath = _prepare_result_dir(workspace, tarball_path)
+
+    tarpath = _prepare_result_dir(workspace, tarball_path)
     spec_processing(spec, work_dir_paths, workspace)
 
-    out = _pack(reponame, work_dir_paths, tarpath, spec, master_branches=master_branches)
+    out = dict(
+        _pack(
+            reponame,
+            work_dir_paths,
+            tarpath,
+            spec,
+            master_branches=master_branches))
+
     if clean_ws:
         _clean_ws(ws_tepm_dir)
 

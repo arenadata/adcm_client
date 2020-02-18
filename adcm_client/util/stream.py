@@ -12,27 +12,21 @@
 import gzip
 import io
 import os
-import tarfile
 
 import requests
+from adcm_client.packer.bundle_build import build
 
 
-def file(path):
-    stream = None
+def file(path, **args):
     if os.path.isdir(path):
-        stream = io.BytesIO()
-        tar = tarfile.TarFile(fileobj=stream, mode="w")
-        for sub in os.listdir(path):
-            tar.add(os.path.join(path, sub), arcname=sub)
-        tar.close()
+        return list(build(repopath=path, **args).values())
     else:
         stream = io.BytesIO()
         try:
             stream.write(gzip.open(path, 'rb').read())
         except OSError:
             stream.write(io.open(path, 'rb').read())
-    stream.seek(0)
-    return stream
+        return [stream.seek(0)]
 
 
 def web(url):

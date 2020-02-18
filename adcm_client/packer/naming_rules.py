@@ -39,6 +39,13 @@ def add_build_id(path, reponame, edition, master_branches: list):
             config.truncate()
             config.write(data)
 
+    edition = "community" if edition is None or edition == "None" else edition
+    bundle = ConfigData(catalog=path)
+    version = bundle.get_data('version', 'catalog', explict_raw=True)
+
+    if version is None:
+        raise NoVersionFound('No version detected').with_traceback(sys.exc_info()[2])
+
     try:
         git = Repo(path).git
         if git.describe('--all').split('/')[0] == 'tags':
@@ -58,18 +65,12 @@ def add_build_id(path, reponame, edition, master_branches: list):
             branch = '-' + branch.replace("-", "_")
     except InvalidGitRepositoryError:
         branch = ''
-
-    bundle = ConfigData(catalog=path, branch='origin/master')
-    version = bundle.get_data('version', 'catalog', explict_raw=True)
-
-    if version is None:
-        raise NoVersionFound('No version detected').with_traceback(sys.exc_info()[2])
-    if '-' in version:
-        raise RestrictedSymbol('Version contains restricted symbol \
-            "-" in position %s' % version.index('-')).with_traceback(sys.exc_info()[2])
-
-    if edition is None or edition == "None":
-        edition = "ce"
-    if branch:
+    else:
+        if not isinstance(version, str):
+            raise TypeError('Bundle version must be string').with_traceback(sys.exc_info()[2])
+        if '-' in version:
+            raise RestrictedSymbol('Version contains restricted symbol \
+                "-" in position %s' % version.index('-')).with_traceback(sys.exc_info()[2])
         write_version(bundle.file, version, version + branch)
+
     return str(reponame) + '_v' + str(version) + branch + '_' + edition + '.tgz'
