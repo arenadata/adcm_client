@@ -20,7 +20,7 @@ extras = {
 
 setuptools.setup(
     name="adcm_client",
-    version="2020.02.18.18",
+    version="2020.02.25.17",
     author="Anton Chevychalov",
     author_email="cab@arenadata.io",
     description="ArenaData Cluster Manager Client",
