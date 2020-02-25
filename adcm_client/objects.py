@@ -13,12 +13,13 @@
 import logging
 from contextlib import contextmanager
 
-from adcm_client.util import stream
-from adcm_client.wrappers.api import ADCMApiWrapper
 from version_utils import rpm
 
-from .base import (ADCMApiError, BaseAPIListObject, BaseAPIObject,
-                   ObjectNotFound, TooManyArguments, strip_none_keys)
+from adcm_client.base import (ADCMApiError, BaseAPIListObject, BaseAPIObject,
+                              ObjectHasIssue, ObjectNotFound,
+                              TooManyArguments, strip_none_keys)
+from adcm_client.util import stream
+from adcm_client.wrappers.api import ADCMApiWrapper
 
 # If we are running the client from tests with Allure we expected that code
 # to trace steps in Allure UI.
@@ -281,6 +282,8 @@ class _BaseObject(BaseAPIObject):
         return self._subobject(ActionList, paging=paging, **args)
 
     def action_run(self, **args) -> "Task":
+        if self.issue:
+            raise ObjectHasIssue(str(self.issue))
         action = self.action(**args)
         return action.run()
 
@@ -450,9 +453,6 @@ class Cluster(_BaseObject):
         return self._subcall("status", "list")
 
     def imports(self):
-        raise NotImplementedError
-
-    def issue(self):
         raise NotImplementedError
 
     def upgrade(self, **args) -> "Upgrade":
