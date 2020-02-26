@@ -13,11 +13,12 @@
 import logging
 from contextlib import contextmanager
 
+from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
 
-from adcm_client.base import (ADCMApiError, BaseAPIListObject, BaseAPIObject,
-                              ObjectHasIssue, ObjectNotFound,
-                              TooManyArguments, strip_none_keys)
+from adcm_client.base import (ActionHasIssues, ADCMApiError, BaseAPIListObject,
+                              BaseAPIObject, ObjectNotFound, TooManyArguments,
+                              strip_none_keys)
 from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
 
@@ -282,8 +283,6 @@ class _BaseObject(BaseAPIObject):
         return self._subobject(ActionList, paging=paging, **args)
 
     def action_run(self, **args) -> "Task":
-        if self.issue:
-            raise ObjectHasIssue(str(self.issue))
         action = self.action(**args)
         return action.run()
 
@@ -677,7 +676,13 @@ class Action(BaseAPIObject):
                     for key, value in config_diff.items():
                         args['config'][key] = value
 
-            data = self._subcall("run", "create", **args)
+            try:
+                data = self._subcall("run", "create", **args)
+            except ErrorMessage as error:
+                if error.title == '409 Conflict' and\
+                    'has issues' in getattr(error, '_data', {}).get('desc', ''):
+                    raise ActionHasIssues
+                raise error
             return Task(self._api, task_id=data["id"])
 
 

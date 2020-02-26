@@ -49,7 +49,7 @@ class ObjectNotFound(Exception):
     pass
 
 
-class ObjectHasIssue(Exception):
+class ActionHasIssues(Exception):
     pass
 
 
