@@ -679,8 +679,8 @@ class Action(BaseAPIObject):
             try:
                 data = self._subcall("run", "create", **args)
             except ErrorMessage as error:
-                if error.title == '409 Conflict' and\
-                    'has issues' in getattr(error, '_data', {}).get('desc', ''):
+                if (error.title == '409 Conflict'
+                        and 'has issues' in getattr(error, '_data', {}).get('desc', '')):
                     raise ActionHasIssues
                 raise error
             return Task(self._api, task_id=data["id"])
