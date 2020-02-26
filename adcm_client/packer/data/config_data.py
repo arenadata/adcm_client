@@ -21,8 +21,10 @@ from git import Git
 
 
 # TO DO: Exeptions - non valid methods calls when required property is None
-class ConfigData:  # pylint: disable=too-many-instance-attributes
-    def __init__(self, git: Git = None, file=None, data=None, catalog=None,  # pylint: disable=too-many-arguments
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-arguments
+class ConfigData:
+    def __init__(self, git: Git = None, file=None, data=None, catalog=None,
                  branch=None, tar=None, url=None):
         self.url = url
         self.tar = tar

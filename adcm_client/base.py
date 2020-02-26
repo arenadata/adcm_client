@@ -49,6 +49,10 @@ class ObjectNotFound(Exception):
     pass
 
 
+class ActionHasIssues(Exception):
+    pass
+
+
 class WaitTimeout(Exception):
     pass
 

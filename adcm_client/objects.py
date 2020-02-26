@@ -13,12 +13,14 @@
 import logging
 from contextlib import contextmanager
 
-from adcm_client.util import stream
-from adcm_client.wrappers.api import ADCMApiWrapper
+from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
 
-from .base import (ADCMApiError, BaseAPIListObject, BaseAPIObject,
-                   ObjectNotFound, TooManyArguments, strip_none_keys)
+from adcm_client.base import (ActionHasIssues, ADCMApiError, BaseAPIListObject,
+                              BaseAPIObject, ObjectNotFound, TooManyArguments,
+                              strip_none_keys)
+from adcm_client.util import stream
+from adcm_client.wrappers.api import ADCMApiWrapper
 
 # If we are running the client from tests with Allure we expected that code
 # to trace steps in Allure UI.
@@ -452,9 +454,6 @@ class Cluster(_BaseObject):
     def imports(self):
         raise NotImplementedError
 
-    def issue(self):
-        raise NotImplementedError
-
     def upgrade(self, **args) -> "Upgrade":
         return self._subobject(Upgrade, **args)
 
@@ -677,7 +676,13 @@ class Action(BaseAPIObject):
                     for key, value in config_diff.items():
                         args['config'][key] = value
 
-            data = self._subcall("run", "create", **args)
+            try:
+                data = self._subcall("run", "create", **args)
+            except ErrorMessage as error:
+                if (error.title == '409 Conflict'
+                        and 'has issues' in getattr(error, '_data', {}).get('desc', '')):
+                    raise ActionHasIssues
+                raise error
             return Task(self._api, task_id=data["id"])
 
 
