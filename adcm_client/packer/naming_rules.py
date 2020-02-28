@@ -10,6 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import sys
+import io
 from time import gmtime, strftime
 
 from git import Repo
@@ -29,13 +30,44 @@ class RestrictedSymbol(Exception):
         super().__init__(message)
         self.errors = errors
 
+class ReadFileWrapper:
+    def __init__(self, stream: io.StringIO):
+        self.stream = stream
+
+    def __next__(self):
+        if self.stream.tell() == self.get_end():
+            raise StopIteration
+        start, line = self.stream.tell(), self.stream.readline()
+        end = self.stream.tell()
+        return start, line, end
+
+    def __iter__(self):
+        return self
+
+    def get_end(self):
+        cur_pos = self.stream.tell()
+        end_pos = self.stream.seek(0, 2)
+        self.stream.seek(cur_pos)
+        return end_pos
+
 
 def add_build_id(path, reponame, edition, master_branches: list):
     def write_version(file, old_version, new_version):
-        with open(file, 'r+') as config:
-            for line in config:
+        with io.open(file, 'r+') as config:
+            for start_pos, line, end_pos in ReadFileWrapper(config):
                 if 'version:' in line and old_version in line:
-                    config.write(line.replace(old_version, new_version))
+                    # remember tail
+                    # truncate from position before line
+                    # write new line
+                    # write end of file
+                    config.seek(end_pos)
+                    tail = config.read()
+                    config.seek(start_pos)
+                    config.truncate()
+                    new_end_pos = config.write(line.replace(old_version, new_version))
+                    config.write(tail)
+                    config.seek(new_end_pos)
+
 
     edition = "community" if edition is None or edition == "None" else edition
     bundle = ConfigData(catalog=path)
