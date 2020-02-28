@@ -33,11 +33,9 @@ class RestrictedSymbol(Exception):
 def add_build_id(path, reponame, edition, master_branches: list):
     def write_version(file, old_version, new_version):
         with open(file, 'r+') as config:
-            data = config.read()
-            data = data.replace(old_version, new_version)
-            config.seek(0)
-            config.truncate()
-            config.write(data)
+            for line in config:
+                if 'version:' in line and old_version in line:
+                    config.write(line.replace(old_version, new_version))
 
     edition = "community" if edition is None or edition == "None" else edition
     bundle = ConfigData(catalog=path)
