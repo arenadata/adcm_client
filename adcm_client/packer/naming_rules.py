@@ -30,6 +30,7 @@ class RestrictedSymbol(Exception):
         super().__init__(message)
         self.errors = errors
 
+
 class ReadFileWrapper:
     def __init__(self, stream: io.StringIO):
         self.stream = stream
@@ -67,7 +68,6 @@ def add_build_id(path, reponame, edition, master_branches: list):
                     new_end_pos = config.write(line.replace(old_version, new_version))
                     config.write(tail)
                     config.seek(new_end_pos)
-
 
     edition = "community" if edition is None or edition == "None" else edition
     bundle = ConfigData(catalog=path)
