@@ -123,10 +123,10 @@ def _copy_pkgs_files(path, dirs, image: Image, volumes: dict, client: DockerClie
     :type client: DockerClient
     """
     dirs = list(dict.fromkeys(dirs))  # filter on keys of duplicate elements
-    command = '/bin/sh -c "mkdir %s/pmod; cp -r %s %s/pmod ;' % (path,
-                                                                 ' '.join(dirs),
-                                                                 path)
-    command += ' chown -R %s %s/pmod"' % (os.getuid(), path)
+    command = '/bin/sh -c "mkdir %s; cp -r %s %s ;' % (path,
+                                                       ' '.join(dirs),
+                                                       path)
+    command += ' chown -R %s %s"' % (os.getuid(), path)
     client.containers.run(image, command, volumes=volumes, remove=True)
 
 
@@ -182,7 +182,11 @@ def python_mod_req(source_path, workspace, **kwargs):
                 workspace: {'bind': workspace, 'mode': 'rw'}
             }
 
-            _copy_pkgs_files(source_path, dirs, prepared_image, volumes, client)
+            if kwargs.get('target_dir'):
+                path = os.path.join(source_path, kwargs['target_dir'], 'pmod')
+            else:
+                path = os.path.join(source_path, 'pmod')
+            _copy_pkgs_files(path, dirs, prepared_image, volumes, client)
 
             if rm_prepared_image:
                 client.images.remove(prepared_image.id)
