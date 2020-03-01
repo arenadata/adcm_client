@@ -65,7 +65,7 @@ def add_build_id(path, reponame, edition, master_branches: list):
                     tail = config.read()
                     config.seek(start_pos)
                     config.truncate()
-                    new_end_pos = config.write(line.replace(old_version, new_version))
+                    new_end_pos = start_pos + config.write(line.replace(old_version, new_version))
                     config.write(tail)
                     config.seek(new_end_pos)
 
