@@ -130,7 +130,8 @@ def _copy_pkgs_files(path, dirs, image: Image, volumes: dict, client: DockerClie
     client.containers.run(image, command, volumes=volumes, remove=True)
 
 
-def _get_prepared_image(pkgs, image: Image, client: DockerClient) -> "Image":
+def _get_prepared_image(pkgs, image: Image,
+                        client: DockerClient, prepared_image_name=None) -> "Image":
     """Install pgks to container from given image and commits container to a new image
 
     :return: returns image with installed required python packages
@@ -139,10 +140,11 @@ def _get_prepared_image(pkgs, image: Image, client: DockerClient) -> "Image":
     container = _get_prepared_container(pkgs, image, client)
     container.wait()
 
-    prepared_image_name = [
-        image.tags[0].split(':')[0],
-        ''.join(random.sample(string.ascii_lowercase, 5))
-    ]
+    if not prepared_image_name:
+        prepared_image_name = [
+            image.tags[0].split(':')[0],
+            ''.join(random.sample(string.ascii_lowercase, 5))
+        ]
     prepared_image = container.commit(repository=prepared_image_name[0],
                                       tag=prepared_image_name[1])
     container.remove()
@@ -166,11 +168,15 @@ def python_mod_req(source_path, workspace, **kwargs):
             # that need to be packed in bundle
             # for debug purposes there may be an prepared_image variable received from spec.yaml
             if kwargs.get('prepared_image'):
+                # it will work as staticimage option in pytest_plugin
+                rm_prepared_image = False
                 try:
                     prepared_image = client.images.get(kwargs['prepared_image'])
-                    rm_prepared_image = False
                 except ImageNotFound:
-                    prepared_image = _get_prepared_image(pkgs, image, client)
+                    prepared_image = _get_prepared_image(pkgs,
+                                                         image,
+                                                         client,
+                                                         kwargs['prepared_image'].split(':'))
             else:
                 prepared_image = _get_prepared_image(pkgs, image, client)
 
