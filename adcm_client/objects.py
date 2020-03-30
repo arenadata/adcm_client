@@ -13,14 +13,13 @@
 import logging
 from contextlib import contextmanager
 
-from coreapi.exceptions import ErrorMessage
-from version_utils import rpm
-
 from adcm_client.base import (ActionHasIssues, ADCMApiError, BaseAPIListObject,
                               BaseAPIObject, ObjectNotFound, TooManyArguments,
                               strip_none_keys)
 from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
+from coreapi.exceptions import ErrorMessage
+from version_utils import rpm
 
 # If we are running the client from tests with Allure we expected that code
 # to trace steps in Allure UI.
@@ -648,9 +647,14 @@ class Action(BaseAPIObject):
     config = None
 
     def _get_config(self):
-        config = {}
+        config = dict()
         for item in self.config['config']:
-            config[item['name']] = item['value']
+            if item['type'] == 'group':
+                config[item['name']] = dict()
+            elif item['subname']:
+                config[item['name']][item['subname']] = item['value']
+            else:
+                config[item['name']] = item['value']
         return config
 
     def log_files(self):
@@ -673,13 +677,20 @@ class Action(BaseAPIObject):
 
                 if 'config_diff' in args:
                     config_diff = args.pop('config_diff')
-                    for key, value in config_diff.items():
-                        args['config'][key] = value
+                    for item in self.config['config']:
+                        if item['type'] == 'group':
+                            continue
+
+                        key, subkey = item['name'], item['subname']
+                        if subkey and subkey in config_diff.get(key, {}):
+                            args['config'][key][subkey] = config_diff[key][subkey]
+                        elif not subkey and config_diff.get(key):
+                            args['config'][key] = config_diff[key]
 
             try:
                 data = self._subcall("run", "create", **args)
             except ErrorMessage as error:
-                if (error.title == '409 Conflict'
+                if (getattr(error, 'title', '') == '409 Conflict'
                         and 'has issues' in getattr(error, '_data', {}).get('desc', '')):
                     raise ActionHasIssues
                 raise error
