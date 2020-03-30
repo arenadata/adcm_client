@@ -753,7 +753,9 @@ class Task(BaseAPIObject):
     def _log_jobs(self, status):
         for job in self.job_list(status=status):
             for file in job.log_files:
-                logger.error(self._api.client.get(file["url"])["content"])
+                response = self._api.client.get(file["url"])
+                if 'content' in response:
+                    logger.error(response["content"])
 
 
 class TaskList(BaseAPIListObject):
