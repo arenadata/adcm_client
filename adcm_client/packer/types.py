@@ -23,6 +23,9 @@ from docker.client import DockerClient
 from docker.errors import ImageNotFound
 from docker.models.containers import Container  # pylint: disable=unused-import
 from docker.models.images import Image
+from github import Github
+
+from .naming_rules import get_git_data
 
 
 class NoModulesToInstall(Exception):
@@ -195,13 +198,37 @@ def python_mod_req(source_path, workspace, **kwargs):
             raise NoModulesToInstall('Can`t get python modules list to be inatalled')
 
 
+def is_release(git_data, master_branches, github_token=None):
+    if git_data:
+        if 'branch' in git_data:
+            return git_data['branch'] in master_branches
+        elif 'pull_request' in git_data:
+            if not github_token:
+                raise Exception('For packing pull request case and splitter usage '
+                                'github token option must be defined. Use -g option')
+            github = Github(github_token)
+            repo = github.get_repo(git_data['repoowner'] + '/' + git_data['reponame'])
+            pr = repo.get_pull(int(git_data['pull_request']))
+            return pr.base.ref in master_branches
+        else:
+            raise NotImplementedError('This code must not arrive here')
+    return True
+
+
 def splitter(*args, **kwargs):
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(args[0]),
                              undefined=jinja2.StrictUndefined)
+    git_data = get_git_data(args[0])
+    env_vars = kwargs['jinja_values']
+    env_vars.update(
+        {'release_version': is_release(git_data,
+                                       kwargs['master_branches'],
+                                       kwargs['github_token'])}
+    )
     for file in kwargs['files']:
         tmpl = env.get_template(file)
         with codecs.open(os.path.join(args[0], (os.path.splitext(file)[0])), 'w', 'utf-8') as f:
-            f.write(tmpl.render(kwargs['edition']))
+            f.write(tmpl.render(env_vars))
 
 
 def get_type_func(tpe):

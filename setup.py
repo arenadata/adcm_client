@@ -20,7 +20,7 @@ extras = {
 
 setuptools.setup(
     name="adcm_client",
-    version="2020.03.30.18",
+    version="2020.04.16.18",
     author="Anton Chevychalov",
     author_email="cab@arenadata.io",
     description="ArenaData Cluster Manager Client",
@@ -28,7 +28,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         'pyyaml', 'coreapi', 'ipython', 'gitpython', 'docker', 'jinja2',
-        'version_utils'
+        'version_utils', 'PyGithub'
     ],
     tests_require=test_deps,
     extras_require=extras,
