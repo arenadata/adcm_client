@@ -71,7 +71,7 @@ def _clean_ws(path):
 def build(reponame=None, repopath=None, workspace='/tmp',  # pylint: disable=R0913
           tarball_path=None, loglevel='ERROR',
           clean_ws=True, master_branches=None,
-          github_token=None, **args):
+          release_version=False, **args):
     """Moves sources to workspace inside of temporary directory. \
     Some operations over sources cant be proceed concurent(for exemple in pytest with xdist \
     plugin) that why each thread need is own tmp dir with sources. \
@@ -112,7 +112,7 @@ def build(reponame=None, repopath=None, workspace='/tmp',  # pylint: disable=R09
     ws_tepm_dir, work_dir_paths = _prepare_ws(reponame, workspace, repopath, spec)
 
     tarpath = _prepare_result_dir(workspace, tarball_path)
-    spec_processing(spec, work_dir_paths, workspace, master_branches, github_token)
+    spec_processing(spec, work_dir_paths, workspace, release_version)
 
     out = dict(
         _pack(

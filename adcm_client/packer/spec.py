@@ -76,7 +76,7 @@ class SpecFile:
         return tar_except
 
 
-def spec_processing(spec: SpecFile, path, workspace, master_branches, gh_token):
+def spec_processing(spec: SpecFile, path, workspace, release_version):
     for edition in spec.data['editions']:
         if edition.get('preprocessors'):
             for x in edition['preprocessors']:
@@ -87,9 +87,8 @@ def spec_processing(spec: SpecFile, path, workspace, master_branches, gh_token):
                     logging.info(check_output(command, cwd=path[edition['name']]).decode("utf-8"))
                 else:
                     if x['type'] == 'splitter':
-                        params = {'jinja_values': {'edition': edition['name']},
-                                  'master_branches': master_branches,
-                                  'github_token': gh_token}
+                        params = {'jinja_values': {'edition': edition['name'],
+                                                   'release_version': release_version}}
                     else:
                         params = {}
                     get_type_func(x['type'])(path[edition['name']], workspace,

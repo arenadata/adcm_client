@@ -28,7 +28,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         'pyyaml', 'coreapi', 'ipython', 'gitpython', 'docker', 'jinja2',
-        'version_utils', 'PyGithub'
+        'version_utils'
     ],
     tests_require=test_deps,
     extras_require=extras,
