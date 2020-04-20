@@ -9,17 +9,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# pylint: disable=R0901, R0904
+# pylint: disable=R0901, R0904, W0401
 import logging
 from contextlib import contextmanager
 
-from adcm_client.base import (ActionHasIssues, ADCMApiError, BaseAPIListObject,
-                              BaseAPIObject, ObjectNotFound, TooManyArguments,
-                              strip_none_keys)
-from adcm_client.util import stream
-from adcm_client.wrappers.api import ADCMApiWrapper
 from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
+
+from adcm_client.base import (
+    ActionHasIssues, ADCMApiError, BaseAPIListObject, BaseAPIObject, ObjectNotFound,
+    TooManyArguments, strip_none_keys
+)
+from adcm_client.object import *
+from adcm_client.util import stream
+from adcm_client.wrappers.api import ADCMApiWrapper
 
 # If we are running the client from tests with Allure we expected that code
 # to trace steps in Allure UI.
@@ -779,13 +782,16 @@ class Job(BaseAPIObject):
     log_files = None
     task_id = None
 
-    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
-        super().__init__(api, path, **args)
-
     def wait(self, timeout=None):
         return self.wait_for_attr("status",
                                   self._END_STATUSES,
                                   timeout=timeout)
+
+    def log(self, **kwargs) -> "Log":
+        return Log(self._api, path_args=dict(job_id=self.id), **kwargs)
+
+    def logs(self, **kwargs) -> "LogList":
+        return LogList(self._api, path_args=dict(job_id=self.id), **kwargs)
 
 
 class JobList(BaseAPIListObject):
