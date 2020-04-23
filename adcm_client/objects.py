@@ -730,10 +730,10 @@ class Task(BaseAPIObject):
     url = None
 
     def job(self, **args) -> "Job":
-        return Job(self._api, **args)
+        return Job(self._api, path_args=dict(task_id=self.id), **args)
 
     def job_list(self, paging=None, **args) -> "JobList":
-        return JobList(self._api, paging=paging, **args)
+        return JobList(self._api, paging=paging, path_args=dict(task_id=self.id), **args)
 
     @allure_step("Wait for task end")
     def wait(self, timeout=None, log_failed=True):
@@ -757,8 +757,8 @@ class Task(BaseAPIObject):
         for job in self.job_list(status=status):
             for file in job.log_files:
                 response = self._api.client.get(file["url"])
-                if 'body' in response:
-                    logger.error(response["body"])
+                if 'content' in response:
+                    logger.error(response["content"])
 
 
 class TaskList(BaseAPIListObject):
@@ -800,6 +800,10 @@ class Job(BaseAPIObject):
     url = None
     log_files = None
     task_id = None
+
+    # FIXME: remove method __init__, deal with argument path_args
+    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
+        super().__init__(api, path, **args)
 
     def wait(self, timeout=None):
         return self.wait_for_attr("status",
