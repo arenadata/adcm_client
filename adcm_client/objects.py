@@ -9,7 +9,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# pylint: disable=R0901, R0904, W0401
+# pylint: disable=R0901, R0904, W0401, C0302
+
 import logging
 from contextlib import contextmanager
 
@@ -20,7 +21,6 @@ from adcm_client.base import (
     ActionHasIssues, ADCMApiError, BaseAPIListObject, BaseAPIObject, ObjectNotFound,
     TooManyArguments, strip_none_keys
 )
-from adcm_client.object import *
 from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
 
@@ -730,10 +730,10 @@ class Task(BaseAPIObject):
     url = None
 
     def job(self, **args) -> "Job":
-        return Job(self._api, path_args=dict(task_id=self.id), **args)
+        return Job(self._api, **args)
 
     def job_list(self, paging=None, **args) -> "JobList":
-        return JobList(self._api, paging=paging, path_args=dict(task_id=self.id), **args)
+        return JobList(self._api, paging=paging, **args)
 
     @allure_step("Wait for task end")
     def wait(self, timeout=None, log_failed=True):
@@ -757,12 +757,31 @@ class Task(BaseAPIObject):
         for job in self.job_list(status=status):
             for file in job.log_files:
                 response = self._api.client.get(file["url"])
-                if 'content' in response:
-                    logger.error(response["content"])
+                if 'body' in response:
+                    logger.error(response["body"])
 
 
 class TaskList(BaseAPIListObject):
     _ENTRY_CLASS = Task
+
+
+##################################################
+#              L O G
+##################################################
+class Log(BaseAPIObject):
+    IDNAME = 'log_id'
+    PATH = ['job', 'log']
+    SUBPATH = ['log']
+    id = None
+    name = None
+    type = None
+    format = None
+    body = None
+
+
+class LogList(BaseAPIListObject):
+    _ENTRY_CLASS = Log
+    SUBPATH = ['log']
 
 
 ##################################################
@@ -788,10 +807,10 @@ class Job(BaseAPIObject):
                                   timeout=timeout)
 
     def log(self, **kwargs) -> "Log":
-        return Log(self._api, path_args=dict(job_id=self.id), **kwargs)
+        return self._subobject(Log, **kwargs)
 
-    def logs(self, **kwargs) -> "LogList":
-        return LogList(self._api, path_args=dict(job_id=self.id), **kwargs)
+    def log_list(self, paging=None, **kwargs) -> "LogList":
+        return self._subobject(LogList, paging=paging, **kwargs)
 
 
 class JobList(BaseAPIListObject):
