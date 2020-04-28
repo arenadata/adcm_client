@@ -9,17 +9,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# pylint: disable=R0901, R0904
+# pylint: disable=R0901, R0904, W0401, C0302
+
 import logging
 from contextlib import contextmanager
 
-from adcm_client.base import (ActionHasIssues, ADCMApiError, BaseAPIListObject,
-                              BaseAPIObject, ObjectNotFound, TooManyArguments,
-                              strip_none_keys)
-from adcm_client.util import stream
-from adcm_client.wrappers.api import ADCMApiWrapper
 from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
+
+from adcm_client.base import (
+    ActionHasIssues, ADCMApiError, BaseAPIListObject, BaseAPIObject, ObjectNotFound,
+    TooManyArguments, strip_none_keys
+)
+from adcm_client.util import stream
+from adcm_client.wrappers.api import ADCMApiWrapper
 
 # If we are running the client from tests with Allure we expected that code
 # to trace steps in Allure UI.
@@ -763,6 +766,25 @@ class TaskList(BaseAPIListObject):
 
 
 ##################################################
+#              L O G
+##################################################
+class Log(BaseAPIObject):
+    IDNAME = 'log_id'
+    PATH = ['job', 'log']
+    SUBPATH = ['log']
+    id = None
+    name = None
+    type = None
+    format = None
+    body = None
+
+
+class LogList(BaseAPIListObject):
+    _ENTRY_CLASS = Log
+    SUBPATH = ['log']
+
+
+##################################################
 #              J O B
 ##################################################
 class Job(BaseAPIObject):
@@ -779,6 +801,7 @@ class Job(BaseAPIObject):
     log_files = None
     task_id = None
 
+    # FIXME: remove method __init__, deal with argument path_args
     def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
         super().__init__(api, path, **args)
 
@@ -786,6 +809,12 @@ class Job(BaseAPIObject):
         return self.wait_for_attr("status",
                                   self._END_STATUSES,
                                   timeout=timeout)
+
+    def log(self, **kwargs) -> "Log":
+        return self._subobject(Log, **kwargs)
+
+    def log_list(self, paging=None, **kwargs) -> "LogList":
+        return self._subobject(LogList, paging=paging, **kwargs)
 
 
 class JobList(BaseAPIListObject):
@@ -846,7 +875,7 @@ class ADCM(BaseAPIObject):
 #              C L I E N T
 ##################################################
 class ADCMClient:
-    _MIN_VERSION = "2019.10.01.00"
+    _MIN_VERSION = "2020.04.21.00"
 
     def __init__(self, api=None, url=None, user=None, password=None):
         if api is not None:
