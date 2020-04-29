@@ -776,7 +776,7 @@ class Log(BaseAPIObject):
     name = None
     type = None
     format = None
-    body = None
+    content = None
 
 
 class LogList(BaseAPIListObject):
