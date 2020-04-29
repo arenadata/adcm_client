@@ -99,8 +99,6 @@ def check_version(version):
     :raises TypeError: version is not string
     :raises RestrictedSymbol: version contains dash
     """
-    if version is None:
-        raise NoVersionFound('No version detected').with_traceback(sys.exc_info()[2])
     if not isinstance(version, str):
         raise TypeError('Bundle version must be string').with_traceback(sys.exc_info()[2])
     if '-' in version:
@@ -152,10 +150,14 @@ def add_build_id(path, reponame, edition, master_branches: list):
     bundle = ConfigData(catalog=path)
     version = bundle.get_data('version', 'catalog', explict_raw=True)
 
-    check_version(version)
+    if version is None:
+        raise NoVersionFound('No version detected').with_traceback(sys.exc_info()[2])
 
     git_data = get_git_data(path)
-    build_id = resolve_build_id(git_data, master_branches)
-    write_version(bundle.file, version, version + build_id)
+    build_id = ''
+    if git_data:
+        check_version(version)
+        build_id = resolve_build_id(git_data, master_branches)
+        write_version(bundle.file, version, version + build_id)
 
     return str(reponame) + '_v' + str(version) + build_id + '_' + edition + '.tgz'
