@@ -875,7 +875,7 @@ class ADCM(BaseAPIObject):
 #              C L I E N T
 ##################################################
 class ADCMClient:
-    _MIN_VERSION = "2020.04.21.00"
+    _MIN_VERSION = "2020.04.29.15"
 
     def __init__(self, api=None, url=None, user=None, password=None):
         if api is not None:
