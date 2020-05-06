@@ -9,8 +9,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import sys
 import io
+import sys
 from time import gmtime, strftime
 
 from git import Repo
@@ -52,6 +52,83 @@ class ReadFileWrapper:
         return end_pos
 
 
+def get_git_data(path):
+    """
+        Return git repo data.
+        In case of branch retun {branch: _name_}
+        In case of pr return {pull_request: _number_}
+        If not detect git repo return None
+    """
+    try:
+        repo = Repo(path)
+    except InvalidGitRepositoryError:
+        return None
+
+    describe = repo.git.describe('--all')
+    describe_list = describe.split('/')
+    reponame = repo.remotes.origin.url.split('/')[-1].split('.git')[0]
+    repoowner = repo.remotes.origin.url.split('/')[-2].split('.com:')[-1]
+
+    data = {'reponame': reponame, 'repoowner': repoowner}
+    # pull request case
+    # it works basically on ci with
+    # clean git init and fetch remote with +refs/pull/*:refs/origin/pr/*
+    # in onther cases with high chance it wont detect pr
+    if describe_list[1] == 'pr' and len(describe_list) > 2:
+        data.update({'pull_request': describe_list[2]})
+        return data
+    # tags case
+    if describe_list[0] == 'tags':
+        branch = next(filter(
+            lambda x: 'origin' in x,
+            repo.git.branch('-a', '--contains', describe).splitlines())).split('/')[2]
+    # all others case
+    else:
+        branch = repo.git.rev_parse('--abbrev-ref', 'HEAD')
+
+    data.update({'branch': branch})
+    return data
+
+
+def check_version(version):
+    """Check version format rules
+
+    :param version: bundle_version
+    :type version: str
+    :raises NoVersionFound: no version is given
+    :raises TypeError: version is not string
+    :raises RestrictedSymbol: version contains dash
+    """
+    if not isinstance(version, str):
+        raise TypeError('Bundle version must be string').with_traceback(sys.exc_info()[2])
+    if '-' in version:
+        raise RestrictedSymbol('Version contains restricted symbol \
+            "-" in position %s' % version.index('-')).with_traceback(sys.exc_info()[2])
+
+
+def resolve_build_id(git_data, master_branches):
+    """resolves build id according to discovered git data
+
+    :param git_data: discovered git data
+    :type git_data: None or dict
+    :param master_branches: list of master branches
+    :type master_branches: list
+    :return: build id
+    :rtype: str
+    """
+    if git_data:
+        if 'pull_request' in git_data:
+            build_id = '-rc' + git_data['pull_request'] + '.' + strftime("%Y%m%d%H%M%S", gmtime())
+        else:
+            if git_data['branch'] in master_branches:
+                build_id = '-1'
+            else:
+                build_id = '-' + git_data['branch'].replace("-", "_")
+    else:
+        build_id = '-1'
+    return build_id
+
+
 def add_build_id(path, reponame, edition, master_branches: list):
     def write_version(file, old_version, new_version):
         with io.open(file, 'r+') as config:
@@ -76,31 +153,11 @@ def add_build_id(path, reponame, edition, master_branches: list):
     if version is None:
         raise NoVersionFound('No version detected').with_traceback(sys.exc_info()[2])
 
-    try:
-        git = Repo(path).git
-        if git.describe('--all').split('/')[0] == 'tags':
-            tag = git.describe('--all')
-            branch = [out.split('/')[2] for out in git.branch('-a', '--contains', tag).splitlines()
-                      if 'origin' in out][0]
-        else:
-            try:
-                branch = git.describe('--all').split('/')[2]
-            except IndexError:
-                branch = git.rev_parse('--abbrev-ref', 'HEAD')
-        if branch in master_branches:
-            branch = '-1'
-        elif git.describe('--all').split('/')[1] == 'pr':
-            branch = '-rc' + branch + '.' + strftime("%Y%m%d%H%M%S", gmtime())
-        else:
-            branch = '-' + branch.replace("-", "_")
-    except InvalidGitRepositoryError:
-        branch = ''
-    else:
-        if not isinstance(version, str):
-            raise TypeError('Bundle version must be string').with_traceback(sys.exc_info()[2])
-        if '-' in version:
-            raise RestrictedSymbol('Version contains restricted symbol \
-                "-" in position %s' % version.index('-')).with_traceback(sys.exc_info()[2])
-        write_version(bundle.file, version, version + branch)
+    git_data = get_git_data(path)
+    build_id = ''
+    if git_data:
+        check_version(version)
+        build_id = resolve_build_id(git_data, master_branches)
+        write_version(bundle.file, version, version + build_id)
 
-    return str(reponame) + '_v' + str(version) + branch + '_' + edition + '.tgz'
+    return str(reponame) + '_v' + str(version) + build_id + '_' + edition + '.tgz'
