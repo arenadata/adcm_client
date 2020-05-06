@@ -201,7 +201,7 @@ def splitter(*args, **kwargs):
     for file in kwargs['files']:
         tmpl = env.get_template(file)
         with codecs.open(os.path.join(args[0], (os.path.splitext(file)[0])), 'w', 'utf-8') as f:
-            f.write(tmpl.render(kwargs['edition']))
+            f.write(tmpl.render(**kwargs['jinja_values']))
 
 
 def get_type_func(tpe):
