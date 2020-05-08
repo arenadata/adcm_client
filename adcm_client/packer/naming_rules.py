@@ -84,7 +84,10 @@ def get_git_data(path):
             repo.git.branch('-a', '--contains', describe).splitlines())).split('/')[2]
     # all others case
     else:
-        branch = repo.git.rev_parse('--abbrev-ref', 'HEAD')
+        try:
+            branch = describe_list[2]
+        except IndexError:
+            branch = repo.git.rev_parse('--abbrev-ref', 'HEAD')
 
     data.update({'branch': branch})
     return data
