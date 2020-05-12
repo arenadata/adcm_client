@@ -9,6 +9,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from datetime import datetime
+
 import setuptools
 
 test_deps = [
@@ -20,7 +22,7 @@ extras = {
 
 setuptools.setup(
     name="adcm_client",
-    version="2020.05.08.16",
+    version=datetime.now().strftime('%Y.%m.%d.%H'),
     author="Anton Chevychalov",
     author_email="cab@arenadata.io",
     description="ArenaData Cluster Manager Client",
