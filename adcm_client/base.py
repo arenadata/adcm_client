@@ -173,6 +173,7 @@ class EndPoint:
             # pylint: disable=W0212
             if "code" in e.error._data and e.error._data["code"] == "TOO_LONG":
                 raise ResponseTooLong
+            raise e
 
         if isinstance(result, OrderedDict):
             # It's paging mode
