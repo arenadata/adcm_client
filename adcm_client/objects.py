@@ -974,9 +974,6 @@ class ADCMClient:
     def service(self, **args) -> Service:
         return Service(self._api, **args)
 
-    def service_list(self, paging=None, **args) -> ServiceList:
-        return ServiceList(self._api, paging=paging, **args)
-
     def service_prototype(self, **args) -> ServicePrototype:
         return ServicePrototype(self._api, **args)
 
