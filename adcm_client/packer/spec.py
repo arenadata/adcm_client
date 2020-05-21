@@ -25,6 +25,9 @@ class SpecFile:
         try:
             with open(spec, 'r') as file:
                 self.data = yaml.safe_load(file)
+                # TODO supported verions check
+                self.current_version = self.version = str(self.data.get('version', 0))
+
         except FileNotFoundError:
             self.data = {}
 
@@ -61,8 +64,21 @@ class SpecFile:
             if self.data.get('version') in versions else 0
         for i in versions[index:]:
             self.data = migrations[i]()
-
+        self.current_version = versions[-1]
         return self.data
+
+    def pop_edition(self, edition):
+        if float(self.current_version) < 1.0:
+            raise ValueError('Current spec version doent support editions')
+        if not edition:
+            return
+        else:
+            for e in self.data['editions'][:]:
+                if e.get('name') == edition:
+                    self.data['editions'] = [e]
+                    break
+            else:
+                raise ValueError('setuped build edition is not present in spec file')
 
     # deprecated method. Needed for backward compatibility with old specs
     def except_var(self, config):
