@@ -9,30 +9,57 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from datetime import datetime
+
+from os.path import realpath, dirname
 
 import setuptools
+from git import JenkinsRepo
+from pytz import timezone
 
 test_deps = [
     'pytest',
 ]
+setup_deps = [
+    'gitpython @ git+ssh://git@github.com/arenadata/GitPython@master#egg=gitpython',
+    'pytz',
+    'setuptools',
+    'wheel'
+]
 extras = {
     'test': test_deps,
+    'setup': setup_deps
 }
+
+
+def version_build():
+    repo = JenkinsRepo(dirname(realpath(__file__)))
+    git_data = repo.get_git_data()
+    headoffice_tz = timezone('Europe/Moscow')
+    version = repo.head.commit.committed_datetime.astimezone(headoffice_tz).strftime('%Y.%m.%d.%H')
+    postfix = ''
+    if 'pull_request' in git_data:
+        postfix = 'rc' + git_data['pull_request']
+    elif git_data.get('branch') != 'master':
+        postfix = '.dev+' + git_data['branch']
+
+    return version + postfix
+
 
 setuptools.setup(
     name="adcm_client",
-    version=datetime.now().strftime('%Y.%m.%d.%H'),
+    version=version_build(),
     author="Anton Chevychalov",
     author_email="cab@arenadata.io",
     description="ArenaData Cluster Manager Client",
     url="https://github.com/arenadata/adcm",
     packages=setuptools.find_packages(),
     install_requires=[
-        'pyyaml', 'coreapi', 'ipython', 'gitpython', 'docker', 'jinja2',
-        'version_utils'
+        'pyyaml', 'coreapi', 'ipython',
+        'gitpython @ git+ssh://git@github.com/arenadata/GitPython@master#egg=gitpython',
+        'docker', 'jinja2', 'version_utils'
     ],
     tests_require=test_deps,
+    setup_require=setup_deps,
     extras_require=extras,
     classifiers=[
         "Programming Language :: Python :: 3",

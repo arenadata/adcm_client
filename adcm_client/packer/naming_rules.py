@@ -13,7 +13,7 @@ import io
 import sys
 from time import gmtime, strftime
 
-from git import Repo
+from git import JenkinsRepo
 from git.exc import InvalidGitRepositoryError
 
 from .data.config_data import ConfigData
@@ -50,47 +50,6 @@ class ReadFileWrapper:
         end_pos = self.stream.seek(0, 2)
         self.stream.seek(cur_pos)
         return end_pos
-
-
-def get_git_data(path):
-    """
-        Return git repo data.
-        In case of branch retun {branch: _name_}
-        In case of pr return {pull_request: _number_}
-        If not detect git repo return None
-    """
-    try:
-        repo = Repo(path)
-    except InvalidGitRepositoryError:
-        return None
-
-    describe = repo.git.describe('--all')
-    describe_list = describe.split('/')
-    reponame = repo.remotes.origin.url.split('/')[-1].split('.git')[0]
-    repoowner = repo.remotes.origin.url.split('/')[-2].split('.com:')[-1]
-
-    data = {'reponame': reponame, 'repoowner': repoowner}
-    # pull request case
-    # it works basically on ci with
-    # clean git init and fetch remote with +refs/pull/*:refs/origin/pr/*
-    # in onther cases with high chance it wont detect pr
-    if describe_list[1] == 'pr' and len(describe_list) > 2:
-        data.update({'pull_request': describe_list[2]})
-        return data
-    # tags case
-    if describe_list[0] == 'tags':
-        branch = next(filter(
-            lambda x: 'origin' in x,
-            repo.git.branch('-a', '--contains', describe).splitlines())).split('/')[2]
-    # all others case
-    else:
-        try:
-            branch = describe_list[2]
-        except IndexError:
-            branch = repo.git.rev_parse('--abbrev-ref', 'HEAD')
-
-    data.update({'branch': branch})
-    return data
 
 
 def check_version(version):
@@ -156,7 +115,11 @@ def add_build_id(path, reponame, edition, master_branches: list):
     if version is None:
         raise NoVersionFound('No version detected').with_traceback(sys.exc_info()[2])
 
-    git_data = get_git_data(path)
+    try:
+        git_data = JenkinsRepo(path).get_git_data()
+    except InvalidGitRepositoryError:
+        git_data = None
+
     build_id = ''
     if git_data:
         check_version(version)

@@ -1,0 +1,5 @@
+[build-system]
+requires = ['gitpython @ git+ssh://git@github.com/arenadata/GitPython@master#egg=gitpython',
+            'pytz',
+            'setuptools',
+            'wheel']
