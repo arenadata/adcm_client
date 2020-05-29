@@ -13,8 +13,8 @@
 from os.path import realpath, dirname
 
 import setuptools
-from git import JenkinsRepo
-from pytz import timezone
+from git import JenkinsRepo  # pylint: disable=E0401
+from pytz import timezone  # pylint: disable=E0401
 
 test_deps = [
     'pytest',
