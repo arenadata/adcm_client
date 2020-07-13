@@ -1,0 +1,5 @@
+[build-system]
+requires = ['ad_ci_tools==0.1.0',
+            'pytz',
+            'setuptools',
+            'wheel']
