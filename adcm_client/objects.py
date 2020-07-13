@@ -431,9 +431,9 @@ class Cluster(_BaseObject):
             data = self._subcall("service", "create", prototype_id=proto.id)
             return self._subobject(Service, service_id=data['id'])
 
-#    @allure_step("Remove service to cluster")
-#    def service_delete(self, service):
-#        self._subcall("service", "delete", service_id=service.id)
+    def service_delete(self, service: "Service"):
+        with allure_step("Remove service {} from cluster {}".format(service.name, self.name)):
+            self._subcall("service", "delete", service_id=service.id)
 
     def hostcomponent(self):
         return self._subcall("hostcomponent", "list")
