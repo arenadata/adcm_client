@@ -19,7 +19,7 @@ from version_utils import rpm
 
 from adcm_client.base import (
     ActionHasIssues, ADCMApiError, BaseAPIListObject, BaseAPIObject, ObjectNotFound,
-    TooManyArguments, strip_none_keys, version_compatibility_check
+    TooManyArguments, strip_none_keys, min_server_version
 )
 from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
@@ -431,7 +431,7 @@ class Cluster(_BaseObject):
             data = self._subcall("service", "create", prototype_id=proto.id)
             return self._subobject(Service, service_id=data['id'])
 
-    @version_compatibility_check('2020.05.13.00')
+    @min_server_version('2020.05.13.00')
     def service_delete(self, service: "Service"):
         with allure_step("Remove service {} from cluster {}".format(service.name, self.name)):
             self._subcall("service", "delete", service_id=service.id)

@@ -73,7 +73,7 @@ class PagingEnds(Exception):
     """There are no more data in paginated mode."""
 
 
-class IncompatibleVersion(Exception):
+class TooOldServerVersion(Exception):
     """Incompatible version, upgrade version ADCM."""
     def __init__(self, method_name='', version='', message=None):
         if message is None:
@@ -81,15 +81,17 @@ class IncompatibleVersion(Exception):
                             f' upgrade version ADCM.')
         else:
             self.message = message
-        super(IncompatibleVersion, self).__init__(self.message)
+        super(TooOldServerVersion, self).__init__(self.message)
 
 
-def version_compatibility_check(version):
+def min_server_version(version):
     def decorate(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
+            # The ADCM version must be greater than or equal to the method version
+            # args[0].api_version >= version
             if rpm.compare_versions(args[0].api_version, version) < 0:
-                raise IncompatibleVersion(func.__name__, version)
+                raise TooOldServerVersion(func.__name__, version)
             return func(*args, **kwargs)
         return wrapper
     return decorate
