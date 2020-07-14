@@ -102,6 +102,7 @@ class ADCMApiWrapper():
         self.schema = None
         self.objects = None
         self.api_token = None
+        self.adcm_version = None
 
     def _check_for_error(self, data):
         if data is not None:
@@ -124,6 +125,10 @@ class ADCMApiWrapper():
         self.schema = self.client.get("{}{}schema/".format(self.url, self.api_url))
         self.objects = self._parse_schema(self.schema, is_allure=IS_ALLURE)
         self.api_token = token['token']
+        try:
+            self.adcm_version = self.objects.info.list()['adcm_version']
+        except (KeyError, AttributeError):
+            self.adcm_version = "0"
 
     def action(self, *args, **kvargs):
         """

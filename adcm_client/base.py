@@ -10,12 +10,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # pylint: disable=R0901
-from adcm_client.util.search import search_one, search
-from adcm_client.wrappers.api import ADCMApiWrapper
 from collections import UserList, OrderedDict
+from functools import wraps
 from pprint import pprint
 from time import sleep
+
 import coreapi
+from version_utils import rpm
+
+from adcm_client.util.search import search_one, search
+from adcm_client.wrappers.api import ADCMApiWrapper
 
 
 def pp(*args, **kwargs):
@@ -67,6 +71,30 @@ class ResponseTooLong(Exception):
 
 class PagingEnds(Exception):
     """There are no more data in paginated mode."""
+
+
+class TooOldServerVersion(Exception):
+    """Incompatible version, upgrade version ADCM."""
+    def __init__(self, method_name='', version='', message=None):
+        if message is None:
+            self.message = (f'The "{method_name}" method works with versions older {version},'
+                            f' upgrade version ADCM.')
+        else:
+            self.message = message
+        super(TooOldServerVersion, self).__init__(self.message)
+
+
+def min_server_version(version):
+    def decorate(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # The ADCM version must be greater than or equal to the method version
+            # args[0].adcm_version >= version
+            if rpm.compare_versions(args[0].adcm_version, version) < 0:
+                raise TooOldServerVersion(func.__name__, version)
+            return func(*args, **kwargs)
+        return wrapper
+    return decorate
 
 
 class Paging:
@@ -245,7 +273,7 @@ class BaseAPIObject:
 
         self._endpoint = EndPoint(api, self.IDNAME, path, path_args, self.FILTERS)
         self._api = api
-
+        self.adcm_version = self._api.adcm_version
         self._client = api.objects
 
         self._data = self._endpoint.search_one(**args)

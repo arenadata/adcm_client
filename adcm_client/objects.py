@@ -19,7 +19,7 @@ from version_utils import rpm
 
 from adcm_client.base import (
     ActionHasIssues, ADCMApiError, BaseAPIListObject, BaseAPIObject, ObjectNotFound,
-    TooManyArguments, strip_none_keys
+    TooManyArguments, strip_none_keys, min_server_version
 )
 from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
@@ -431,9 +431,10 @@ class Cluster(_BaseObject):
             data = self._subcall("service", "create", prototype_id=proto.id)
             return self._subobject(Service, service_id=data['id'])
 
-#    @allure_step("Remove service to cluster")
-#    def service_delete(self, service):
-#        self._subcall("service", "delete", service_id=service.id)
+    @min_server_version('2020.05.13.00')
+    def service_delete(self, service: "Service"):
+        with allure_step("Remove service {} from cluster {}".format(service.name, self.name)):
+            self._subcall("service", "delete", service_id=service.id)
 
     def hostcomponent(self):
         return self._subcall("hostcomponent", "list")
@@ -889,6 +890,7 @@ class ADCMClient:
             self.auth(user, password)
         if self.api_token() is not None:
             self.guess_adcm_url()
+        self.adcm_version = self._api.adcm_version
 
     def auth(self, user=None, password=None):
         if user is None or password is None:
@@ -899,11 +901,7 @@ class ADCMClient:
         self._check_min_version()
 
     def _check_min_version(self):
-        try:
-            version = self._api.objects.info.list()['adcm_version']
-        except (KeyError, AttributeError):
-            version = "0"
-        if rpm.compare_versions(self._MIN_VERSION, version) > 0:
+        if rpm.compare_versions(self._MIN_VERSION, self._api.adcm_version) > 0:
             raise ADCMApiError("That client supports ADCM versions >= {}".format(self._MIN_VERSION))
 
     def api_token(self):
