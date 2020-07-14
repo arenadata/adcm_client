@@ -890,7 +890,7 @@ class ADCMClient:
             self.auth(user, password)
         if self.api_token() is not None:
             self.guess_adcm_url()
-        self.api_version = self._api.api_version
+        self.adcm_version = self._api.adcm_version
 
     def auth(self, user=None, password=None):
         if user is None or password is None:
@@ -901,7 +901,7 @@ class ADCMClient:
         self._check_min_version()
 
     def _check_min_version(self):
-        if rpm.compare_versions(self._MIN_VERSION, self._api.api_version) > 0:
+        if rpm.compare_versions(self._MIN_VERSION, self._api.adcm_version) > 0:
             raise ADCMApiError("That client supports ADCM versions >= {}".format(self._MIN_VERSION))
 
     def api_token(self):

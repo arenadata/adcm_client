@@ -89,8 +89,8 @@ def min_server_version(version):
         @wraps(func)
         def wrapper(*args, **kwargs):
             # The ADCM version must be greater than or equal to the method version
-            # args[0].api_version >= version
-            if rpm.compare_versions(args[0].api_version, version) < 0:
+            # args[0].adcm_version >= version
+            if rpm.compare_versions(args[0].adcm_version, version) < 0:
                 raise TooOldServerVersion(func.__name__, version)
             return func(*args, **kwargs)
         return wrapper
@@ -273,7 +273,7 @@ class BaseAPIObject:
 
         self._endpoint = EndPoint(api, self.IDNAME, path, path_args, self.FILTERS)
         self._api = api
-        self.api_version = self._api.api_version
+        self.adcm_version = self._api.adcm_version
         self._client = api.objects
 
         self._data = self._endpoint.search_one(**args)
