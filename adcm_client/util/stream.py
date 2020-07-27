@@ -9,7 +9,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import gzip
 import io
 import os
 
@@ -22,10 +21,7 @@ def file(path, **args):
         return list(build(repopath=path, **args).values())
     else:
         stream = io.BytesIO()
-        try:
-            stream.write(gzip.open(path, 'rb').read())
-        except OSError:
-            stream.write(io.open(path, 'rb').read())
+        stream.write(io.open(path, 'rb').read())
         stream.seek(0)
         return [stream]
 
