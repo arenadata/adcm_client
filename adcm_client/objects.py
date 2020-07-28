@@ -12,6 +12,7 @@
 # pylint: disable=R0901, R0904, W0401, C0302
 
 import logging
+from json import dumps
 from contextlib import contextmanager
 
 from coreapi.exceptions import ErrorMessage
@@ -756,10 +757,26 @@ class Task(BaseAPIObject):
 
     def _log_jobs(self, status):
         for job in self.job_list(status=status):
+            logger.error('===============')
+            # For multi jobs we'll see only main action name
+            # Need to add access to sub-actions in ADCM API and adcm_client
+            logger.error(self.action().name)
+            logger.error('===============')
             for file in job.log_files:
                 response = self._api.client.get(file["url"])
+                try:
+                    content_format = response['format']
+                except KeyError:
+                    content_format = 'txt'
+                if 'type' in response:
+                    logger.error('===============')
+                    logger.error(response["type"])
+                    logger.error('===============')
                 if 'content' in response:
-                    logger.error(response["content"])
+                    if content_format != 'txt':
+                        logger.error(dumps(response["content"], indent=2))
+                    else:
+                        logger.error(response["content"])
 
 
 class TaskList(BaseAPIListObject):
