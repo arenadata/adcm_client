@@ -9,7 +9,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# pylint: disable=R0901, R0904, W0401, C0302
+# pylint: disable=R0901, R0904, W0401, C0302, E1135, E1136
 
 import logging
 from json import dumps
@@ -737,7 +737,7 @@ class Task(BaseAPIObject):
             return Host(self._api, id=self.selector['host']).action(id=self.action_id)
         elif 'provider' in self.selector:
             return Provider(self._api, id=self.selector['provider']).action(id=self.action_id)
-        elif 'cluster' in self.selector:
+        else:
             return Cluster(self._api, id=self.selector['cluster']).action(id=self.action_id)
 
     def job(self, **args) -> "Job":
