@@ -718,7 +718,6 @@ class Task(BaseAPIObject):
     PATH = ["task"]
     FILTERS = ['action_id', 'pid', 'status', 'start_date', 'finish_date']
     _END_STATUSES = ["failed", "success"]
-    action = None
     action_id = None
     config = None
     hostcomponentmap = None
@@ -729,6 +728,16 @@ class Task(BaseAPIObject):
     selector = None
     status = None
     url = None
+
+    def action(self) -> "Action":
+        if 'service' in self.selector:
+            return Service(self._api, id=self.selector['service']).action(id=self.action_id)
+        elif 'host' in self.selector:
+            return Host(self._api, id=self.selector['host']).action(id=self.action_id)
+        elif 'provider' in self.selector:
+            return Provider(self._api, id=self.selector['provider']).action(id=self.action_id)
+        elif 'cluster' in self.selector:
+            return Cluster(self._api, id=self.selector['cluster']).action(id=self.action_id)
 
     def job(self, **args) -> "Job":
         return Job(self._api, path_args=dict(task_id=self.id), **args)
@@ -805,6 +814,9 @@ class Job(BaseAPIObject):
     # FIXME: remove method __init__, deal with argument path_args
     def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
         super().__init__(api, path, **args)
+
+    def task(self) -> "Task":
+        return self._parent_obj(Task)
 
     def wait(self, timeout=None):
         return self.wait_for_attr("status",
