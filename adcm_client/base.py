@@ -81,7 +81,7 @@ class TooOldServerVersion(Exception):
                             f' upgrade version ADCM.')
         else:
             self.message = message
-        super(TooOldServerVersion, self).__init__(self.message)
+        super().__init__(self.message)
 
 
 def min_server_version(version):
@@ -123,7 +123,7 @@ class Paging:
             self._current_list = result
             self._current_iterator = iter(self._current_list)
         except PagingEnds:
-            raise StopIteration
+            raise StopIteration from None
 
     def __next_element(self):
         return next(self._current_iterator)
@@ -200,7 +200,7 @@ class EndPoint:
         except coreapi.exceptions.ErrorMessage as e:
             # pylint: disable=W0212
             if "code" in e.error._data and e.error._data["code"] == "TOO_LONG":
-                raise ResponseTooLong
+                raise ResponseTooLong from e
             raise e
 
         if isinstance(result, OrderedDict):
