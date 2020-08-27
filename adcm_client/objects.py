@@ -714,6 +714,18 @@ class TaskFailed(Exception):
     pass
 
 
+class DoesNotExistAction(Exception):
+    pass
+
+
+TASK_PARENT = {
+    'cluster': Cluster,
+    'service': Service,
+    'host': Host,
+    'provider': Provider,
+}
+
+
 class Task(BaseAPIObject):
     IDNAME = "task_id"
     PATH = ["task"]
@@ -729,16 +741,15 @@ class Task(BaseAPIObject):
     selector = None
     status = None
     url = None
+    object_type = None
 
+    @min_server_version('2020.08.27.00')
     def action(self) -> "Action":
-        if 'service' in self.selector:
-            return Service(self._api, id=self.selector['service']).action(id=self.action_id)
-        elif 'host' in self.selector:
-            return Host(self._api, id=self.selector['host']).action(id=self.action_id)
-        elif 'provider' in self.selector:
-            return Provider(self._api, id=self.selector['provider']).action(id=self.action_id)
-        else:
-            return Cluster(self._api, id=self.selector['cluster']).action(id=self.action_id)
+        try:
+            return TASK_PARENT[self.object_type](
+                self._api, id=self.selector[self.object_type]).action(id=self.action_id)
+        except KeyError:
+            raise DoesNotExistAction from None
 
     def job(self, **args) -> "Job":
         return Job(self._api, path_args=dict(task_id=self.id), **args)
