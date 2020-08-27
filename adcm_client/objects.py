@@ -87,21 +87,21 @@ class Bundle(BaseAPIObject):
         try:
             prototype = self.provider_prototype()
         except ObjectNotFound:
-            raise IncorrectPrototypeType
+            raise IncorrectPrototypeType from None
         return prototype.provider_create(name, description)
 
     def provider_list(self, paging=None, **args) -> "ProviderList":
         try:
             prototype = self.provider_prototype()
         except ObjectNotFound:
-            raise IncorrectPrototypeType
+            raise IncorrectPrototypeType from None
         return prototype.provider_list(paging=paging, **args)
 
     def provider(self, **args) -> "Provider":
         try:
             prototype = self.provider_prototype()
         except ObjectNotFound:
-            raise IncorrectPrototypeType
+            raise IncorrectPrototypeType from None
         return prototype.provider(**args)
 
     def service_prototype(self, **args) -> "ServicePrototype":
@@ -114,21 +114,21 @@ class Bundle(BaseAPIObject):
         try:
             prototype = self.cluster_prototype()
         except ObjectNotFound:
-            raise IncorrectPrototypeType
+            raise IncorrectPrototypeType from None
         return prototype.cluster_create(name, description)
 
     def cluster_list(self, paging=None, **args) -> "ClusterList":
         try:
             prototype = self.cluster_prototype()
         except ObjectNotFound:
-            raise IncorrectPrototypeType
+            raise IncorrectPrototypeType from None
         return prototype.cluster_list(paging=paging, **args)
 
     def cluster(self, **args) -> "Cluster":
         try:
             prototype = self.cluster_prototype()
         except ObjectNotFound:
-            raise IncorrectPrototypeType
+            raise IncorrectPrototypeType from None
         return prototype.cluster(**args)
 
     def license(self):
@@ -697,7 +697,7 @@ class Action(BaseAPIObject):
             except ErrorMessage as error:
                 if (getattr(error.error, 'title', '') == '409 Conflict'
                         and 'has issues' in getattr(error.error, '_data', {}).get('desc', '')):
-                    raise ActionHasIssues
+                    raise ActionHasIssues from error
                 raise error
             return Task(self._api, task_id=data["id"])
 
