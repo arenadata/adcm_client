@@ -713,10 +713,6 @@ class TaskFailed(Exception):
     pass
 
 
-class DoesNotExistAction(Exception):
-    pass
-
-
 TASK_PARENT = {
     'cluster': Cluster,
     'service': Service,
@@ -740,15 +736,13 @@ class Task(BaseAPIObject):
     selector = None
     status = None
     url = None
+    object_id = None
     object_type = None
 
     @min_server_version('2020.08.27.00')
     def action(self) -> "Action":
-        try:
-            return TASK_PARENT[self.object_type](
-                self._api, id=self.selector[self.object_type]).action(id=self.action_id)
-        except KeyError:
-            raise DoesNotExistAction from None
+        return TASK_PARENT[self.object_type](
+            self._api, id=self.object_id).action(id=self.action_id)
 
     def job(self, **args) -> "Job":
         return Job(self._api, path_args=dict(task_id=self.id), **args)
