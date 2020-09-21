@@ -428,7 +428,7 @@ class Cluster(_BaseObject):
     def service_add(self, **args) -> "Service":
         proto = self.bundle().service_prototype(**args)
         with allure_step("Add service {} to cluster {}".format(proto.name, self.name)):
-            data = self._subcall("service", "create", prototype_id=proto.id)
+            data = self._subcall("service", "create", prototype_id=proto.id, cluster_id=self.id)
             return self._subobject(Service, service_id=data['id'])
 
     @min_server_version('2020.05.13.00')
@@ -511,8 +511,7 @@ class UpgradeList(BaseAPIListObject):
 ##################################################
 class Service(_BaseObject):
     IDNAME = "service_id"
-    PATH = None
-    SUBPATH = ["service"]
+    PATH = ["service"]
 
     id = None
     service_id = None
@@ -551,7 +550,6 @@ class Service(_BaseObject):
 
 
 class ServiceList(BaseAPIListObject):
-    SUBPATH = ["service"]
     _ENTRY_CLASS = Service
 
 
