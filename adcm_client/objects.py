@@ -420,16 +420,16 @@ class Cluster(_BaseObject):
             self._subcall("host", "delete", host_id=host.id)
 
     def service(self, **args) -> "Service":
-        return self._subobject(Service, **args)
+        return self._child_obj(Service, **args)
 
     def service_list(self, paging=None, **args) -> "ServiceList":
-        return self._subobject(ServiceList, paging=paging, **args)
+        return self._child_obj(ServiceList, paging=paging, **args)
 
     def service_add(self, **args) -> "Service":
         proto = self.bundle().service_prototype(**args)
         with allure_step("Add service {} to cluster {}".format(proto.name, self.name)):
             data = self._subcall("service", "create", prototype_id=proto.id, cluster_id=self.id)
-            return self._subobject(Service, service_id=data['id'])
+            return Service(self._api, id=data['id'])
 
     @min_server_version('2020.05.13.00')
     def service_delete(self, service: "Service"):
