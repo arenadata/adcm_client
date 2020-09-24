@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # pylint: disable=R0901
-from collections import UserList, OrderedDict, abc
+from collections import UserList, OrderedDict
 from contextlib import contextmanager
 from functools import wraps
 from pprint import pprint
@@ -378,45 +378,3 @@ class BaseAPIListObject(UserList):  # pylint: disable=too-many-ancestors
                                           path_args=path_args,
                                           **{self._ENTRY_CLASS.IDNAME: i['id']}))
         super().__init__(data)
-
-
-class BaseAPIConfigObject(BaseAPIObject):
-
-    def prototype(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def config(self, full=False):
-        history_entry = self._subcall("config", "current", "list")
-        if full:
-            return history_entry
-        return history_entry['config']
-
-    @allure_step("Save config")
-    def config_set(self, data):
-        config = self.config(full=True)
-        if "config" in data and "attr" in data:
-            # We are in a new mode with full_info == True
-            if data["attr"] is None:
-                data["attr"] = {}
-            history_entry = self._subcall('config', 'history', 'create', **data)
-            return history_entry
-        history_entry = self._subcall(
-            'config', 'history', 'create', config=data, attr=config['attr'])
-        return history_entry['config']
-
-    @allure_step("Save config")
-    def config_set_diff(self, data, full=False):
-
-        def update(d, u):
-            for key, value in u.items():
-                if isinstance(value, abc.Mapping):
-                    d[key] = update(d.get(key, {}), value)
-                else:
-                    d[key] = value
-            return d
-
-        config = self.config(full=full)
-        return self.config_set(update(config, data))
-
-    def config_prototype(self):
-        return self.prototype().config

@@ -12,13 +12,14 @@
 # pylint: disable=R0901, R0904, W0401, C0302
 
 import logging
+from collections import abc
 
 from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
 
 from adcm_client.base import (
     ActionHasIssues, ADCMApiError, BaseAPIListObject, BaseAPIObject, ObjectNotFound,
-    TooManyArguments, strip_none_keys, min_server_version, allure_step, BaseAPIConfigObject
+    TooManyArguments, strip_none_keys, min_server_version, allure_step
 )
 from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
@@ -263,11 +264,47 @@ class _BaseObject(BaseAPIObject):
         action = self.action(**args)
         return action.run()
 
+    def config(self, full=False):
+        history_entry = self._subcall("config", "current", "list")
+        if full:
+            return history_entry
+        return history_entry['config']
+
+    @allure_step("Save config")
+    def config_set(self, data):
+        config = self.config(full=True)
+        if "config" in data and "attr" in data:
+            # We are in a new mode with full_info == True
+            if data["attr"] is None:
+                data["attr"] = {}
+            history_entry = self._subcall('config', 'history', 'create', **data)
+            return history_entry
+        history_entry = self._subcall(
+            'config', 'history', 'create', config=data, attr=config['attr'])
+        return history_entry['config']
+
+    @allure_step("Save config")
+    def config_set_diff(self, data, full=False):
+
+        def update(d, u):
+            for key, value in u.items():
+                if isinstance(value, abc.Mapping):
+                    d[key] = update(d.get(key, {}), value)
+                else:
+                    d[key] = value
+            return d
+
+        config = self.config(full=full)
+        return self.config_set(update(config, data))
+
+    def config_prototype(self):
+        return self.prototype().config
+
 
 ##################################################
 #              P R O V I D E R
 ##################################################
-class Provider(_BaseObject, BaseAPIConfigObject):
+class Provider(_BaseObject):
     IDNAME = "provider_id"
     PATH = ["provider"]
     FILTERS = ["name", "prototype_id"]
@@ -311,7 +348,7 @@ def new_provider(api, **args) -> "Provider":
 ##################################################
 #              C L U S T E R
 ##################################################
-class Cluster(_BaseObject, BaseAPIConfigObject):
+class Cluster(_BaseObject):
     IDNAME = "cluster_id"
     PATH = ["cluster"]
     FILTERS = ["name", "prototype_id"]
@@ -449,7 +486,7 @@ class UpgradeList(BaseAPIListObject):
 ##################################################
 #           S E R V I C E S
 ##################################################
-class Service(_BaseObject, BaseAPIConfigObject):
+class Service(_BaseObject):
     IDNAME = "service_id"
     PATH = None
     SUBPATH = ["service"]
@@ -524,7 +561,7 @@ class ComponentList(BaseAPIListObject):
 ##################################################
 #              H O S T
 ##################################################
-class Host(_BaseObject, BaseAPIConfigObject):
+class Host(_BaseObject):
     IDNAME = "host_id"
     PATH = ["host"]
     FILTERS = ["fqdn", "prototype_id", "provider_id", "cluster_id"]
@@ -765,7 +802,7 @@ class JobList(BaseAPIListObject):
 ##################################################
 #              A D C M
 ##################################################
-class ADCM(BaseAPIConfigObject):
+class ADCM(_BaseObject):
     IDNAME = "adcm_id"
     PATH = ["adcm"]
     id = None
@@ -774,6 +811,9 @@ class ADCM(BaseAPIConfigObject):
     url = None
     prototype_version = None
     bundle_id = None
+
+    def prototype(self) -> "Prototype":
+        return Prototype(self._api, id=self.prototype_id)
 
 
 ##################################################
