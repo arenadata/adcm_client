@@ -12,45 +12,20 @@
 # pylint: disable=R0901, R0904, W0401, C0302
 
 import logging
-from contextlib import contextmanager
 
 from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
 
 from adcm_client.base import (
     ActionHasIssues, ADCMApiError, BaseAPIListObject, BaseAPIObject, ObjectNotFound,
-    TooManyArguments, strip_none_keys, min_server_version
+    TooManyArguments, strip_none_keys, min_server_version, allure_step, BaseAPIConfigObject
 )
 from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
 
-# If we are running the client from tests with Allure we expected that code
-# to trace steps in Allure UI.
-# But in case of running client outside of testing Allure is useless in virtualenv.
-# So that code should be flexible enought to work with Allure or without.
-ALLURE = True
-try:
-    import allure
-except ImportError:
-    ALLURE = False
-
 # Init logger
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
-
-
-# That is trick which is allmost the same that in _allure.py::StepContext
-# We have a function that can be used as contextmanager and decorator
-# in same time.
-@contextmanager
-def dummy_context(text):
-    yield text
-
-
-def allure_step(text):
-    if ALLURE:
-        return allure.step(text)
-    return dummy_context(text)
 
 
 class NoCredentionsProvided(Exception):
@@ -288,46 +263,11 @@ class _BaseObject(BaseAPIObject):
         action = self.action(**args)
         return action.run()
 
-    def config(self, full=False):
-        history_entry = self._subcall("config", "current", "list")
-        if full:
-            return history_entry
-        return history_entry['config']
-
-    @allure_step("Save config")
-    def config_set(self, data):
-        if "config" in data and "attr" in data:
-            # We are in a new mode with full_info == True
-            if data["attr"] is None:
-                data["attr"] = []
-            history_entry = self._subcall(
-                'config', 'history', 'create',
-                config=data["config"],
-                attr=data["attr"],
-            )
-            return history_entry
-        history_entry = self._subcall('config', 'history', 'create', config=data)
-        return history_entry['config']
-
-    @allure_step("Save config")
-    def config_set_diff(self, data):
-        config = self.config()
-        for gk, gv in data.items():
-            if isinstance(gv, dict):
-                for k, v in gv.items():
-                    config[gk][k] = v
-            else:
-                config[gk] = gv
-        self.config_set(config)
-
-    def config_prototype(self):
-        return self.prototype().config
-
 
 ##################################################
 #              P R O V I D E R
 ##################################################
-class Provider(_BaseObject):
+class Provider(_BaseObject, BaseAPIConfigObject):
     IDNAME = "provider_id"
     PATH = ["provider"]
     FILTERS = ["name", "prototype_id"]
@@ -371,7 +311,7 @@ def new_provider(api, **args) -> "Provider":
 ##################################################
 #              C L U S T E R
 ##################################################
-class Cluster(_BaseObject):
+class Cluster(_BaseObject, BaseAPIConfigObject):
     IDNAME = "cluster_id"
     PATH = ["cluster"]
     FILTERS = ["name", "prototype_id"]
@@ -509,7 +449,7 @@ class UpgradeList(BaseAPIListObject):
 ##################################################
 #           S E R V I C E S
 ##################################################
-class Service(_BaseObject):
+class Service(_BaseObject, BaseAPIConfigObject):
     IDNAME = "service_id"
     PATH = None
     SUBPATH = ["service"]
@@ -584,7 +524,7 @@ class ComponentList(BaseAPIListObject):
 ##################################################
 #              H O S T
 ##################################################
-class Host(_BaseObject):
+class Host(_BaseObject, BaseAPIConfigObject):
     IDNAME = "host_id"
     PATH = ["host"]
     FILTERS = ["fqdn", "prototype_id", "provider_id", "cluster_id"]
@@ -825,7 +765,7 @@ class JobList(BaseAPIListObject):
 ##################################################
 #              A D C M
 ##################################################
-class ADCM(BaseAPIObject):
+class ADCM(BaseAPIConfigObject):
     IDNAME = "adcm_id"
     PATH = ["adcm"]
     id = None
@@ -834,42 +774,6 @@ class ADCM(BaseAPIObject):
     url = None
     prototype_version = None
     bundle_id = None
-
-    # TODO: Remove that function when it become first class object
-    def config(self, full=False):
-        history_entry = self._subcall("config", "current", "list")
-        if full:
-            return history_entry
-        return history_entry['config']
-
-    @allure_step("Save config")
-    def config_set(self, data):
-        if "config" in data and "attr" in data:
-            # We are in a new mode with full_info == True
-            if data["attr"] is None:
-                data["attr"] = []
-            history_entry = self._subcall(
-                'config', 'history', 'create',
-                config=data["config"],
-                attr=data["attr"],
-            )
-            return history_entry
-        history_entry = self._subcall('config', 'history', 'create', config=data)
-        return history_entry['config']
-
-    @allure_step("Save config")
-    def config_set_diff(self, data):
-        config = self.config()
-        for gk, gv in data.items():
-            if isinstance(gv, dict):
-                for k, v in gv.items():
-                    config[gk][k] = v
-            else:
-                config[gk] = gv
-        self.config_set(config)
-
-    def config_prototype(self):
-        return self.prototype().config
 
 
 ##################################################

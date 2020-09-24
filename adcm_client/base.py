@@ -10,7 +10,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # pylint: disable=R0901
-from collections import UserList, OrderedDict
+from collections import UserList, OrderedDict, abc
+from contextlib import contextmanager
 from functools import wraps
 from pprint import pprint
 from time import sleep
@@ -20,6 +21,30 @@ from version_utils import rpm
 
 from adcm_client.util.search import search_one, search
 from adcm_client.wrappers.api import ADCMApiWrapper
+
+# If we are running the client from tests with Allure we expected that code
+# to trace steps in Allure UI.
+# But in case of running client outside of testing Allure is useless in virtualenv.
+# So that code should be flexible enought to work with Allure or without.
+ALLURE = True
+try:
+    import allure
+except ImportError:
+    ALLURE = False
+
+
+# That is trick which is allmost the same that in _allure.py::StepContext
+# We have a function that can be used as contextmanager and decorator
+# in same time.
+@contextmanager
+def dummy_context(text):
+    yield text
+
+
+def allure_step(text):
+    if ALLURE:
+        return allure.step(text)
+    return dummy_context(text)
 
 
 def pp(*args, **kwargs):
@@ -353,3 +378,45 @@ class BaseAPIListObject(UserList):  # pylint: disable=too-many-ancestors
                                           path_args=path_args,
                                           **{self._ENTRY_CLASS.IDNAME: i['id']}))
         super().__init__(data)
+
+
+class BaseAPIConfigObject(BaseAPIObject):
+
+    def prototype(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def config(self, full=False):
+        history_entry = self._subcall("config", "current", "list")
+        if full:
+            return history_entry
+        return history_entry['config']
+
+    @allure_step("Save config")
+    def config_set(self, data):
+        config = self.config(full=True)
+        if "config" in data and "attr" in data:
+            # We are in a new mode with full_info == True
+            if data["attr"] is None:
+                data["attr"] = {}
+            history_entry = self._subcall('config', 'history', 'create', **data)
+            return history_entry
+        history_entry = self._subcall(
+            'config', 'history', 'create', config=data, attr=config['attr'])
+        return history_entry['config']
+
+    @allure_step("Save config")
+    def config_set_diff(self, data, full=False):
+
+        def update(d, u):
+            for key, value in u.items():
+                if isinstance(value, abc.Mapping):
+                    d[key] = update(d.get(key, {}), value)
+                else:
+                    d[key] = value
+            return d
+
+        config = self.config(full=full)
+        return self.config_set(update(config, data), full=full)
+
+    def config_prototype(self):
+        return self.prototype().config
