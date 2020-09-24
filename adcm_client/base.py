@@ -416,7 +416,7 @@ class BaseAPIConfigObject(BaseAPIObject):
             return d
 
         config = self.config(full=full)
-        return self.config_set(update(config, data), full=full)
+        return self.config_set(update(config, data))
 
     def config_prototype(self):
         return self.prototype().config
