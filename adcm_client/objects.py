@@ -273,6 +273,8 @@ class _BaseObject(BaseAPIObject):
     @allure_step("Save config")
     def config_set(self, data):
         config = self.config(full=True)
+        # this check is incomplete, cases of presence of keys "config" and "attr" in config
+        # are not considered
         if "config" in data and "attr" in data:
             # We are in a new mode with full_info == True
             if data["attr"] is None:
@@ -284,7 +286,7 @@ class _BaseObject(BaseAPIObject):
         return history_entry['config']
 
     @allure_step("Save config")
-    def config_set_diff(self, data, full=False):
+    def config_set_diff(self, data):
 
         def update(d, u):
             for key, value in u.items():
@@ -293,8 +295,10 @@ class _BaseObject(BaseAPIObject):
                 else:
                     d[key] = value
             return d
-
-        config = self.config(full=full)
+        # this check is incomplete, cases of presence of keys "config" and "attr" in config
+        # are not considered
+        is_full = "config" in data and "attr" in data
+        config = self.config(full=is_full)
         return self.config_set(update(config, data))
 
     def config_prototype(self):
