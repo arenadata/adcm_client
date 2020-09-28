@@ -9,7 +9,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# pylint: disable=R0901, R0904, W0401, C0302
+# pylint: disable=R0901, R0904, W0401, C0302, E0202
 
 import logging
 from contextlib import contextmanager
@@ -382,6 +382,41 @@ class Cluster(_BaseObject):
     serviceprototype = None
     status = None
 
+    def _service_old(self, **args):
+        return self._subobject(Service, **args)
+
+    def _service_new(self, **args):
+        return self._child_obj(Service, **args)
+
+    def _service_list_old(self, paging=None, **args):
+        return self._subobject(ServiceList, paging=paging, **args)
+
+    def _service_list_new(self, paging=None, **args):
+        return self._child_obj(ServiceList, paging=paging, **args)
+
+    def _service_add_old(self, **args):
+        proto = self.bundle().service_prototype(**args)
+        with allure_step("Add service {} to cluster {}".format(proto.name, self.name)):
+            data = self._subcall("service", "create", prototype_id=proto.id)
+            return self._subobject(Service, service_id=data['id'])
+
+    def _service_add_new(self, **args):
+        proto = self.bundle().service_prototype(**args)
+        with allure_step("Add service {} to cluster {}".format(proto.name, self.name)):
+            data = self._subcall("service", "create", prototype_id=proto.id, cluster_id=self.id)
+            return Service(self._api, id=data['id'])
+
+    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
+        super().__init__(api, path=path, path_args=path_args, **args)
+        if rpm.compare_versions(self.adcm_version, '2020.09.25.13') == -1:
+            self.service = self._service_old
+            self.service_list = self._service_list_old
+            self.service_add = self._service_add_old
+        else:
+            self.service = self._service_new
+            self.service_list = self._service_list_new
+            self.service_add = self._service_add_new
+
     def prototype(self) -> "ClusterPrototype":
         return self._parent_obj(ClusterPrototype)
 
@@ -420,16 +455,13 @@ class Cluster(_BaseObject):
             self._subcall("host", "delete", host_id=host.id)
 
     def service(self, **args) -> "Service":
-        return self._child_obj(Service, **args)
+        pass
 
     def service_list(self, paging=None, **args) -> "ServiceList":
-        return self._child_obj(ServiceList, paging=paging, **args)
+        pass
 
     def service_add(self, **args) -> "Service":
-        proto = self.bundle().service_prototype(**args)
-        with allure_step("Add service {} to cluster {}".format(proto.name, self.name)):
-            data = self._subcall("service", "create", prototype_id=proto.id, cluster_id=self.id)
-            return Service(self._api, id=data['id'])
+        pass
 
     @min_server_version('2020.05.13.00')
     def service_delete(self, service: "Service"):
@@ -511,7 +543,8 @@ class UpgradeList(BaseAPIListObject):
 ##################################################
 class Service(_BaseObject):
     IDNAME = "service_id"
-    PATH = ["service"]
+    PATH = ['service']
+    SUBPATH = ['service']
 
     id = None
     service_id = None
@@ -550,6 +583,8 @@ class Service(_BaseObject):
 
 
 class ServiceList(BaseAPIListObject):
+    PATH = ['service']
+    SUBPATH = ['service']
     _ENTRY_CLASS = Service
 
 
