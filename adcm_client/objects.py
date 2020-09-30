@@ -205,11 +205,13 @@ class ServicePrototype(Prototype):
     imports = None
     monitoring = None
 
+    @min_server_version('2020.09.25.13')
     def service_list(self, paging=None, **args) -> "ServiceList":
-        return self._child_obj(ServiceList, paging=paging, **args)
+        return ServiceList(self._api, paging=paging, prototype_id=self.prototype_id, **args)
 
+    @min_server_version('2020.09.25.13')
     def service(self, **args) -> "Service":
-        return self._child_obj(Service)
+        return Service(self._api, prototype_id=self.prototype_id, **args)
 
 
 class ServicePrototypeList(BaseAPIListObject):
@@ -445,7 +447,6 @@ class Cluster(_BaseObject):
         with allure_step("Add service {} to cluster {}".format(proto.name, self.name)):
             data = self._subcall("service", "create", prototype_id=proto.id, cluster_id=self.id)
             return Service(self._api, id=data['id'])
-
 
     @min_server_version('2020.05.13.00')
     def service_delete(self, service: "Service"):

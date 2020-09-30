@@ -112,9 +112,9 @@ def legacy_server_implementaion(oldfunc, turnover_version):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
             # adcm_version >= turnover_versions
-            if rpm.compare_versions(args[0].adcm_version, turnover_version) < 0:
-                return func(self, *args, **kwargs)
-            return oldfunc(self, *args, **kwargs)
+            if rpm.compare_versions(self.adcm_version, turnover_version) < 0:
+                return oldfunc(self, *args, **kwargs)
+            return func(self, *args, **kwargs)
         return wrapper
     return decorator
 
