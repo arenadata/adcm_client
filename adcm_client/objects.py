@@ -207,11 +207,11 @@ class ServicePrototype(Prototype):
 
     @min_server_version('2020.09.25.13')
     def service_list(self, paging=None, **args) -> "ServiceList":
-        return ServiceList(self._api, paging=paging, prototype_id=self.prototype_id, **args)
+        return self._child_obj(ServiceList, paging=paging, **args)
 
     @min_server_version('2020.09.25.13')
     def service(self, **args) -> "Service":
-        return Service(self._api, prototype_id=self.prototype_id, **args)
+        return self._child_obj(Service, **args)
 
 
 class ServicePrototypeList(BaseAPIListObject):
