@@ -104,6 +104,7 @@ def build(reponame=None, repopath=None, workspace='/tmp',  # pylint: disable=R09
         raise ValueError('path to source should be defined')
     if not reponame:
         reponame = os.path.basename(os.path.realpath(repopath))
+    workspace = os.path.abspath(workspace)
 
     logging.basicConfig(stream=sys.stdout, level=getattr(logging, loglevel))
     spec = SpecFile(os.path.join(repopath, 'spec.yaml'))
