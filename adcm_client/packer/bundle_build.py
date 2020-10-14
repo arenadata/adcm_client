@@ -16,6 +16,7 @@ import tarfile
 from distutils.dir_util import copy_tree, remove_tree
 from io import BytesIO
 from tempfile import mkdtemp
+from time import gmtime, strftime
 
 from .add_to_tar import add_to_tar
 from .naming_rules import add_build_id
@@ -40,6 +41,7 @@ def _prepare_result_dir(workspace, tarball_path):
 
 
 def _pack(reponame, repopaths, tarpaths, spec: SpecFile, **kwargs):
+    pack_timestamp = strftime("%Y%m%d%H%M%S", gmtime())
     for edition in spec.data['editions']:
         name = edition.get('name')
         tarpath = tarpaths[name] if isinstance(tarpaths, dict) else tarpaths
@@ -47,7 +49,13 @@ def _pack(reponame, repopaths, tarpaths, spec: SpecFile, **kwargs):
         tar_except = edition.get('exclude', [])
 
         # naming rules
-        tarname = add_build_id(repopath, reponame, name, kwargs['master_branches'])
+        tarname = add_build_id(
+            repopath,
+            reponame,
+            name,
+            kwargs['master_branches'],
+            pack_timestamp
+        )
 
         stream = BytesIO()
         tar = tarfile.open(fileobj=stream, mode='w|gz')
