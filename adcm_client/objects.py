@@ -738,11 +738,15 @@ class Task(BaseAPIObject):
 
     @allure_step("Wait for task end")
     def wait(self, timeout=None, log_failed=True):
-        status = self.wait_for_attr("status",
-                                    self._END_STATUSES,
-                                    timeout=timeout)
-        if log_failed and status == "failed":
-            self._log_jobs('failed')
+        try:
+            status = self.wait_for_attr("status",
+                                        self._END_STATUSES,
+                                        timeout=timeout)
+            if log_failed and status == "failed":
+                self._log_jobs('failed')
+        except TimeoutError as e:
+            self._log_jobs()
+            raise TimeoutError from e
         return status
 
     @allure_step("Wait for task to success.")
@@ -754,8 +758,9 @@ class Task(BaseAPIObject):
 
         return status
 
-    def _log_jobs(self, status):
-        for job in self.job_list(status=status):
+    def _log_jobs(self, status=None):
+        job_list = self.job_list(status=status) if status else self.job_list()
+        for job in job_list:
             for file in job.log_files:
                 response = self._api.client.get(file["url"])
                 if 'content' in response:
