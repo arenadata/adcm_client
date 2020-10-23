@@ -26,7 +26,7 @@ def file(path, **args):
         return [stream]
 
 
-def web(url):
-    response = requests.get(url=url)
+def web(url, timeout=600):
+    response = requests.get(url=url, timeout=timeout)
     response.raise_for_status()
     return response.content
