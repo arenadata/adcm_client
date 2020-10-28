@@ -743,9 +743,10 @@ class Task(BaseAPIObject):
                                         self._END_STATUSES,
                                         timeout=timeout)
             if log_failed and status == "failed":
-                self._log_jobs('failed')
+                self._log_jobs(status=status)
         except TimeoutError as e:
-            self._log_jobs()
+            if log_failed:
+                self._log_jobs()
             raise TimeoutError from e
         return status
 
@@ -758,9 +759,8 @@ class Task(BaseAPIObject):
 
         return status
 
-    def _log_jobs(self, status=None):
-        job_list = self.job_list(status=status) if status else self.job_list()
-        for job in job_list:
+    def _log_jobs(self, **filters):
+        for job in self.job_list(**filters):
             for file in job.log_files:
                 response = self._api.client.get(file["url"])
                 if 'content' in response:
