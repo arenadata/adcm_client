@@ -79,6 +79,9 @@ class Bundle(BaseAPIObject):
     version = None
     edition = None
 
+    def __repr__(self):
+        return f"<Bundle {self.name} {self.version} {self.edition} at {id(self)}>"
+
     def provider_prototype(self) -> "ProviderPrototype":
         return self._child_obj(ProviderPrototype)
 
@@ -336,6 +339,9 @@ class Provider(_BaseObject):
     description = None
     bundle_id = None
 
+    def __repr__(self):
+        return f"<Provider {self.name} at {id(self)}>"
+
     def bundle(self) -> "Bundle":
         return self._parent_obj(Bundle)
 
@@ -381,6 +387,9 @@ class Cluster(_BaseObject):
     bundle_id = None
     serviceprototype = None
     status = None
+
+    def __repr__(self):
+        return f"<Cluster {self.name} form bundle - {self.bundle_id} at {id(self)}>"
 
     def prototype(self) -> "ClusterPrototype":
         return self._parent_obj(ClusterPrototype)
@@ -525,6 +534,9 @@ class Service(_BaseObject):
     button = None
     monitoring = None
 
+    def __repr__(self):
+        return f"<Service {self.name} form cluster - {self.cluster_id} at {id(self)}>"
+
     def bind(self, target):
         if isinstance(target, Cluster):
             self._subcall("bind", "create", export_cluster_id=target.cluster_id)
@@ -536,6 +548,9 @@ class Service(_BaseObject):
 
     def prototype(self) -> "ServicePrototype":
         return ServicePrototype(self._api, id=self.prototype_id)
+
+    def cluster(self) -> Cluster:
+        return Cluster(self._api, id=self.cluster_id)
 
     def imports(self):
         raise NotImplementedError
@@ -598,6 +613,9 @@ class Host(_BaseObject):
     bundle_id = None
     status = None
 
+    def __repr__(self):
+        return f"<Host {self.fqdn} form provider - {self.provider_id} at {id(self)}>"
+
     def provider(self) -> "Provider":
         return self._parent_obj(Provider)
 
@@ -649,6 +667,9 @@ class Action(BaseAPIObject):
     url = None
     subs = None
     config = None
+
+    def __repr__(self):
+        return f"<Action {self.name} at {id(self)}>"
 
     def _get_config(self):
         config = dict()
@@ -730,6 +751,9 @@ class Task(BaseAPIObject):
     status = None
     url = None
 
+    def __repr__(self):
+        return f"<Task {self.task_id} at {id(self)}>"
+
     def job(self, **args) -> "Job":
         return Job(self._api, path_args=dict(task_id=self.id), **args)
 
@@ -806,6 +830,9 @@ class Job(BaseAPIObject):
     url = None
     log_files = None
     task_id = None
+
+    def __repr__(self):
+        return f"<Job {self.job_id} at {id(self)}>"
 
     # FIXME: remove method __init__, deal with argument path_args
     def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
@@ -896,6 +923,9 @@ class ADCMClient:
         if self.api_token() is not None:
             self.guess_adcm_url()
         self.adcm_version = self._api.adcm_version
+
+    def __repr__(self):
+        return f"<ADCM API Client for {self.url} at {id(self)}>"
 
     def auth(self, user=None, password=None):
         if user is None or password is None:
