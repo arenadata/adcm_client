@@ -464,7 +464,7 @@ class Cluster(_BaseObject):
         return self._subcall("status", "list")
 
     def imports(self):
-        raise NotImplementedError
+        return self._subcall("import", "list")
 
     def upgrade(self, **args) -> "Upgrade":
         return self._subobject(Upgrade, **args)
@@ -553,7 +553,7 @@ class Service(_BaseObject):
         return Cluster(self._api, id=self.cluster_id)
 
     def imports(self):
-        raise NotImplementedError
+        return self._subcall("import", "list")
 
     def bind_list(self, paging=None):
         return self._subcall("bind", "list")
