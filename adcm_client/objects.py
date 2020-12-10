@@ -79,6 +79,9 @@ class Bundle(BaseAPIObject):
     version = None
     edition = None
 
+    def __repr__(self):
+        return f"<Bundle {self.name} {self.version} {self.edition} at {id(self)}>"
+
     def provider_prototype(self) -> "ProviderPrototype":
         return self._child_obj(ProviderPrototype)
 
@@ -86,21 +89,21 @@ class Bundle(BaseAPIObject):
         try:
             prototype = self.provider_prototype()
         except ObjectNotFound:
-            raise IncorrectPrototypeType
+            raise IncorrectPrototypeType from None
         return prototype.provider_create(name, description)
 
     def provider_list(self, paging=None, **args) -> "ProviderList":
         try:
             prototype = self.provider_prototype()
         except ObjectNotFound:
-            raise IncorrectPrototypeType
+            raise IncorrectPrototypeType from None
         return prototype.provider_list(paging=paging, **args)
 
     def provider(self, **args) -> "Provider":
         try:
             prototype = self.provider_prototype()
         except ObjectNotFound:
-            raise IncorrectPrototypeType
+            raise IncorrectPrototypeType from None
         return prototype.provider(**args)
 
     def service_prototype(self, **args) -> "ServicePrototype":
@@ -113,21 +116,21 @@ class Bundle(BaseAPIObject):
         try:
             prototype = self.cluster_prototype()
         except ObjectNotFound:
-            raise IncorrectPrototypeType
+            raise IncorrectPrototypeType from None
         return prototype.cluster_create(name, description)
 
     def cluster_list(self, paging=None, **args) -> "ClusterList":
         try:
             prototype = self.cluster_prototype()
         except ObjectNotFound:
-            raise IncorrectPrototypeType
+            raise IncorrectPrototypeType from None
         return prototype.cluster_list(paging=paging, **args)
 
     def cluster(self, **args) -> "Cluster":
         try:
             prototype = self.cluster_prototype()
         except ObjectNotFound:
-            raise IncorrectPrototypeType
+            raise IncorrectPrototypeType from None
         return prototype.cluster(**args)
 
     def license(self):
@@ -336,6 +339,9 @@ class Provider(_BaseObject):
     description = None
     bundle_id = None
 
+    def __repr__(self):
+        return f"<Provider {self.name} at {id(self)}>"
+
     def bundle(self) -> "Bundle":
         return self._parent_obj(Bundle)
 
@@ -381,6 +387,9 @@ class Cluster(_BaseObject):
     bundle_id = None
     serviceprototype = None
     status = None
+
+    def __repr__(self):
+        return f"<Cluster {self.name} form bundle - {self.bundle_id} at {id(self)}>"
 
     def prototype(self) -> "ClusterPrototype":
         return self._parent_obj(ClusterPrototype)
@@ -455,7 +464,7 @@ class Cluster(_BaseObject):
         return self._subcall("status", "list")
 
     def imports(self):
-        raise NotImplementedError
+        return self._subcall("import", "list")
 
     def upgrade(self, **args) -> "Upgrade":
         return self._subobject(Upgrade, **args)
@@ -525,6 +534,9 @@ class Service(_BaseObject):
     button = None
     monitoring = None
 
+    def __repr__(self):
+        return f"<Service {self.name} form cluster - {self.cluster_id} at {id(self)}>"
+
     def bind(self, target):
         if isinstance(target, Cluster):
             self._subcall("bind", "create", export_cluster_id=target.cluster_id)
@@ -537,8 +549,11 @@ class Service(_BaseObject):
     def prototype(self) -> "ServicePrototype":
         return ServicePrototype(self._api, id=self.prototype_id)
 
+    def cluster(self) -> Cluster:
+        return Cluster(self._api, id=self.cluster_id)
+
     def imports(self):
-        raise NotImplementedError
+        return self._subcall("import", "list")
 
     def bind_list(self, paging=None):
         return self._subcall("bind", "list")
@@ -598,6 +613,9 @@ class Host(_BaseObject):
     bundle_id = None
     status = None
 
+    def __repr__(self):
+        return f"<Host {self.fqdn} form provider - {self.provider_id} at {id(self)}>"
+
     def provider(self) -> "Provider":
         return self._parent_obj(Provider)
 
@@ -650,6 +668,9 @@ class Action(BaseAPIObject):
     subs = None
     config = None
 
+    def __repr__(self):
+        return f"<Action {self.name} at {id(self)}>"
+
     def _get_config(self):
         config = dict()
         for item in self.config['config']:
@@ -696,7 +717,7 @@ class Action(BaseAPIObject):
             except ErrorMessage as error:
                 if (getattr(error.error, 'title', '') == '409 Conflict'
                         and 'has issues' in getattr(error.error, '_data', {}).get('desc', '')):
-                    raise ActionHasIssues
+                    raise ActionHasIssues from error
                 raise error
             return Task(self._api, task_id=data["id"])
 
@@ -730,6 +751,9 @@ class Task(BaseAPIObject):
     status = None
     url = None
 
+    def __repr__(self):
+        return f"<Task {self.task_id} at {id(self)}>"
+
     def job(self, **args) -> "Job":
         return Job(self._api, path_args=dict(task_id=self.id), **args)
 
@@ -738,11 +762,16 @@ class Task(BaseAPIObject):
 
     @allure_step("Wait for task end")
     def wait(self, timeout=None, log_failed=True):
-        status = self.wait_for_attr("status",
-                                    self._END_STATUSES,
-                                    timeout=timeout)
-        if log_failed and status == "failed":
-            self._log_jobs('failed')
+        try:
+            status = self.wait_for_attr("status",
+                                        self._END_STATUSES,
+                                        timeout=timeout)
+            if log_failed and status == "failed":
+                self._log_jobs(status=status)
+        except TimeoutError as e:
+            if log_failed:
+                self._log_jobs()
+            raise TimeoutError from e
         return status
 
     @allure_step("Wait for task to success.")
@@ -754,8 +783,8 @@ class Task(BaseAPIObject):
 
         return status
 
-    def _log_jobs(self, status):
-        for job in self.job_list(status=status):
+    def _log_jobs(self, **filters):
+        for job in self.job_list(**filters):
             for file in job.log_files:
                 response = self._api.client.get(file["url"])
                 if 'content' in response:
@@ -801,6 +830,9 @@ class Job(BaseAPIObject):
     url = None
     log_files = None
     task_id = None
+
+    def __repr__(self):
+        return f"<Job {self.job_id} at {id(self)}>"
 
     # FIXME: remove method __init__, deal with argument path_args
     def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
@@ -891,6 +923,9 @@ class ADCMClient:
         if self.api_token() is not None:
             self.guess_adcm_url()
         self.adcm_version = self._api.adcm_version
+
+    def __repr__(self):
+        return f"<ADCM API Client for {self.url} at {id(self)}>"
 
     def auth(self, user=None, password=None):
         if user is None or password is None:
