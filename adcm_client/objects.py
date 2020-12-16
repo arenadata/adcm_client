@@ -287,7 +287,7 @@ class _BaseObject(BaseAPIObject):
             history_entry = self._subcall('config', 'history', 'create', **data)
             return history_entry
         history_entry = self._subcall(
-            'config', 'history', 'create', config=data, attr=config['attr'])
+            'config', 'history', 'create', config=data, attr=config.get('attr', {}))
         return history_entry['config']
 
     @allure_step("Save config")
