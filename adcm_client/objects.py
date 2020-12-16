@@ -277,17 +277,14 @@ class _BaseObject(BaseAPIObject):
 
     @allure_step("Save config")
     def config_set(self, data):
-        config = self.config(full=True)
         # this check is incomplete, cases of presence of keys "config" and "attr" in config
         # are not considered
         if "config" in data and "attr" in data:
-            # We are in a new mode with full_info == True
             if data["attr"] is None:
                 data["attr"] = {}
             history_entry = self._subcall('config', 'history', 'create', **data)
-            return history_entry
-        history_entry = self._subcall(
-            'config', 'history', 'create', config=data, attr=config.get('attr', {}))
+            return {key: value for key, value in history_entry.items() if key in ['config', 'attr']}
+        history_entry = self._subcall('config', 'history', 'create', config=data)
         return history_entry['config']
 
     @allure_step("Save config")
