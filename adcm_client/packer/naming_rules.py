@@ -11,7 +11,6 @@
 # limitations under the License.
 import io
 import sys
-from time import gmtime, strftime
 
 from ad_ci_tools import JenkinsRepo
 from git.exc import InvalidGitRepositoryError
@@ -68,19 +67,20 @@ def check_version(version):
             "-" in position %s' % version.index('-')).with_traceback(sys.exc_info()[2])
 
 
-def resolve_build_id(git_data, master_branches):
+def resolve_build_id(git_data, master_branches, timestamp):
     """resolves build id according to discovered git data
 
     :param git_data: discovered git data
     :type git_data: None or dict
     :param master_branches: list of master branches
     :type master_branches: list
+    :param timestamp: Timestamp string to be added to version
     :return: build id
     :rtype: str
     """
     if git_data:
         if 'pull_request' in git_data:
-            build_id = '-rc' + git_data['pull_request'] + '.' + strftime("%Y%m%d%H%M%S", gmtime())
+            build_id = '-rc' + git_data['pull_request'] + '.' + timestamp
         else:
             if git_data['branch'] in master_branches:
                 build_id = '-1'
@@ -91,7 +91,7 @@ def resolve_build_id(git_data, master_branches):
     return build_id
 
 
-def add_build_id(path, reponame, edition, master_branches: list):
+def add_build_id(path, reponame, edition, master_branches: list, timestamp):
     def write_version(file, old_version, new_version):
         with io.open(file, 'r+') as config:
             for start_pos, line, end_pos in ReadFileWrapper(config):
@@ -123,7 +123,7 @@ def add_build_id(path, reponame, edition, master_branches: list):
     build_id = ''
     if git_data:
         check_version(version)
-        build_id = resolve_build_id(git_data, master_branches)
+        build_id = resolve_build_id(git_data, master_branches, timestamp)
         write_version(bundle.file, version, version + build_id)
 
     return str(reponame) + '_v' + str(version) + build_id + '_' + edition + '.tgz'

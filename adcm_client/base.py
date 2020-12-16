@@ -122,6 +122,28 @@ def min_server_version(version):
     return decorate
 
 
+def legacy_server_implementaion(oldfunc, turnover_version):
+    """Replace function with oldfunc if version of server < turnover_version
+
+    This decorator is usefull in case you have two way to do almost the same for
+    new server and for old server. For example you have new, more efficient calls.
+
+    There is a restriction of using this decorator. You should not patch legacy and
+    non legacy functions with setattr. Because we call original class functions from
+    inner wrapper.
+    But any you are not so dirty, don't you?
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            # adcm_version >= turnover_versions
+            if rpm.compare_versions(self.adcm_version, turnover_version) < 0:
+                return oldfunc(self, *args, **kwargs)
+            return func(self, *args, **kwargs)
+        return wrapper
+    return decorator
+
+
 class Paging:
     def __init__(self, paged_object, limit=50, **args):
         self._paged_object = paged_object
