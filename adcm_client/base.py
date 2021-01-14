@@ -11,6 +11,7 @@
 # limitations under the License.
 # pylint: disable=R0901
 from collections import UserList, OrderedDict
+from contextlib import contextmanager
 from functools import wraps
 from pprint import pprint
 from time import sleep
@@ -20,6 +21,30 @@ from version_utils import rpm
 
 from adcm_client.util.search import search_one, search
 from adcm_client.wrappers.api import ADCMApiWrapper
+
+# If we are running the client from tests with Allure we expected that code
+# to trace steps in Allure UI.
+# But in case of running client outside of testing Allure is useless in virtualenv.
+# So that code should be flexible enought to work with Allure or without.
+ALLURE = True
+try:
+    import allure
+except ImportError:
+    ALLURE = False
+
+
+# That is trick which is allmost the same that in _allure.py::StepContext
+# We have a function that can be used as contextmanager and decorator
+# in same time.
+@contextmanager
+def dummy_context(text):
+    yield text
+
+
+def allure_step(text):
+    if ALLURE:
+        return allure.step(text)
+    return dummy_context(text)
 
 
 def pp(*args, **kwargs):
