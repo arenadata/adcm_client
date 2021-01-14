@@ -282,7 +282,8 @@ class _BaseObject(BaseAPIObject):
         if "config" in data and "attr" in data:
             if data["attr"] is None:
                 data["attr"] = {}
-            history_entry = self._subcall('config', 'history', 'create', **data)
+            history_entry = self._subcall(
+                'config', 'history', 'create', config=data['config'], attr=data['attr'])
             return {key: value for key, value in history_entry.items() if key in ['config', 'attr']}
         history_entry = self._subcall('config', 'history', 'create', config=data)
         return history_entry['config']
