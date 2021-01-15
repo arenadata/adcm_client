@@ -11,6 +11,7 @@
 # limitations under the License.
 # pylint: disable=R0901
 from collections import UserList, OrderedDict
+from contextlib import contextmanager
 from functools import wraps
 from pprint import pprint
 from time import sleep
@@ -20,6 +21,30 @@ from version_utils import rpm
 
 from adcm_client.util.search import search_one, search
 from adcm_client.wrappers.api import ADCMApiWrapper
+
+# If we are running the client from tests with Allure we expected that code
+# to trace steps in Allure UI.
+# But in case of running client outside of testing Allure is useless in virtualenv.
+# So that code should be flexible enought to work with Allure or without.
+ALLURE = True
+try:
+    import allure
+except ImportError:
+    ALLURE = False
+
+
+# That is trick which is allmost the same that in _allure.py::StepContext
+# We have a function that can be used as contextmanager and decorator
+# in same time.
+@contextmanager
+def dummy_context(text):
+    yield text
+
+
+def allure_step(text):
+    if ALLURE:
+        return allure.step(text)
+    return dummy_context(text)
 
 
 def pp(*args, **kwargs):
@@ -95,6 +120,28 @@ def min_server_version(version):
             return func(*args, **kwargs)
         return wrapper
     return decorate
+
+
+def legacy_server_implementaion(oldfunc, turnover_version):
+    """Replace function with oldfunc if version of server < turnover_version
+
+    This decorator is usefull in case you have two way to do almost the same for
+    new server and for old server. For example you have new, more efficient calls.
+
+    There is a restriction of using this decorator. You should not patch legacy and
+    non legacy functions with setattr. Because we call original class functions from
+    inner wrapper.
+    But any you are not so dirty, don't you?
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            # adcm_version >= turnover_versions
+            if rpm.compare_versions(self.adcm_version, turnover_version) < 0:
+                return oldfunc(self, *args, **kwargs)
+            return func(self, *args, **kwargs)
+        return wrapper
+    return decorator
 
 
 class Paging:

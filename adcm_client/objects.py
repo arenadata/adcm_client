@@ -9,9 +9,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# pylint: disable=R0901, R0904, W0401, C0302, E1135, E1136
+# pylint: disable=R0901, R0904, W0401, C0302, E0202, E1135, E1136
 
 import logging
+from collections import abc
 from json import dumps
 from contextlib import contextmanager
 
@@ -20,38 +21,14 @@ from version_utils import rpm
 
 from adcm_client.base import (
     ActionHasIssues, ADCMApiError, BaseAPIListObject, BaseAPIObject, ObjectNotFound,
-    TooManyArguments, strip_none_keys, min_server_version
+    TooManyArguments, strip_none_keys, min_server_version, allure_step, legacy_server_implementaion
 )
 from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
 
-# If we are running the client from tests with Allure we expected that code
-# to trace steps in Allure UI.
-# But in case of running client outside of testing Allure is useless in virtualenv.
-# So that code should be flexible enought to work with Allure or without.
-ALLURE = True
-try:
-    import allure
-except ImportError:
-    ALLURE = False
-
 # Init logger
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
-
-
-# That is trick which is allmost the same that in _allure.py::StepContext
-# We have a function that can be used as contextmanager and decorator
-# in same time.
-@contextmanager
-def dummy_context(text):
-    yield text
-
-
-def allure_step(text):
-    if ALLURE:
-        return allure.step(text)
-    return dummy_context(text)
 
 
 class NoCredentionsProvided(Exception):
@@ -79,6 +56,9 @@ class Bundle(BaseAPIObject):
     description = None
     version = None
     edition = None
+
+    def __repr__(self):
+        return f"<Bundle {self.name} {self.version} {self.edition} at {id(self)}>"
 
     def provider_prototype(self) -> "ProviderPrototype":
         return self._child_obj(ProviderPrototype)
@@ -206,11 +186,13 @@ class ServicePrototype(Prototype):
     imports = None
     monitoring = None
 
+    @min_server_version('2020.09.25.13')
     def service_list(self, paging=None, **args) -> "ServiceList":
         return self._child_obj(ServiceList, paging=paging, **args)
 
+    @min_server_version('2020.09.25.13')
     def service(self, **args) -> "Service":
-        return self._child_obj(Service)
+        return self._child_obj(Service, **args)
 
 
 class ServicePrototypeList(BaseAPIListObject):
@@ -297,29 +279,32 @@ class _BaseObject(BaseAPIObject):
 
     @allure_step("Save config")
     def config_set(self, data):
+        # this check is incomplete, cases of presence of keys "config" and "attr" in config
+        # are not considered
         if "config" in data and "attr" in data:
-            # We are in a new mode with full_info == True
             if data["attr"] is None:
-                data["attr"] = []
+                data["attr"] = {}
             history_entry = self._subcall(
-                'config', 'history', 'create',
-                config=data["config"],
-                attr=data["attr"],
-            )
-            return history_entry
+                'config', 'history', 'create', config=data['config'], attr=data['attr'])
+            return {key: value for key, value in history_entry.items() if key in ['config', 'attr']}
         history_entry = self._subcall('config', 'history', 'create', config=data)
         return history_entry['config']
 
     @allure_step("Save config")
     def config_set_diff(self, data):
-        config = self.config()
-        for gk, gv in data.items():
-            if isinstance(gv, dict):
-                for k, v in gv.items():
-                    config[gk][k] = v
-            else:
-                config[gk] = gv
-        self.config_set(config)
+
+        def update(d, u):
+            for key, value in u.items():
+                if isinstance(value, abc.Mapping):
+                    d[key] = update(d.get(key, {}), value)
+                else:
+                    d[key] = value
+            return d
+        # this check is incomplete, cases of presence of keys "config" and "attr" in config
+        # are not considered
+        is_full = "config" in data and "attr" in data
+        config = self.config(full=is_full)
+        return self.config_set(update(config, data))
 
     def config_prototype(self):
         return self.prototype().config
@@ -336,6 +321,9 @@ class Provider(_BaseObject):
     name = None
     description = None
     bundle_id = None
+
+    def __repr__(self):
+        return f"<Provider {self.name} at {id(self)}>"
 
     def bundle(self) -> "Bundle":
         return self._parent_obj(Bundle)
@@ -383,6 +371,9 @@ class Cluster(_BaseObject):
     serviceprototype = None
     status = None
 
+    def __repr__(self):
+        return f"<Cluster {self.name} form bundle - {self.bundle_id} at {id(self)}>"
+
     def prototype(self) -> "ClusterPrototype":
         return self._parent_obj(ClusterPrototype)
 
@@ -420,17 +411,32 @@ class Cluster(_BaseObject):
         with allure_step("Remove host {} from cluster {}".format(host.fqdn, self.name)):
             self._subcall("host", "delete", host_id=host.id)
 
-    def service(self, **args) -> "Service":
+    def _service_old(self, **args):
         return self._subobject(Service, **args)
 
-    def service_list(self, paging=None, **args) -> "ServiceList":
+    @legacy_server_implementaion(_service_old, '2020.09.25.13')
+    def service(self, **args) -> "Service":
+        return self._child_obj(Service, **args)
+
+    def _service_list_old(self, paging=None, **args):
         return self._subobject(ServiceList, paging=paging, **args)
 
-    def service_add(self, **args) -> "Service":
+    @legacy_server_implementaion(_service_list_old, '2020.09.25.13')
+    def service_list(self, paging=None, **args) -> "ServiceList":
+        return self._child_obj(ServiceList, paging=paging, **args)
+
+    def _service_add_old(self, **args):
         proto = self.bundle().service_prototype(**args)
         with allure_step("Add service {} to cluster {}".format(proto.name, self.name)):
             data = self._subcall("service", "create", prototype_id=proto.id)
             return self._subobject(Service, service_id=data['id'])
+
+    @legacy_server_implementaion(_service_add_old, '2020.09.25.13')
+    def service_add(self, **args) -> "Service":
+        proto = self.bundle().service_prototype(**args)
+        with allure_step("Add service {} to cluster {}".format(proto.name, self.name)):
+            data = self._subcall("service", "create", prototype_id=proto.id, cluster_id=self.id)
+            return Service(self._api, id=data['id'])
 
     @min_server_version('2020.05.13.00')
     def service_delete(self, service: "Service"):
@@ -456,7 +462,7 @@ class Cluster(_BaseObject):
         return self._subcall("status", "list")
 
     def imports(self):
-        raise NotImplementedError
+        return self._subcall("import", "list")
 
     def upgrade(self, **args) -> "Upgrade":
         return self._subobject(Upgrade, **args)
@@ -512,8 +518,8 @@ class UpgradeList(BaseAPIListObject):
 ##################################################
 class Service(_BaseObject):
     IDNAME = "service_id"
-    PATH = None
-    SUBPATH = ["service"]
+    PATH = ['service']
+    SUBPATH = ['service']
 
     id = None
     service_id = None
@@ -525,6 +531,9 @@ class Service(_BaseObject):
     status = None
     button = None
     monitoring = None
+
+    def __repr__(self):
+        return f"<Service {self.name} form cluster - {self.cluster_id} at {id(self)}>"
 
     def bind(self, target):
         if isinstance(target, Cluster):
@@ -538,8 +547,11 @@ class Service(_BaseObject):
     def prototype(self) -> "ServicePrototype":
         return ServicePrototype(self._api, id=self.prototype_id)
 
+    def cluster(self) -> Cluster:
+        return Cluster(self._api, id=self.cluster_id)
+
     def imports(self):
-        raise NotImplementedError
+        return self._subcall("import", "list")
 
     def bind_list(self, paging=None):
         return self._subcall("bind", "list")
@@ -552,7 +564,8 @@ class Service(_BaseObject):
 
 
 class ServiceList(BaseAPIListObject):
-    SUBPATH = ["service"]
+    PATH = ['service']
+    SUBPATH = ['service']
     _ENTRY_CLASS = Service
 
 
@@ -598,6 +611,9 @@ class Host(_BaseObject):
     description = None
     bundle_id = None
     status = None
+
+    def __repr__(self):
+        return f"<Host {self.fqdn} form provider - {self.provider_id} at {id(self)}>"
 
     def provider(self) -> "Provider":
         return self._parent_obj(Provider)
@@ -650,6 +666,9 @@ class Action(BaseAPIObject):
     url = None
     subs = None
     config = None
+
+    def __repr__(self):
+        return f"<Action {self.name} at {id(self)}>"
 
     def _get_config(self):
         config = dict()
@@ -745,6 +764,9 @@ class Task(BaseAPIObject):
         return TASK_PARENT[self.object_type](
             self._api, id=self.object_id).action(id=self.action_id)
 
+    def __repr__(self):
+        return f"<Task {self.task_id} at {id(self)}>"
+
     def job(self, **args) -> "Job":
         return Job(self._api, path_args=dict(task_id=self.id), **args)
 
@@ -753,11 +775,16 @@ class Task(BaseAPIObject):
 
     @allure_step("Wait for task end")
     def wait(self, timeout=None, log_failed=True):
-        status = self.wait_for_attr("status",
-                                    self._END_STATUSES,
-                                    timeout=timeout)
-        if log_failed and status == "failed":
-            self._log_jobs('failed')
+        try:
+            status = self.wait_for_attr("status",
+                                        self._END_STATUSES,
+                                        timeout=timeout)
+            if log_failed and status == "failed":
+                self._log_jobs(status=status)
+        except TimeoutError as e:
+            if log_failed:
+                self._log_jobs()
+            raise TimeoutError from e
         return status
 
     @allure_step("Wait for task to success.")
@@ -769,8 +796,8 @@ class Task(BaseAPIObject):
 
         return status
 
-    def _log_jobs(self, status):
-        for job in self.job_list(status=status):
+    def _log_jobs(self, **filters):
+        for job in self.job_list(**filters):
             logger.error('===============')
             # For multi jobs we'll see only main action name
             # Need to add access to sub-actions in ADCM API and adcm_client
@@ -833,6 +860,9 @@ class Job(BaseAPIObject):
     log_files = None
     task_id = None
 
+    def __repr__(self):
+        return f"<Job {self.job_id} at {id(self)}>"
+
     # FIXME: remove method __init__, deal with argument path_args
     def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
         super().__init__(api, path, **args)
@@ -859,7 +889,7 @@ class JobList(BaseAPIListObject):
 ##################################################
 #              A D C M
 ##################################################
-class ADCM(BaseAPIObject):
+class ADCM(_BaseObject):
     IDNAME = "adcm_id"
     PATH = ["adcm"]
     id = None
@@ -869,41 +899,8 @@ class ADCM(BaseAPIObject):
     prototype_version = None
     bundle_id = None
 
-    # TODO: Remove that function when it become first class object
-    def config(self, full=False):
-        history_entry = self._subcall("config", "current", "list")
-        if full:
-            return history_entry
-        return history_entry['config']
-
-    @allure_step("Save config")
-    def config_set(self, data):
-        if "config" in data and "attr" in data:
-            # We are in a new mode with full_info == True
-            if data["attr"] is None:
-                data["attr"] = []
-            history_entry = self._subcall(
-                'config', 'history', 'create',
-                config=data["config"],
-                attr=data["attr"],
-            )
-            return history_entry
-        history_entry = self._subcall('config', 'history', 'create', config=data)
-        return history_entry['config']
-
-    @allure_step("Save config")
-    def config_set_diff(self, data):
-        config = self.config()
-        for gk, gv in data.items():
-            if isinstance(gv, dict):
-                for k, v in gv.items():
-                    config[gk][k] = v
-            else:
-                config[gk] = gv
-        self.config_set(config)
-
-    def config_prototype(self):
-        return self.prototype().config
+    def prototype(self) -> "Prototype":
+        return Prototype(self._api, id=self.prototype_id)
 
 
 ##################################################
@@ -925,6 +922,9 @@ class ADCMClient:
         if self.api_token() is not None:
             self.guess_adcm_url()
         self.adcm_version = self._api.adcm_version
+
+    def __repr__(self):
+        return f"<ADCM API Client for {self.url} at {id(self)}>"
 
     def auth(self, user=None, password=None):
         if user is None or password is None:
