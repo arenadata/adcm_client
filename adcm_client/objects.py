@@ -14,7 +14,6 @@
 import logging
 from collections import abc
 from json import dumps
-from contextlib import contextmanager
 
 from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
