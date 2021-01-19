@@ -292,11 +292,13 @@ class _BaseObject(BaseAPIObject):
     def config_set_diff(self, data):
 
         def update(d, u):
+            # if the old and new values are dictionaries, we try to update, otherwise we replace
             for key, value in u.items():
                 if isinstance(value, abc.Mapping):
-                    d[key] = update(d.get(key, {}), value)
-                else:
-                    d[key] = value
+                    if key in d and isinstance(d[key], abc.Mapping):
+                        d[key] = update(d[key], value)
+                        continue
+                d[key] = value
             return d
         # this check is incomplete, cases of presence of keys "config" and "attr" in config
         # are not considered
