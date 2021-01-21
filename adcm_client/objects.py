@@ -19,7 +19,8 @@ from version_utils import rpm
 
 from adcm_client.base import (
     ActionHasIssues, ADCMApiError, BaseAPIListObject, BaseAPIObject, ObjectNotFound,
-    TooManyArguments, strip_none_keys, min_server_version, allure_step, legacy_server_implementaion
+    TooManyArguments, strip_none_keys, min_server_version, allure_step, allure_attach_json,
+    legacy_server_implementaion
 )
 from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
@@ -279,6 +280,7 @@ class _BaseObject(BaseAPIObject):
     def config_set(self, data):
         # this check is incomplete, cases of presence of keys "config" and "attr" in config
         # are not considered
+        allure_attach_json(data, name="Completed config")
         if "config" in data and "attr" in data:
             if data["attr"] is None:
                 data["attr"] = {}
@@ -301,6 +303,7 @@ class _BaseObject(BaseAPIObject):
             return d
         # this check is incomplete, cases of presence of keys "config" and "attr" in config
         # are not considered
+        allure_attach_json(data, name="Changed fields")
         is_full = "config" in data and "attr" in data
         config = self.config(full=is_full)
         return self.config_set(update(config, data))
@@ -455,6 +458,7 @@ class Cluster(_BaseObject):
                 'service_id': c.service_id,
                 'component_id': c.id
             })
+        allure_attach_json(hostcomponents, name="Hostcomponents map")
         return self._subcall("hostcomponent", "create", hc=hc)
 
     def status_url(self):
@@ -691,6 +695,9 @@ class Action(BaseAPIObject):
 
     def run(self, **args) -> "Task":
         with allure_step("Run action {}".format(self.name)):
+
+            if 'hc' in args:
+                allure_attach_json(args.get('hc'), name="Hostcomponent map")
 
             if 'config' in args and 'config_diff' in args:
                 raise TypeError("only one argument is expected 'config' or 'config_diff'")

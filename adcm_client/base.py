@@ -10,6 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # pylint: disable=R0901
+import json
 from collections import UserList, OrderedDict
 from contextlib import contextmanager
 from functools import wraps
@@ -33,18 +34,27 @@ except ImportError:
     ALLURE = False
 
 
-# That is trick which is allmost the same that in _allure.py::StepContext
+# That is trick which is almost the same that in _allure.py::StepContext
 # We have a function that can be used as contextmanager and decorator
 # in same time.
 @contextmanager
-def dummy_context(text):
-    yield text
+def dummy_context(*args, **kwargs):
+    yield
 
 
 def allure_step(text):
     if ALLURE:
         return allure.step(text)
     return dummy_context(text)
+
+
+def allure_attach_json(body, name):
+    if ALLURE:
+        allure.attach(
+            json.dumps(body, indent=2),
+            name=name,
+            attachment_type=allure.attachment_type.JSON,
+        )
 
 
 def pp(*args, **kwargs):
