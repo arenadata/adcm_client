@@ -48,7 +48,6 @@ class Bundle(BaseAPIObject):
     IDNAME = "bundle_id"
     PATH = ["stack", "bundle"]
     FILTERS = ["name", "version"]
-
     id = None
     bundle_id = None
     name = None
@@ -280,7 +279,7 @@ class _BaseObject(BaseAPIObject):
     def config_set(self, data):
         # this check is incomplete, cases of presence of keys "config" and "attr" in config
         # are not considered
-        allure_attach_json(data, name="Completed config")
+        allure_attach_json(data, name="Complete config")
         if "config" in data and "attr" in data:
             if data["attr"] is None:
                 data["attr"] = {}
@@ -306,6 +305,7 @@ class _BaseObject(BaseAPIObject):
         allure_attach_json(data, name="Changed fields")
         is_full = "config" in data and "attr" in data
         config = self.config(full=is_full)
+        allure_attach_json(config, name="Original config")
         return self.config_set(update(config, data))
 
     def config_prototype(self):
@@ -451,6 +451,7 @@ class Cluster(_BaseObject):
     @allure_step("Save hostcomponents map")
     def hostcomponent_set(self, *hostcomponents):
         hc = []
+        readable_hc = []
         for i in hostcomponents:
             h, c = i
             hc.append({
@@ -458,7 +459,12 @@ class Cluster(_BaseObject):
                 'service_id': c.service_id,
                 'component_id': c.id
             })
-        allure_attach_json(hostcomponents, name="Hostcomponents map")
+            readable_hc.append({
+                'host_fqdn': h.fqdn,
+                'component_name': c.display_name
+            })
+        allure_attach_json(readable_hc, name="Readable hc map")
+        allure_attach_json(hc, name="Complete hc map")
         return self._subcall("hostcomponent", "create", hc=hc)
 
     def status_url(self):
