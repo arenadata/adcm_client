@@ -60,8 +60,8 @@ def _pack(reponame, repopaths, tarpaths, spec: SpecFile, **kwargs):
         stream = BytesIO()
         tar = tarfile.open(fileobj=stream, mode='w|gz')
         add_to_tar(spec.data['version'], repopath, tar_except, tar)
-        logging.info("#######\n Edition %s \n#######", name)
-        logging.info("#######\n Packed files list:\n%s\n#######", "\n".join(tar.getnames()))
+        logging.info("\n#######\n Edition %s \n#######", name)
+        logging.info("\n#######\n Packed files list:\n%s\n#######", "\n".join(tar.getnames()))
         tar.close()
         stream.seek(0)
         # saving tarball
