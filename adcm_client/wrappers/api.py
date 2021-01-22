@@ -25,6 +25,9 @@ except ImportError:
 
 
 logging.getLogger("urllib3").setLevel(logging.ERROR)
+logging.getLogger("docker").setLevel(logging.ERROR)
+logging.getLogger("git").setLevel(logging.ERROR)
+logging.getLogger("version_utils").setLevel(logging.ERROR)
 
 
 class APINode():
