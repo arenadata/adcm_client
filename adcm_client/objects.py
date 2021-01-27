@@ -720,7 +720,7 @@ class Action(BaseAPIObject):
                         key, subkey = item['name'], item['subname']
                         if subkey and subkey in config_diff.get(key, {}):
                             args['config'][key][subkey] = config_diff[key][subkey]
-                        elif not subkey and config_diff.get(key):
+                        elif not subkey and key in config_diff:
                             args['config'][key] = config_diff[key]
 
             try:
