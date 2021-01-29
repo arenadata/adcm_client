@@ -886,7 +886,7 @@ class ADCM(_BaseObject):
 #              C L I E N T
 ##################################################
 class ADCMClient:
-    _MIN_VERSION = "2020.04.29.15"
+    _MIN_VERSION = "2019.02.20.00"
 
     def __init__(self, api=None, url=None, user=None, password=None):
         if api is not None:
@@ -898,9 +898,12 @@ class ADCMClient:
             self.url = url
             self._api = ADCMApiWrapper(self.url)
             self.auth(user, password)
+
         if self.api_token() is not None:
             self.guess_adcm_url()
+
         self.adcm_version = self._api.adcm_version
+        self._check_min_version()
 
     def __repr__(self):
         return f"<ADCM API Client for {self.url} at {id(self)}>"
@@ -914,8 +917,10 @@ class ADCMClient:
         self._check_min_version()
 
     def _check_min_version(self):
-        if rpm.compare_versions(self._MIN_VERSION, self._api.adcm_version) > 0:
-            raise ADCMApiError("That client supports ADCM versions >= {}".format(self._MIN_VERSION))
+        if rpm.compare_versions(self._MIN_VERSION, self._api.adcm_version) > -1:
+            raise ADCMApiError(
+                "The client supports ADCM versions newer than '{}'".format(self._MIN_VERSION)
+            )
 
     def api_token(self):
         return self._api.api_token
