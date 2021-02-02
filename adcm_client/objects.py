@@ -9,7 +9,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# pylint: disable=R0901, R0904, W0401, C0302, E0202, E1135, E1136
+# pylint: disable=too-many-lines, too-many-public-methods, too-many-ancestors
 
 import logging
 from collections import abc
