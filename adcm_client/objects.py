@@ -796,27 +796,25 @@ class Task(BaseAPIObject):
         return status
 
     def _log_jobs(self, **filters):
+
+        def _decorate_log(text, log_func):
+            log_func('===============')
+            log_func(text)
+            log_func('===============')
+
         for job in self.job_list(**filters):
-            logger.error('===============')
-            # For multi jobs we'll see only main action name
-            # Need to add access to sub-actions in ADCM API and adcm_client
-            logger.error(self.action().name)
-            logger.error('===============')
+            log_func = logger.error if job.status == "failed" else logger.info
+            _decorate_log(self.action().name, log_func)
             for file in job.log_files:
                 response = self._api.client.get(file["url"])
-                try:
-                    content_format = response['format']
-                except KeyError:
-                    content_format = 'txt'
+                content_format = response.get("format", "txt")
                 if 'type' in response:
-                    logger.error('===============')
-                    logger.error(response["type"])
-                    logger.error('===============')
+                    _decorate_log(response["type"], log_func)
                 if 'content' in response:
                     if content_format != 'txt':
-                        logger.error(dumps(response["content"], indent=2))
+                        log_func(dumps(response["content"], indent=2))
                     else:
-                        logger.error(response["content"])
+                        log_func(response["content"])
 
 
 class TaskList(BaseAPIListObject):
