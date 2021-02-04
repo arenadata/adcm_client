@@ -722,7 +722,8 @@ class Action(BaseAPIObject):
                             args['config'][key][subkey] = config_diff[key][subkey]
                         elif not subkey and key in config_diff:
                             args['config'][key] = config_diff[key]
-
+            if 'verbose' not in args:
+                args['verbose'] = False
             try:
                 data = self._subcall("run", "create", **args)
             except ErrorMessage as error:
