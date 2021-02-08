@@ -12,6 +12,7 @@
 # pylint: disable=R0901, R0904, W0401, C0302, E0202
 
 import logging
+import warnings
 from collections import abc
 
 from coreapi.exceptions import ErrorMessage
@@ -266,6 +267,8 @@ class _BaseObject(BaseAPIObject):
         return self._subobject(ActionList, paging=paging, **args)
 
     def action_run(self, **args) -> "Task":
+        warnings.warn('Deprecated. The method accepts no arguments for the "action.run()" method.',
+                      DeprecationWarning, stacklevel=2)
         action = self.action(**args)
         return action.run()
 
@@ -722,7 +725,8 @@ class Action(BaseAPIObject):
                             args['config'][key][subkey] = config_diff[key][subkey]
                         elif not subkey and key in config_diff:
                             args['config'][key] = config_diff[key]
-
+            if 'verbose' not in args:
+                args['verbose'] = False
             try:
                 data = self._subcall("run", "create", **args)
             except ErrorMessage as error:
