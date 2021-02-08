@@ -9,7 +9,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# pylint: disable=R0901, R0904, W0401, C0302, E0202
+# pylint: disable=too-many-lines, too-many-public-methods, too-many-ancestors
 
 import logging
 import warnings
@@ -749,12 +749,19 @@ class TaskFailed(Exception):
     pass
 
 
+TASK_PARENT = {
+    'cluster': Cluster,
+    'service': Service,
+    'host': Host,
+    'provider': Provider,
+}
+
+
 class Task(BaseAPIObject):
     IDNAME = "task_id"
     PATH = ["task"]
     FILTERS = ['action_id', 'pid', 'status', 'start_date', 'finish_date']
     _END_STATUSES = ["failed", "success"]
-    action = None
     action_id = None
     config = None
     hostcomponentmap = None
@@ -765,6 +772,13 @@ class Task(BaseAPIObject):
     selector = None
     status = None
     url = None
+    object_id = None
+    object_type = None
+
+    @min_server_version('2020.08.27.00')
+    def action(self) -> "Action":
+        return TASK_PARENT[self.object_type](
+            self._api, id=self.object_id).action(id=self.action_id)
 
     def __repr__(self):
         return f"<Task {self.task_id} at {id(self)}>"
@@ -852,6 +866,9 @@ class Job(BaseAPIObject):
     # FIXME: remove method __init__, deal with argument path_args
     def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
         super().__init__(api, path, **args)
+
+    def task(self) -> "Task":
+        return self._parent_obj(Task)
 
     def wait(self, timeout=None):
         return self.wait_for_attr("status",
