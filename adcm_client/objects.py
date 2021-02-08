@@ -726,9 +726,9 @@ class Action(BaseAPIObject):
                         elif not subkey and key in config_diff:
                             args['config'][key] = config_diff[key]
             # check backward compatibility for `verbose` option
-            if rpm.compare_versions(self.adcm_version, '2021.02.04.13') >= 0:
-                if 'verbose' not in args:
-                    args['verbose'] = False
+            if 'verbose' not in args and rpm.compare_versions(
+                    self.adcm_version, '2021.02.04.13') >= 0:
+                args['verbose'] = False
             try:
                 data = self._subcall("run", "create", **args)
             except ErrorMessage as error:
