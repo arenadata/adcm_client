@@ -12,6 +12,7 @@
 # pylint: disable=R0901, R0904, W0401, C0302, E0202
 
 import logging
+import warnings
 from collections import abc
 
 from coreapi.exceptions import ErrorMessage
@@ -266,6 +267,8 @@ class _BaseObject(BaseAPIObject):
         return self._subobject(ActionList, paging=paging, **args)
 
     def action_run(self, **args) -> "Task":
+        warnings.warn('Deprecated. The method accepts no arguments for the "action.run()" method.',
+                      DeprecationWarning, stacklevel=2)
         action = self.action(**args)
         return action.run()
 
