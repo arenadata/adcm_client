@@ -15,11 +15,10 @@ import logging
 import warnings
 from collections import abc
 
-from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
 
 from adcm_client.base import (
-    ActionHasIssues, ADCMApiError, BaseAPIListObject, BaseAPIObject, ObjectNotFound,
+    ADCMApiError, BaseAPIListObject, BaseAPIObject, ObjectNotFound,
     TooManyArguments, strip_none_keys, min_server_version, allure_step, allure_attach_json,
     legacy_server_implementaion
 )
@@ -703,40 +702,7 @@ class Action(BaseAPIObject):
         return self._child_obj(TaskList, **args)
 
     def run(self, **args) -> "Task":
-        with allure_step("Run action {}".format(self.name)):
-
-            if 'hc' in args:
-                allure_attach_json(args.get('hc'), name="Hostcomponent map")
-
-            if 'config' in args and 'config_diff' in args:
-                raise TypeError("only one argument is expected 'config' or 'config_diff'")
-
-            if 'config' not in args:
-                args['config'] = self._get_config()
-
-                if 'config_diff' in args:
-                    config_diff = args.pop('config_diff')
-                    for item in self.config['config']:
-                        if item['type'] == 'group':
-                            continue
-
-                        key, subkey = item['name'], item['subname']
-                        if subkey and subkey in config_diff.get(key, {}):
-                            args['config'][key][subkey] = config_diff[key][subkey]
-                        elif not subkey and key in config_diff:
-                            args['config'][key] = config_diff[key]
-            # check backward compatibility for `verbose` option
-            if 'verbose' not in args and rpm.compare_versions(
-                    self.adcm_version, '2021.02.04.13') >= 0:
-                args['verbose'] = False
-            try:
-                data = self._subcall("run", "create", **args)
-            except ErrorMessage as error:
-                if (getattr(error.error, 'title', '') == '409 Conflict'
-                        and 'has issues' in getattr(error.error, '_data', {}).get('desc', '')):
-                    raise ActionHasIssues from error
-                raise error
-            return Task(self._api, task_id=data["id"])
+        raise AssertionError(self.adcm_version)
 
 
 class ActionList(BaseAPIListObject):
