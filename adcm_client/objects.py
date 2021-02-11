@@ -303,6 +303,7 @@ class _BaseObject(BaseAPIObject):
                     continue
                 d[key] = value
             return d
+
         # this check is incomplete, cases of presence of keys "config" and "attr" in config
         # are not considered
         allure_attach_json(data, name="Changed fields")
@@ -599,6 +600,7 @@ class ServiceList(BaseAPIListObject):
         if rpm.compare_versions(wrapper.adcm_version, '2020.09.25.13') < 0:
             cls.PATH = None
         return super().__new__(cls)
+
 
 ##################################################
 #           C O M P O N E N T S
