@@ -544,6 +544,16 @@ class Service(_BaseObject):
     button = None
     monitoring = None
 
+    def __new__(cls, *args, **kwargs):
+        """
+        Set PATH=None, if adcm version < `2020.09.25.13`. See ADCM-1439.
+        This method is associated with the action of the `legacy_server_implementaion()` decorator.
+        """
+        wrapper = args[0]
+        if rpm.compare_versions(wrapper.adcm_version, '2020.09.25.13') < 0:
+            cls.PATH = None
+        return super().__new__(cls)
+
     def __repr__(self):
         return f"<Service {self.name} form cluster - {self.cluster_id} at {id(self)}>"
 
@@ -580,6 +590,15 @@ class ServiceList(BaseAPIListObject):
     SUBPATH = ['service']
     _ENTRY_CLASS = Service
 
+    def __new__(cls, *args, **kwargs):
+        """
+        Set PATH=None, if adcm version < `2020.09.25.13`. See ADCM-1439.
+        This method is associated with the action of the `legacy_server_implementaion()` decorator.
+        """
+        wrapper = args[0]
+        if rpm.compare_versions(wrapper.adcm_version, '2020.09.25.13') < 0:
+            cls.PATH = None
+        return super().__new__(cls)
 
 ##################################################
 #           C O M P O N E N T S
