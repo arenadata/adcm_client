@@ -551,9 +551,10 @@ class Service(_BaseObject):
         This method is associated with the action of the `legacy_server_implementaion()` decorator.
         """
         wrapper = args[0]
+        instance = super().__new__(cls)
         if rpm.compare_versions(wrapper.adcm_version, '2020.09.25.13') < 0:
-            cls.PATH = None
-        return super().__new__(cls)
+            instance.PATH = None
+        return instance
 
     def __repr__(self):
         return f"<Service {self.name} form cluster - {self.cluster_id} at {id(self)}>"
@@ -597,9 +598,10 @@ class ServiceList(BaseAPIListObject):
         This method is associated with the action of the `legacy_server_implementaion()` decorator.
         """
         wrapper = args[0]
+        instance = super().__new__(cls)
         if rpm.compare_versions(wrapper.adcm_version, '2020.09.25.13') < 0:
-            cls.PATH = None
-        return super().__new__(cls)
+            instance.PATH = None
+        return instance
 
 
 ##################################################
