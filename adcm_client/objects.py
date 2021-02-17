@@ -838,11 +838,25 @@ class Task(BaseAPIObject):
         return status
 
     def _log_jobs(self, **filters):
+
+        def _decorate_log(text, log_func):
+            log_func('===============')
+            log_func(text)
+            log_func('===============')
+
         for job in self.job_list(**filters):
+            log_func = logger.error if job.status == "failed" else logger.info
+            _decorate_log(self.action().name, log_func)
             for file in job.log_files:
                 response = self._api.client.get(file["url"])
+                content_format = response.get("format", "txt")
+                if 'type' in response:
+                    _decorate_log(response["type"], log_func)
                 if 'content' in response:
-                    logger.error(response["content"])
+                    if content_format != 'txt':
+                        log_func(dumps(response["content"], indent=2))
+                    else:
+                        log_func(response["content"])
 
 
 class TaskList(BaseAPIListObject):
