@@ -14,6 +14,7 @@
 import logging
 import warnings
 from collections import abc
+from json import dumps
 
 from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
