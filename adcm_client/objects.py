@@ -28,7 +28,7 @@ from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
 
 # Init logger
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
