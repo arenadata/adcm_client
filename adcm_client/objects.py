@@ -841,12 +841,12 @@ class Task(BaseAPIObject):
     def _log_jobs(self, **filters):
         for job in self.job_list(**filters):
             log_func = logger.error if job.status == "failed" else logger.info
-            log_func("Action: ", self.action().name)
+            log_func("Action: %s", self.action().name)
             for file in job.log_files:
                 response = self._api.client.get(file["url"])
                 content_format = response.get("format", "txt")
                 if "type" in response:
-                    log_func("Type: ", response['type'])
+                    log_func("Type: %s", response['type'])
                 if "content" in response:
                     if content_format == "json":
                         log_func(dumps(response["content"], indent=2))
