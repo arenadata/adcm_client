@@ -14,6 +14,7 @@
 import logging
 import warnings
 from collections import abc
+from json import dumps
 
 from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
@@ -27,7 +28,7 @@ from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
 
 # Init logger
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
@@ -839,10 +840,18 @@ class Task(BaseAPIObject):
 
     def _log_jobs(self, **filters):
         for job in self.job_list(**filters):
+            log_func = logger.error if job.status == "failed" else logger.info
+            log_func("Action: %s", self.action().name)
             for file in job.log_files:
                 response = self._api.client.get(file["url"])
-                if 'content' in response:
-                    logger.error(response["content"])
+                content_format = response.get("format", "txt")
+                if "type" in response:
+                    log_func("Type: %s", response['type'])
+                if "content" in response:
+                    if content_format == "json":
+                        log_func(dumps(response["content"], indent=2))
+                    else:
+                        log_func(response["content"])
 
 
 class TaskList(BaseAPIListObject):

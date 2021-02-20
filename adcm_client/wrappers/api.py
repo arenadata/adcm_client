@@ -11,7 +11,6 @@
 # limitations under the License.
 # pylint: disable=W0611, W0621, W0404, W0212, C1801
 import coreapi
-import logging
 import requests
 
 try:
@@ -22,12 +21,6 @@ try:
     IS_ALLURE = True
 except ImportError:
     IS_ALLURE = False
-
-
-logging.getLogger("urllib3").setLevel(logging.ERROR)
-logging.getLogger("docker").setLevel(logging.ERROR)
-logging.getLogger("git").setLevel(logging.ERROR)
-logging.getLogger("version_utils").setLevel(logging.ERROR)
 
 
 class APINode():
