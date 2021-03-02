@@ -21,8 +21,8 @@ from version_utils import rpm
 
 from adcm_client.base import (
     ActionHasIssues, ADCMApiError, BaseAPIListObject, BaseAPIObject, ObjectNotFound,
-    TooManyArguments, strip_none_keys, min_server_version, allure_step, allure_attach_json,
-    legacy_server_implementaion, WaitTimeout
+    TooManyArguments, WaitTimeout, strip_none_keys, min_server_version, allure_step,
+    allure_attach_json, legacy_server_implementaion
 )
 from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
