@@ -22,7 +22,7 @@ from version_utils import rpm
 from adcm_client.base import (
     ActionHasIssues, ADCMApiError, BaseAPIListObject, BaseAPIObject, ObjectNotFound,
     TooManyArguments, strip_none_keys, min_server_version, allure_step, allure_attach_json,
-    legacy_server_implementaion
+    legacy_server_implementaion, WaitTimeout
 )
 from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
@@ -823,10 +823,10 @@ class Task(BaseAPIObject):
                                         timeout=timeout)
             if log_failed and status == "failed":
                 self._log_jobs(status=status)
-        except TimeoutError as e:
+        except WaitTimeout as e:
             if log_failed:
                 self._log_jobs()
-            raise TimeoutError from e
+            raise WaitTimeout from e
         return status
 
     @allure_step("Wait for task to success.")
