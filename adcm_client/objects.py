@@ -608,18 +608,22 @@ class ServiceList(BaseAPIListObject):
 ##################################################
 #           C O M P O N E N T S
 ##################################################
-class Component(BaseAPIObject):
+class Component(_BaseObject):
     IDNAME = "component_id"
     SUBPATH = ["component"]
 
     id = None
-    component_id = None
     name = None
     display_name = None
     description = None
     constraint = None
     params = None
     prototype_id = None
+    requires = None
+    bound_to = None
+    monitoring = None
+    status = None
+    state = None
 
     @property
     def service_id(self):
