@@ -613,6 +613,7 @@ class Component(_BaseObject):
     SUBPATH = ["component"]
 
     id = None
+    component_id = None
     name = None
     display_name = None
     description = None
