@@ -843,8 +843,9 @@ class Task(BaseAPIObject):
     @min_server_version('2020.08.27.00')
     def action(self) -> "Action":
         # for component object method will work after version `2021.03.03.17`
+        kwargs = {f'{self.object_type}_id': self.object_id}
         return TASK_PARENT[self.object_type](
-            self._api, id=self.object_id).action(id=self.action_id)
+            self._api, **kwargs).action(action_id=self.action_id)
 
     def __repr__(self):
         return f"<Task {self.task_id} at {id(self)}>"
