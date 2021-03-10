@@ -262,9 +262,11 @@ class EndPoint:
 
         if isinstance(result, OrderedDict):
             # It's paging mode
-            if result['results'] == []:
+            if not result['results']:
                 raise PagingEnds
             return result['results']
+        elif isinstance(result, list) and 'offset' in paging and paging['offset']:
+            raise PagingEnds
         return result
 
     def read(self, object_id):
@@ -278,7 +280,11 @@ class EndPoint:
         # FIXME: paging
         if self.idname in args:
             return self.read(args[self.idname])
-        data = search_one(self.list(**args), **args)
+        data = None
+        for obj in Paging(self.list, **args):
+            data = search_one([obj], **args)
+            if data is not None:
+                break
         if data is None:
             raise ObjectNotFound
 
