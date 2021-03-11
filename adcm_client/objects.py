@@ -584,14 +584,14 @@ class Service(_BaseObject):
     def _component_old(self, **args) -> "Component":
         return self._subobject(Component, **args)
 
-    @legacy_server_implementaion(_component_old, '2021.03.03.17')
+    @legacy_server_implementaion(_component_old, '2021.03.11.16')
     def component(self, **args) -> "Component":
         return self._child_obj(Component, **args)
 
     def _component_list_old(self, paging=None, **args) -> "ComponentList":
         return self._subobject(ComponentList, paging=paging, **args)
 
-    @legacy_server_implementaion(_component_list_old, '2021.03.03.17')
+    @legacy_server_implementaion(_component_list_old, '2021.03.11.16')
     def component_list(self, paging=None, **args) -> "ComponentList":
         return self._child_obj(ComponentList, paging=paging, **args)
 
@@ -639,12 +639,12 @@ class Component(_BaseObject):
 
     def __new__(cls, *args, **kwargs):
         """
-        Set PATH=None, if adcm version < `2021.03.03.17`. See ADCM-1439.
+        Set PATH=None, if adcm version < `2021.03.11.16`. See ADCM-1439.
         This method is associated with the action of the `legacy_server_implementaion()` decorator.
         """
         wrapper = args[0]
         instance = super().__new__(cls)
-        if rpm.compare_versions(wrapper.adcm_version, '2021.03.03.17') < 0:
+        if rpm.compare_versions(wrapper.adcm_version, '2021.03.11.16') < 0:
             instance.PATH = None
         return instance
 
@@ -842,7 +842,7 @@ class Task(BaseAPIObject):
 
     @min_server_version('2020.08.27.00')
     def action(self) -> "Action":
-        # for component object method will work after version `2021.03.03.17`
+        # for component object method will work after version `2021.03.11.16`
         kwargs = {f'{self.object_type}_id': self.object_id}
         return TASK_PARENT[self.object_type](
             self._api, **kwargs).action(action_id=self.action_id)
