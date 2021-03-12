@@ -126,13 +126,30 @@ class ADCMApiWrapper():
         except (KeyError, AttributeError):
             self.adcm_version = "0"
 
-    def action(self, *args, **kvargs):
+    def action(self, *args, **kwargs):
         """
         Do operation over api. For information see coreapi documentation.
 
         Example:
         api.action(['cluster', 'create'], name='testcluster')
         """
-        data = self.client.action(self.schema, *args, **kvargs)
+        overrides = None
+
+        if args[0][-1] == 'list':
+            # Removing query parameters if they exist in path parameters
+            path = args[0]
+            link = self.schema[path[0]]
+            for item in path[1:]:
+                link = link[item]
+
+            fields = []
+            path_fields = [field.name for field in link.fields if field.location == 'path']
+            for field in link.fields:
+                if not (field.location == 'query' and field.name in path_fields):
+                    fields.append(field)
+            fields = tuple(fields)
+            overrides = {'fields': fields}
+
+        data = self.client.action(self.schema, *args, overrides=overrides, **kwargs)
         self._check_for_error(data)
         return data

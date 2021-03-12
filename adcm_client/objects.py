@@ -581,11 +581,19 @@ class Service(_BaseObject):
     def bind_list(self, paging=None):
         return self._subcall("bind", "list")
 
-    def component(self, **args) -> "Component":
+    def _component_old(self, **args) -> "Component":
         return self._subobject(Component, **args)
 
-    def component_list(self, paging=None, **args) -> "ComponentList":
+    @legacy_server_implementaion(_component_old, '2021.03.11.16')
+    def component(self, **args) -> "Component":
+        return self._child_obj(Component, **args)
+
+    def _component_list_old(self, paging=None, **args) -> "ComponentList":
         return self._subobject(ComponentList, paging=paging, **args)
+
+    @legacy_server_implementaion(_component_list_old, '2021.03.11.16')
+    def component_list(self, paging=None, **args) -> "ComponentList":
+        return self._child_obj(ComponentList, paging=paging, **args)
 
 
 class ServiceList(BaseAPIListObject):
@@ -608,25 +616,55 @@ class ServiceList(BaseAPIListObject):
 ##################################################
 #           C O M P O N E N T S
 ##################################################
-class Component(BaseAPIObject):
+class Component(_BaseObject):
     IDNAME = "component_id"
+    PATH = ["component"]
     SUBPATH = ["component"]
 
     id = None
     component_id = None
+    cluster_id = None
+    _service_id = None
     name = None
     display_name = None
     description = None
     constraint = None
     params = None
     prototype_id = None
+    requires = None
+    bound_to = None
+    monitoring = None
+    status = None
+    state = None
+
+    def __new__(cls, *args, **kwargs):
+        """
+        Set PATH=None, if adcm version < `2021.03.11.16`. See ADCM-1439.
+        This method is associated with the action of the `legacy_server_implementaion()` decorator.
+        """
+        wrapper = args[0]
+        instance = super().__new__(cls)
+        if rpm.compare_versions(wrapper.adcm_version, '2021.03.11.16') < 0:
+            instance.PATH = None
+        return instance
 
     @property
     def service_id(self):
-        return self._endpoint.path_args["service_id"]
+        # this code is for backward compatibility
+        if self._service_id is not None:
+            return self._service_id
+        try:
+            return self._endpoint.path_args["service_id"]
+        except KeyError:
+            return self._data['service_id']
+
+    @service_id.setter
+    def service_id(self, value):
+        self._service_id = value
 
 
 class ComponentList(BaseAPIListObject):
+    PATH = ["component"]
     SUBPATH = ["component"]
     _ENTRY_CLASS = Component
 
@@ -780,6 +818,7 @@ TASK_PARENT = {
     'service': Service,
     'host': Host,
     'provider': Provider,
+    'component': Component,
 }
 
 
@@ -803,6 +842,7 @@ class Task(BaseAPIObject):
 
     @min_server_version('2020.08.27.00')
     def action(self) -> "Action":
+        # for component object method will work after version `2021.03.11.16`
         kwargs = {f'{self.object_type}_id': self.object_id}
         return TASK_PARENT[self.object_type](
             self._api, **kwargs).action(action_id=self.action_id)
