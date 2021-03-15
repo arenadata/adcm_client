@@ -935,6 +935,9 @@ class Job(BaseAPIObject):
     url = None
     log_files = None
     task_id = None
+    display_name = None
+    start_date = None
+    finish_date = None
 
     def __repr__(self):
         return f"<Job {self.job_id} at {id(self)}>"
