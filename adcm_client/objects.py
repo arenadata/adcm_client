@@ -584,14 +584,18 @@ class Service(_BaseObject):
     def _component_old(self, **args) -> "Component":
         return self._subobject(Component, **args)
 
-    @legacy_server_implementaion(_component_old, '2021.03.11.16')
+    # Set a real version when components feature will be merged into develop
+    # https://github.com/arenadata/adcm/pull/778
+    @legacy_server_implementaion(_component_old, '2021.12.01.01')
     def component(self, **args) -> "Component":
         return self._child_obj(Component, **args)
 
     def _component_list_old(self, paging=None, **args) -> "ComponentList":
         return self._subobject(ComponentList, paging=paging, **args)
 
-    @legacy_server_implementaion(_component_list_old, '2021.03.11.16')
+    # Set a real version when components feature will be merged into develop
+    # https://github.com/arenadata/adcm/pull/778
+    @legacy_server_implementaion(_component_list_old, '2021.12.01.01')
     def component_list(self, paging=None, **args) -> "ComponentList":
         return self._child_obj(ComponentList, paging=paging, **args)
 
