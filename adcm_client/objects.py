@@ -421,6 +421,8 @@ class Cluster(_BaseObject):
     def _service_old(self, **args):
         return self._subobject(Service, **args)
 
+    # !!! If you change the version, do not forget to change it in the __new__ method
+    # of the Service class as well as in the comments to them
     @legacy_server_implementaion(_service_old, '2020.09.25.13')
     def service(self, **args) -> "Service":
         return self._child_obj(Service, **args)
@@ -428,6 +430,8 @@ class Cluster(_BaseObject):
     def _service_list_old(self, paging=None, **args):
         return self._subobject(ServiceList, paging=paging, **args)
 
+    # !!! If you change the version, do not forget to change it in the __new__ method
+    # of the Service class as well as in the comments to them
     @legacy_server_implementaion(_service_list_old, '2020.09.25.13')
     def service_list(self, paging=None, **args) -> "ServiceList":
         return self._child_obj(ServiceList, paging=paging, **args)
@@ -438,6 +442,8 @@ class Cluster(_BaseObject):
             data = self._subcall("service", "create", prototype_id=proto.id)
             return self._subobject(Service, service_id=data['id'])
 
+    # !!! If you change the version, do not forget to change it in the __new__ method
+    # of the Service class as well as in the comments to them
     @legacy_server_implementaion(_service_add_old, '2020.09.25.13')
     def service_add(self, **args) -> "Service":
         proto = self.bundle().service_prototype(**args)
@@ -553,6 +559,8 @@ class Service(_BaseObject):
         """
         wrapper = args[0]
         instance = super().__new__(cls)
+        # !!! If you change the version, do not forget to change it in the service(), service_list()
+        # and service_add() methods of the Cluster class as well as in the comments to them
         if rpm.compare_versions(wrapper.adcm_version, '2020.09.25.13') < 0:
             instance.PATH = None
         return instance
@@ -586,6 +594,8 @@ class Service(_BaseObject):
 
     # Set a real version when components feature will be merged into develop
     # https://github.com/arenadata/adcm/pull/778
+    # !!! If you change the version, do not forget to change it in the __new__ method
+    # of the Component class as well as in the comments to them
     @legacy_server_implementaion(_component_old, '2021.12.01.01')
     def component(self, **args) -> "Component":
         return self._child_obj(Component, **args)
@@ -595,6 +605,8 @@ class Service(_BaseObject):
 
     # Set a real version when components feature will be merged into develop
     # https://github.com/arenadata/adcm/pull/778
+    # !!! If you change the version, do not forget to change it in the __new__ method
+    # of the Component class as well as in the comments to them
     @legacy_server_implementaion(_component_list_old, '2021.12.01.01')
     def component_list(self, paging=None, **args) -> "ComponentList":
         return self._child_obj(ComponentList, paging=paging, **args)
@@ -612,6 +624,8 @@ class ServiceList(BaseAPIListObject):
         """
         wrapper = args[0]
         instance = super().__new__(cls)
+        # !!! If you change the version, do not forget to change it in the service(), service_list()
+        # and service_add() methods of the Cluster class as well as in the comments to them
         if rpm.compare_versions(wrapper.adcm_version, '2020.09.25.13') < 0:
             instance.PATH = None
         return instance
@@ -643,12 +657,14 @@ class Component(_BaseObject):
 
     def __new__(cls, *args, **kwargs):
         """
-        Set PATH=None, if adcm version < `2021.03.11.16`. See ADCM-1439.
+        Set PATH=None, if adcm version < `2021.12.01.01`. See ADCM-1439.
         This method is associated with the action of the `legacy_server_implementaion()` decorator.
         """
         wrapper = args[0]
         instance = super().__new__(cls)
-        if rpm.compare_versions(wrapper.adcm_version, '2021.03.11.16') < 0:
+        # !!! If you change the version, do not forget to change it in the component()
+        # and component_list() methods of the Service class as well as in the comments to them
+        if rpm.compare_versions(wrapper.adcm_version, '2021.12.01.01') < 0:
             instance.PATH = None
         return instance
 
@@ -671,6 +687,19 @@ class ComponentList(BaseAPIListObject):
     PATH = ["component"]
     SUBPATH = ["component"]
     _ENTRY_CLASS = Component
+
+    def __new__(cls, *args, **kwargs):
+        """
+        Set PATH=None, if adcm version < `2021.12.01.01`. See ADCM-1439.
+        This method is associated with the action of the `legacy_server_implementaion()` decorator.
+        """
+        wrapper = args[0]
+        instance = super().__new__(cls)
+        # !!! If you change the version, do not forget to change it in the component()
+        # and component_list() methods of the Service class as well as in the comments to them
+        if rpm.compare_versions(wrapper.adcm_version, '2021.12.01.01') < 0:
+            instance.PATH = None
+        return instance
 
 
 ##################################################
@@ -846,7 +875,7 @@ class Task(BaseAPIObject):
 
     @min_server_version('2020.08.27.00')
     def action(self) -> "Action":
-        # for component object method will work after version `2021.03.11.16`
+        # for component object method will work after version `2021.12.01.01`
         kwargs = {f'{self.object_type}_id': self.object_id}
         return TASK_PARENT[self.object_type](
             self._api, **kwargs).action(action_id=self.action_id)
