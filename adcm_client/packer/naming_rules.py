@@ -85,7 +85,7 @@ def resolve_build_id(git_data, master_branches, timestamp):
             if git_data['branch'] in master_branches:
                 build_id = '-1'
             else:
-                build_id = '-' + git_data['branch'].replace("-", "_")
+                build_id = '-' + git_data['branch'].replace("-", "_").replace("/", "_")
     else:
         build_id = '-1'
     return build_id

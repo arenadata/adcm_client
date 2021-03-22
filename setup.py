@@ -20,7 +20,7 @@ test_deps = [
     'pytest',
 ]
 setup_deps = [
-    'ad_ci_tools==0.1.0',
+    'ad_ci_tools==0.1.5',
     'pytz',
     'setuptools',
     'wheel'
@@ -54,7 +54,7 @@ setuptools.setup(
     url="https://github.com/arenadata/adcm",
     packages=setuptools.find_packages(),
     install_requires=[
-        'pyyaml', 'coreapi', 'ipython', 'ad_ci_tools==0.1.0',
+        'pyyaml', 'coreapi', 'ipython', 'ad_ci_tools==0.1.5',
         'docker', 'jinja2', 'version_utils'
     ],
     tests_require=test_deps,
