@@ -16,7 +16,7 @@ from subprocess import check_output
 
 import yaml
 
-from .types import get_type_func
+from adcm_client.packer.types import get_type_func
 
 
 class SpecFile:

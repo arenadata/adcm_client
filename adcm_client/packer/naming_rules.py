@@ -15,7 +15,7 @@ import sys
 from ad_ci_tools import JenkinsRepo
 from git.exc import InvalidGitRepositoryError
 
-from .data.config_data import ConfigData
+from adcm_client.packer.data.config_data import ConfigData
 
 
 class NoVersionFound(Exception):

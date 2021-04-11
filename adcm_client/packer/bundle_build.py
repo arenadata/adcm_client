@@ -18,9 +18,10 @@ from io import BytesIO
 from tempfile import mkdtemp
 from time import gmtime, strftime
 
+from adcm_client.packer.spec import SpecFile, spec_processing
+
 from .add_to_tar import add_to_tar
 from .naming_rules import add_build_id
-from .spec import SpecFile, spec_processing
 
 
 def _prepare_ws(reponame, workspace, src_path, spec: SpecFile):
