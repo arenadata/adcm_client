@@ -236,6 +236,7 @@ def splitter(*args, **kwargs):
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(args[0]),
         undefined=jinja2.StrictUndefined,
+        autoescape=True,
     )
     jinja_values = {
         "edition": kwargs["edition"],
