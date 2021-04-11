@@ -76,44 +76,40 @@ class SpecFile:
         self.current_version = versions[-1]
         return self.data
 
-    def pop_edition(self, edition):
+    def pop_edition(self, user_edition):
         if float(self.current_version) < 1.0:
             raise ValueError("Current spec version doent support editions")
-        if not edition:
-            return
+        for edition in self.data["editions"][:]:
+            if edition.get("name") == user_edition:
+                self.data["editions"] = [edition]
+                break
         else:
-            for e in self.data["editions"][:]:
-                if e.get("name") == edition:
-                    self.data["editions"] = [e]
-                    break
-            else:
-                raise ValueError("setuped build edition is not present in spec file")
+            raise ValueError("setuped build edition is not present in spec file")
 
     # deprecated method. Needed for backward compatibility with old specs
-    def except_var(self, config):
+    @staticmethod
+    def except_var(config):
         tar_except = []
-        for k, v in config.items():
-            if "_dir" in k:
-                tar_except.append(v)
-        for k in config.get("processing", {}):
-            if k.get("except_file", False):
-                tar_except.append(k.get("file"))
+        for key, value in config.items():
+            if "_dir" in key:
+                tar_except.append(value)
+        for key in config.get("processing", {}):
+            if key.get("except_file", False):
+                tar_except.append(key.get("file"))
         return tar_except
 
-
-def spec_processing(spec: SpecFile, path, workspace, release_version):
-    for edition in spec.data["editions"]:
-        if edition.get("preprocessors"):
-            for x in edition["preprocessors"]:
-                if x.get("script"):
-                    command = [x["script"]]
-                    if x.get("args"):
-                        command.extend(x["args"])
+    def spec_processing(self, path: dict, workspace: str, release_version):
+        for edition in self.data["editions"]:
+            for operation in edition.get("preprocessors", ()):
+                if operation["type"] == "script":
+                    command = [operation["script"]]
+                    if "args" in operation:
+                        command.extend(operation["args"])
                     logging.info(
                         check_output(command, cwd=path[edition["name"]]).decode("utf-8")
                     )
                 else:
-                    if x["type"] == "splitter":
+                    if operation["type"] == "splitter":
                         params = {
                             "jinja_values": {
                                 "edition": edition["name"],
@@ -122,6 +118,6 @@ def spec_processing(spec: SpecFile, path, workspace, release_version):
                         }
                     else:
                         params = {}
-                    get_type_func(x["type"])(
-                        path[edition["name"]], workspace, **params, **x
+                    get_type_func(operation["type"])(
+                        path[edition["name"]], workspace, **params, **operation
                     )

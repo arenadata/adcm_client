@@ -20,9 +20,9 @@ import yaml
 from git import Git
 
 
-# TO DO: Exeptions - non valid methods calls when required property is None
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-arguments
+# TODO: Exeptions - non valid methods calls when required property is None
+# pylint: disable=too-many-instance-attributes,too-many-arguments
+# pylint: disable=W0613,R0903
 class ConfigData:
     def __init__(
         self,

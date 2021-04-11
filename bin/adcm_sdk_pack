@@ -59,7 +59,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    loglevel = "INFO" if args.verbose else "ERROR"
+    LOGLEVEL = "INFO" if args.verbose else "ERROR"
 
     tarballs = build(
         args.name,
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         edition=args.edition,
         workspace=args.workspace,
         tarball_path=args.tarpath,
-        loglevel=loglevel,
+        loglevel=LOGLEVEL,
         clean_ws=args.dont_clean_ws,
         master_branches=args.master_branches,
         release_version=args.release,

@@ -21,7 +21,7 @@ import yaml
 from docker import from_env
 from docker.client import DockerClient
 from docker.errors import ImageNotFound
-from docker.models.containers import Container  # pylint: disable=unused-import
+from docker.models.containers import Container
 from docker.models.images import Image
 
 
@@ -103,7 +103,7 @@ def _get_modules_list(image: Image, client: DockerClient) -> "list":
 
 def _get_prepared_container(
     pkgs: list, image: Image, client: DockerClient
-) -> "Container":
+) -> Container:
     """Install python pkgs to container from given image
 
     :param pkgs: List of python packages
@@ -216,8 +216,8 @@ def splitter(*args, **kwargs):
         tmpl = env.get_template(file)
         with codecs.open(
             os.path.join(args[0], (os.path.splitext(file)[0])), "w", "utf-8"
-        ) as f:
-            f.write(tmpl.render(**kwargs["jinja_values"]))
+        ) as file:
+            file.write(tmpl.render(**kwargs["jinja_values"]))
 
 
 def get_type_func(tpe):

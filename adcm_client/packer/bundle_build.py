@@ -18,7 +18,7 @@ from io import BytesIO
 from tempfile import mkdtemp
 from time import gmtime, strftime
 
-from adcm_client.packer.spec import SpecFile, spec_processing
+from adcm_client.packer.spec import SpecFile
 
 from .add_to_tar import add_to_tar
 from .naming_rules import add_build_id
@@ -39,8 +39,7 @@ def _prepare_result_dir(workspace, tarball_path):
     if tarball_path:
         os.makedirs(tarball_path, exist_ok=True)
         return tarball_path
-    else:
-        return workspace
+    return workspace
 
 
 def _pack(reponame, repopaths, tarpaths, spec: SpecFile, **kwargs):
@@ -78,16 +77,15 @@ def _clean_ws(path):
 
 
 def build(  # pylint: disable=R0913
-    reponame=None,
-    repopath=None,
-    workspace="/tmp",
-    tarball_path=None,
-    loglevel="ERROR",
-    clean_ws=True,
-    master_branches=None,
-    release_version=False,
-    edition=None,
-    **args
+    reponame: str = None,
+    repopath: str = None,
+    workspace: str = "/tmp",
+    tarball_path: str = None,
+    loglevel: str = "ERROR",
+    clean_ws: bool = True,
+    master_branches: list = None,
+    release_version: bool = False,
+    edition: str = None,
 ):
     """Moves sources to workspace inside of temporary directory. \
     Some operations over sources cant be proceed concurent(for exemple in pytest with xdist \
@@ -126,12 +124,16 @@ def build(  # pylint: disable=R0913
     logging.basicConfig(stream=sys.stdout, level=getattr(logging, loglevel))
     spec = SpecFile(os.path.join(repopath, "spec.yaml"))
     spec.normalize_spec()
-    spec.pop_edition(edition)
+
+    # Edition parameter processing.
+    # To build only one edition we remove every one else editions.
+    if edition:
+        spec.pop_edition(edition)
 
     ws_tepm_dir, work_dir_paths = _prepare_ws(reponame, workspace, repopath, spec)
 
+    spec.spec_processing(work_dir_paths, workspace, release_version)
     tarpath = _prepare_result_dir(workspace, tarball_path)
-    spec_processing(spec, work_dir_paths, workspace, release_version)
 
     out = dict(
         _pack(reponame, work_dir_paths, tarpath, spec, master_branches=master_branches)
