@@ -24,8 +24,16 @@ from git import Git
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
 class ConfigData:
-    def __init__(self, git: Git = None, file=None, data=None, catalog=None,
-                 branch=None, tar=None, url=None):
+    def __init__(
+        self,
+        git: Git = None,
+        file=None,
+        data=None,
+        catalog=None,
+        branch=None,
+        tar=None,
+        url=None,
+    ):
         self.url = url
         self.tar = tar
         self.file = file
@@ -35,12 +43,12 @@ class ConfigData:
         self.catalog = catalog
         self.git = git
         self.switch = {
-            'data': self._from_data,
-            'url': self._from_url,
-            'tar': self._from_tar,
-            'file': self._from_file,
-            'catalog': self._from_fs,
-            'branch': self._from_remote_git
+            "data": self._from_data,
+            "url": self._from_url,
+            "tar": self._from_tar,
+            "file": self._from_file,
+            "catalog": self._from_fs,
+            "branch": self._from_remote_git,
         }
 
     def get_data(self, key, provider, **kwargs):
@@ -55,19 +63,31 @@ class ConfigData:
         return self.switch[provider](key, **kwargs)
 
     def _from_file(self, key, **kwargs):
-        with open(self.file, 'r') as file:
+        with open(self.file, "r") as file:
             self.data = yaml.safe_load(file)
         return self._from_data(key)
 
     def _from_data(self, key, **kwargs):
         try:
-            value = [entry.get(key) for entry in self.data
-                     if (entry.get('type') == 'cluster'
-                         or entry.get('type') == 'provider'  # noqa: W503
-                         or entry.get('type') == 'host')]  # noqa: W503
+            value = [
+                entry.get(key)
+                for entry in self.data
+                if (
+                    entry.get("type") == "cluster"
+                    or entry.get("type") == "provider"  # noqa: W503
+                    or entry.get("type") == "host"
+                )
+            ]  # noqa: W503
         except (TypeError, AttributeError):
-            value = [entry[1].get(key) for entry in self.data.items()
-                     if (entry[0] == 'cluster' or entry[0] == 'host' or entry[0] == 'provider')]
+            value = [
+                entry[1].get(key)
+                for entry in self.data.items()
+                if (
+                    entry[0] == "cluster"
+                    or entry[0] == "host"
+                    or entry[0] == "provider"
+                )
+            ]
         for idx, _ in enumerate(value):
             if value[idx]:
                 value[0] = value[idx]
@@ -77,7 +97,11 @@ class ConfigData:
     def _from_fs(self, key, **kwargs):
         # find config file
 
-        regex = "/**/config.y*ml" if kwargs.get('explict_raw', False) else "/**/*config.y*ml"
+        regex = (
+            "/**/config.y*ml"
+            if kwargs.get("explict_raw", False)
+            else "/**/*config.y*ml"
+        )
         configs = glob.glob(str(self.catalog) + regex, recursive=True)
 
         # version detection
@@ -94,9 +118,13 @@ class ConfigData:
 
     def _from_remote_git(self, key, **kwargs):
         # using ./*config* patern dont work, func is usig metasymbol as is
-        configs = [config for config in
-                   self.git.ls_tree('-r', '--name-only', self.branch).splitlines()
-                   if re.match('.*config.y.*ml', config)]
+        configs = [
+            config
+            for config in self.git.ls_tree(
+                "-r", "--name-only", self.branch
+            ).splitlines()
+            if re.match(".*config.y.*ml", config)
+        ]
         value = None
         for conf in configs:
             try:
@@ -108,12 +136,15 @@ class ConfigData:
         return value
 
     def _from_tar(self, key, **kwargs):
-        tar = tarfile.open(self.tar) if isinstance(self.tar, str)\
+        tar = (
+            tarfile.open(self.tar)
+            if isinstance(self.tar, str)
             else tarfile.open(fileobj=self.tar)
+        )
 
         def conf_files(members):
             for tarinfo in members:
-                if fnmatch.fnmatch(tarinfo.name, '*config.y*ml'):
+                if fnmatch.fnmatch(tarinfo.name, "*config.y*ml"):
                     yield tarinfo
 
         confs = conf_files(tar)
@@ -122,7 +153,7 @@ class ConfigData:
         for conf in confs:
             try:
                 self.file = conf
-                self.data = yaml.safe_load(tar.extractfile(conf).read().decode('utf-8'))
+                self.data = yaml.safe_load(tar.extractfile(conf).read().decode("utf-8"))
                 value = self._from_data(key)
                 break
             except IndexError:

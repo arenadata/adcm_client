@@ -12,34 +12,67 @@
 # limitations under the License.
 
 import argparse
+
 from adcm_client.packer.bundle_build import build
 
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Builds bundles from sources.')
-    parser.add_argument('-n', '--name', type=str, help='bundle name', required=False)
-    parser.add_argument('-p', '--path', type=str, help='path where to seek configs', required=True)
-    parser.add_argument('-t', '--tarpath', type=str, help='path where to save', default=None)
-    parser.add_argument('-w', '--workspace', type=str, help='workspace where to build',
-                        default='/tmp')
-    parser.add_argument('-c', '--dont-clean-ws', help='remove temporary files from ws',
-                        action="store_false")
-    parser.add_argument('-m', '--master-branches', nargs='+',
-                        help='non default master branches', default=['master'])
-    parser.add_argument('-v', '--verbose', action="store_true", help='show info', required=False)
-    parser.add_argument('-r', '--release', action="store_true",
-                        help='set splitter release flag to true', default=None)
-    parser.add_argument('-e', '--edition', default=None, required=False,
-                        help='edition to build, usefull for spec with multiple editions')
+    parser = argparse.ArgumentParser(description="Builds bundles from sources.")
+    parser.add_argument("-n", "--name", type=str, help="bundle name", required=False)
+    parser.add_argument(
+        "-p", "--path", type=str, help="path where to seek configs", required=True
+    )
+    parser.add_argument(
+        "-t", "--tarpath", type=str, help="path where to save", default=None
+    )
+    parser.add_argument(
+        "-w", "--workspace", type=str, help="workspace where to build", default="/tmp"
+    )
+    parser.add_argument(
+        "-c",
+        "--dont-clean-ws",
+        help="remove temporary files from ws",
+        action="store_false",
+    )
+    parser.add_argument(
+        "-m",
+        "--master-branches",
+        nargs="+",
+        help="non default master branches",
+        default=["master"],
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="show info", required=False
+    )
+    parser.add_argument(
+        "-r",
+        "--release",
+        action="store_true",
+        help="set splitter release flag to true",
+        default=None,
+    )
+    parser.add_argument(
+        "-e",
+        "--edition",
+        default=None,
+        required=False,
+        help="edition to build, usefull for spec with multiple editions",
+    )
     args = parser.parse_args()
 
-    loglevel = 'INFO' if args.verbose else 'ERROR'
+    loglevel = "INFO" if args.verbose else "ERROR"
 
-    tarballs = build(args.name, args.path, edition=args.edition,
-                     workspace=args.workspace, tarball_path=args.tarpath,
-                     loglevel=loglevel, clean_ws=args.dont_clean_ws,
-                     master_branches=args.master_branches, release_version=args.release)
+    tarballs = build(
+        args.name,
+        args.path,
+        edition=args.edition,
+        workspace=args.workspace,
+        tarball_path=args.tarpath,
+        loglevel=loglevel,
+        clean_ws=args.dont_clean_ws,
+        master_branches=args.master_branches,
+        release_version=args.release,
+    )
 
     for edition in tarballs:
-        with open(edition, 'wb') as file:
+        with open(edition, "wb") as file:
             file.write(tarballs[edition].read())

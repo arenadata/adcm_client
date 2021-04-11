@@ -24,15 +24,25 @@ class NotValidSpecVersion(Exception):
 
 def compare_helper(version, except_list):
     if version is None:
-        except_list.extend([
-            'spec.yaml', 'pylintrc', '.[0-9a-zA-Z]*', '*pycache*',
-            'README.md', '*requirements*', '*.gz', '*.md'])
+        except_list.extend(
+            [
+                "spec.yaml",
+                "pylintrc",
+                ".[0-9a-zA-Z]*",
+                "*pycache*",
+                "README.md",
+                "*requirements*",
+                "*.gz",
+                "*.md",
+            ]
+        )
 
         def v_None(sub: DirEntry):
             for n in except_list:
                 if fnmatch(normpath(sub.path), n) or fnmatch(sub.name, n):
                     return True
             return False
+
         return v_None
     elif version == "1.0":
         prog = [re.compile(i) for i in except_list]
@@ -42,9 +52,12 @@ def compare_helper(version, except_list):
                 if n.match(normpath(sub.path)):
                     return True
             return False
+
         return v_1_0
     else:
-        raise NotValidSpecVersion('Not valid spec version').with_traceback(sys.exc_info()[2])
+        raise NotValidSpecVersion("Not valid spec version").with_traceback(
+            sys.exc_info()[2]
+        )
 
 
 def add_to_tar(version, directory, except_list, tar):
@@ -52,12 +65,13 @@ def add_to_tar(version, directory, except_list, tar):
     cwd = getcwd()
     chdir(directory)
 
-    def _add_to_tar(path='./'):
+    def _add_to_tar(path="./"):
         for sub in scandir(path):
             if not comparator(sub=sub):
                 if sub.is_dir():
                     _add_to_tar(path=normpath(sub.path))
                 else:
                     tar.add(normpath(sub.path))
+
     _add_to_tar()
     chdir(cwd)

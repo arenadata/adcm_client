@@ -61,10 +61,15 @@ def check_version(version):
     :raises RestrictedSymbol: version contains dash
     """
     if not isinstance(version, str):
-        raise TypeError('Bundle version must be string').with_traceback(sys.exc_info()[2])
-    if '-' in version:
-        raise RestrictedSymbol('Version contains restricted symbol \
-            "-" in position %s' % version.index('-')).with_traceback(sys.exc_info()[2])
+        raise TypeError("Bundle version must be string").with_traceback(
+            sys.exc_info()[2]
+        )
+    if "-" in version:
+        raise RestrictedSymbol(
+            'Version contains restricted symbol \
+            "-" in position %s'
+            % version.index("-")
+        ).with_traceback(sys.exc_info()[2])
 
 
 def resolve_build_id(git_data, master_branches, timestamp):
@@ -79,23 +84,23 @@ def resolve_build_id(git_data, master_branches, timestamp):
     :rtype: str
     """
     if git_data:
-        if 'pull_request' in git_data:
-            build_id = '-rc' + git_data['pull_request'] + '.' + timestamp
+        if "pull_request" in git_data:
+            build_id = "-rc" + git_data["pull_request"] + "." + timestamp
         else:
-            if git_data['branch'] in master_branches:
-                build_id = '-1'
+            if git_data["branch"] in master_branches:
+                build_id = "-1"
             else:
-                build_id = '-' + git_data['branch'].replace("-", "_").replace("/", "_")
+                build_id = "-" + git_data["branch"].replace("-", "_").replace("/", "_")
     else:
-        build_id = '-1'
+        build_id = "-1"
     return build_id
 
 
 def add_build_id(path, reponame, edition, master_branches: list, timestamp):
     def write_version(file, old_version, new_version):
-        with io.open(file, 'r+') as config:
+        with io.open(file, "r+") as config:
             for start_pos, line, end_pos in ReadFileWrapper(config):
-                if 'version:' in line and old_version in line:
+                if "version:" in line and old_version in line:
                     # remember tail
                     # truncate from position before line
                     # write new line
@@ -104,26 +109,28 @@ def add_build_id(path, reponame, edition, master_branches: list, timestamp):
                     tail = config.read()
                     config.seek(start_pos)
                     config.truncate()
-                    new_end_pos = start_pos + config.write(line.replace(old_version, new_version))
+                    new_end_pos = start_pos + config.write(
+                        line.replace(old_version, new_version)
+                    )
                     config.write(tail)
                     config.seek(new_end_pos)
 
     edition = "community" if edition is None or edition == "None" else edition
     bundle = ConfigData(catalog=path)
-    version = bundle.get_data('version', 'catalog', explict_raw=True)
+    version = bundle.get_data("version", "catalog", explict_raw=True)
 
     if version is None:
-        raise NoVersionFound('No version detected').with_traceback(sys.exc_info()[2])
+        raise NoVersionFound("No version detected").with_traceback(sys.exc_info()[2])
 
     try:
         git_data = JenkinsRepo(path).get_git_data()
     except InvalidGitRepositoryError:
         git_data = None
 
-    build_id = ''
+    build_id = ""
     if git_data:
         check_version(version)
         build_id = resolve_build_id(git_data, master_branches, timestamp)
         write_version(bundle.file, version, version + build_id)
 
-    return str(reponame) + '_v' + str(version) + build_id + '_' + edition + '.tgz'
+    return str(reponame) + "_v" + str(version) + build_id + "_" + edition + ".tgz"
