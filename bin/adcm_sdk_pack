@@ -57,6 +57,16 @@ if __name__ == "__main__":
         required=False,
         help="edition to build, usefull for spec with multiple editions",
     )
+    parser.add_argument(
+        "-i",
+        "--prepared-image",
+        action="store_true",
+        help=(
+            "adds prepared image behaviour to bundle`s spec"
+            "python_mod_req proccessing function"
+        ),
+        default=None,
+    )
     args = parser.parse_args()
 
     LOGLEVEL = "INFO" if args.verbose else "ERROR"
@@ -71,6 +81,7 @@ if __name__ == "__main__":
         clean_ws=args.dont_clean_ws,
         master_branches=args.master_branches,
         release_version=args.release,
+        prepared_image=args.prepared_image,
     )
 
     for edition in tarballs:

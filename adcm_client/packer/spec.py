@@ -16,11 +16,11 @@ from subprocess import check_output
 
 import yaml
 
-from adcm_client.packer.types import get_type_func
+from adcm_client.packer.types import PackFlags, get_type_func
 
 
 class SpecFile:
-    def __init__(self, spec):
+    def __init__(self, spec, release_version=False, prepared_image=False):
         try:
             with open(spec, "r") as file:
                 self.data = yaml.safe_load(file)
@@ -29,6 +29,9 @@ class SpecFile:
 
         except FileNotFoundError:
             self.data = {}
+        self.flags = PackFlags(
+            release_version=release_version, prepared_image=prepared_image
+        )
 
     def to_1_0(self):
         new_spec = dict(
@@ -98,7 +101,7 @@ class SpecFile:
                 tar_except.append(key.get("file"))
         return tar_except
 
-    def spec_processing(self, path: dict, workspace: str, release_version):
+    def spec_processing(self, path: dict, workspace: str):
         for edition in self.data["editions"]:
             for operation in edition.get("preprocessors", ()):
                 if operation["type"] == "script":
@@ -109,15 +112,11 @@ class SpecFile:
                         check_output(command, cwd=path[edition["name"]]).decode("utf-8")
                     )
                 else:
+                    # because `op` has its own fields, self.flags are not converted to dict and
+                    # is transmited in key "flags" of params dict instead
+                    params = {"flags": self.flags}
                     if operation["type"] == "splitter":
-                        params = {
-                            "jinja_values": {
-                                "edition": edition["name"],
-                                "release_version": release_version,
-                            }
-                        }
-                    else:
-                        params = {}
+                        params.update(edition=edition["name"])
                     get_type_func(operation["type"])(
                         path[edition["name"]], workspace, **params, **operation
                     )

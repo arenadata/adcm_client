@@ -18,10 +18,9 @@ from io import BytesIO
 from tempfile import mkdtemp
 from time import gmtime, strftime
 
+from adcm_client.packer.add_to_tar import add_to_tar
+from adcm_client.packer.naming_rules import add_build_id
 from adcm_client.packer.spec import SpecFile
-
-from .add_to_tar import add_to_tar
-from .naming_rules import add_build_id
 
 
 def _prepare_ws(reponame, workspace, src_path, spec: SpecFile):
@@ -86,6 +85,7 @@ def build(  # pylint: disable=R0913
     master_branches: list = None,
     release_version: bool = False,
     edition: str = None,
+    prepared_image: bool = False,
 ):
     """Moves sources to workspace inside of temporary directory. \
     Some operations over sources cant be proceed concurent(for exemple in pytest with xdist \
@@ -122,7 +122,9 @@ def build(  # pylint: disable=R0913
     workspace = os.path.abspath(workspace)
 
     logging.basicConfig(stream=sys.stdout, level=getattr(logging, loglevel))
-    spec = SpecFile(os.path.join(repopath, "spec.yaml"))
+    spec = SpecFile(
+        os.path.join(repopath, "spec.yaml"), release_version, prepared_image
+    )
     spec.normalize_spec()
 
     # Edition parameter processing.
@@ -132,7 +134,7 @@ def build(  # pylint: disable=R0913
 
     ws_tepm_dir, work_dir_paths = _prepare_ws(reponame, workspace, repopath, spec)
 
-    spec.spec_processing(work_dir_paths, workspace, release_version)
+    spec.spec_processing(work_dir_paths, workspace)
     tarpath = _prepare_result_dir(workspace, tarball_path)
 
     out = dict(
