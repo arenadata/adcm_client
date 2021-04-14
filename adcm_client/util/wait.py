@@ -26,20 +26,15 @@ def wait_net_service(server, port, timeout, period=1):
         @return: True of False
     """
 
-    start = now()
-
-    s = socket.socket()
-    while now() - start < timeout:
+    start_time = now()
+    while True:
         try:
-            s.connect((server, port))
+            with socket.create_connection((server, port), timeout=timeout):
+                return True
         except Exception:
-            pass
-
-        else:
-            s.close()
-            return True
-        sleep(period)
-    return False
+            sleep(period)
+            if now() - start_time >= timeout:
+                return False
 
 
 def wait_for_url(url, timeout, period=1):
