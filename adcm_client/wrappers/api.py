@@ -133,9 +133,12 @@ class ADCMApiWrapper():
         Example:
         api.action(['cluster', 'create'], name='testcluster')
         """
-        overrides = None
 
-        # Removing query and form parameters if they exist in path parameters
+        # After parsing the schema, fields for a query, a form, or a path may appear that have
+        # the same names, which may cause the field value to go to the wrong place.
+        # Path fields take precedence over query and form fields, so if there are path fields
+        # and query or form fields with the same name, we delete the query and form fields
+        # with the given name.
         path = args[0]
         link = self.schema[path[0]]
         for item in path[1:]:
