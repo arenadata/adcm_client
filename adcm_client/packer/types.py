@@ -12,8 +12,10 @@
 
 import codecs
 import os
-import random
+import secrets
 import string
+from dataclasses import dataclass
+from hashlib import blake2b
 from itertools import chain
 
 import jinja2
@@ -21,8 +23,14 @@ import yaml
 from docker import from_env
 from docker.client import DockerClient
 from docker.errors import ImageNotFound
-from docker.models.containers import Container  # pylint: disable=unused-import
+from docker.models.containers import Container
 from docker.models.images import Image
+
+
+@dataclass(frozen=True)
+class PackFlags:
+    release_version: bool
+    prepared_image: bool
 
 
 class NoModulesToInstall(Exception):
@@ -50,28 +58,37 @@ def _get_top_dirs(image: Image, prepared_image: Image, client: DockerClient) -> 
     modified_module_list = _get_modules_list(prepared_image, client)
 
     # list of packages tham must be installed
-    modules = list(map(
-        lambda x: x.split('==')[0],
-        set(modified_module_list).difference(default_module_list)
-    ))
+    modules = list(
+        map(
+            lambda x: x.split("==")[0],
+            set(modified_module_list).difference(default_module_list),
+        )
+    )
 
     modules_data = yaml.safe_load_all(
         client.containers.run(
-            prepared_image,
-            'pip show -f %s' % ' '.join(modules),
-            remove=True
+            prepared_image, "pip show -f %s" % " ".join(modules), remove=True
         ).decode("utf-8")
     )
-    return list(chain.from_iterable(map(
-        lambda x: [os.path.join(x['Location'], i) for i in list(
-            dict.fromkeys(
-                map(
-                    lambda y: os.path.normpath(y).split(os.sep)[0],
-                    x['Files'].split()
-                )
-            )) if i not in ['..', '.']],
-        modules_data
-    )))
+    return list(
+        chain.from_iterable(
+            map(
+                lambda x: [
+                    os.path.join(x["Location"], i)
+                    for i in list(
+                        dict.fromkeys(
+                            map(
+                                lambda y: os.path.normpath(y).split(os.sep)[0],
+                                x["Files"].split(),
+                            )
+                        )
+                    )
+                    if i not in ["..", "."]
+                ],
+                modules_data,
+            )
+        )
+    )
 
 
 def _get_modules_list(image: Image, client: DockerClient) -> "list":
@@ -85,11 +102,16 @@ def _get_modules_list(image: Image, client: DockerClient) -> "list":
     :return: list of installed python pkgs in given inamge freeze format
     :rtype: list
     """
-    return client.containers.run(
-        image, '/bin/sh -c "pip freeze"', remove=True).decode("utf-8").split()
+    return (
+        client.containers.run(image, '/bin/sh -c "pip freeze"', remove=True)
+        .decode("utf-8")
+        .split()
+    )
 
 
-def _get_prepared_container(pkgs: list, image: Image, client: DockerClient) -> "Container":
+def _get_prepared_container(
+    pkgs: list, image: Image, client: DockerClient
+) -> Container:
     """Install python pkgs to container from given image
 
     :param pkgs: List of python packages
@@ -102,9 +124,9 @@ def _get_prepared_container(pkgs: list, image: Image, client: DockerClient) -> "
     :rtype: Container
     """
     command = '/bin/sh -c "'
-    if pkgs.get('system_pkg'):
-        command += 'apk add ' + ' '.join(pkgs.get('system_pkg')) + ' >/dev/null ;'
-    command += ' pip install ' + ' '.join(pkgs.get('python_mod')) + ' >/dev/null"'
+    if pkgs.get("system_pkg"):
+        command += "apk add " + " ".join(pkgs.get("system_pkg")) + " >/dev/null ;"
+    command += " pip install " + " ".join(pkgs.get("python_mod")) + ' >/dev/null"'
     return client.containers.run(image, command, detach=True)
 
 
@@ -123,14 +145,14 @@ def _copy_pkgs_files(path, dirs, image: Image, volumes: dict, client: DockerClie
     :type client: DockerClient
     """
     dirs = list(dict.fromkeys(dirs))  # filter on keys of duplicate elements
-    command = '/bin/sh -c "mkdir %s; cp -r %s %s ;' % (path,
-                                                       ' '.join(dirs),
-                                                       path)
+    command = '/bin/sh -c "mkdir %s; cp -r %s %s ;' % (path, " ".join(dirs), path)
     command += ' chown -R %s %s"' % (os.getuid(), path)
     client.containers.run(image, command, volumes=volumes, remove=True)
 
 
-def _get_prepared_image(pkgs, image: Image, client: DockerClient) -> "Image":
+def _get_prepared_image(
+    pkgs, image: Image, client: DockerClient, prepared_image_name: list = None
+) -> Image:
     """Install pgks to container from given image and commits container to a new image
 
     :return: returns image with installed required python packages
@@ -139,71 +161,95 @@ def _get_prepared_image(pkgs, image: Image, client: DockerClient) -> "Image":
     container = _get_prepared_container(pkgs, image, client)
     container.wait()
 
-    prepared_image_name = [
-        image.tags[0].split(':')[0],
-        ''.join(random.sample(string.ascii_lowercase, 5))
-    ]
-    prepared_image = container.commit(repository=prepared_image_name[0],
-                                      tag=prepared_image_name[1])
+    if not prepared_image_name:
+        prepared_image_name = [
+            image.tags[0].split(":")[0],
+            "".join(secrets.choice(string.ascii_lowercase) for _ in range(5)),
+        ]
+    prepared_image = container.commit(
+        repository=prepared_image_name[0], tag=prepared_image_name[1]
+    )
     container.remove()
     return prepared_image
 
 
-def python_mod_req(source_path, workspace, **kwargs):
-    with open(os.path.join(source_path, kwargs['requirements']), 'r') as file:
-        pkgs = yaml.safe_load(file)
-        if pkgs.get('python_mod'):
-            client = from_env()
-            # choose image where to install python pkgs
-            # by default adcm:latest but i think this may be bad practice
-            # better to use adcm_min_version of bundle
-            image_name = "arenadata/adcm:latest" if not kwargs.get('image') else kwargs['image']
-            image = client.images.pull(image_name)
-            # clean up flag
-            rm_prepared_image = True
+def _file_hash(data: str) -> blake2b:
+    return blake2b(bytes(data, "utf-8"), digest_size=4)
 
-            # prepared image is an image with intalled python packages
-            # that need to be packed in bundle
-            # for debug purposes there may be an prepared_image variable received from spec.yaml
-            if kwargs.get('prepared_image'):
-                try:
-                    prepared_image = client.images.get(kwargs['prepared_image'])
-                    rm_prepared_image = False
-                except ImageNotFound:
-                    prepared_image = _get_prepared_image(pkgs, image, client)
-            else:
-                prepared_image = _get_prepared_image(pkgs, image, client)
 
-            # list of all highlevel dirs of python pkgs that must be packed
-            dirs = _get_top_dirs(image, prepared_image, client)
+def _prepared_image_name(base_image: str, hash_obj: blake2b) -> str:
+    hash_obj.update(bytes(base_image, "utf-8"))
+    return f"adcm_sdk_pack/python_mod_req_adcm:{hash_obj.hexdigest()}"
 
-            # volume that contains workspace
-            volumes = {
-                workspace: {'bind': workspace, 'mode': 'rw'}
-            }
 
-            if kwargs.get('target_dir'):
-                path = os.path.join(source_path, kwargs['target_dir'], 'pmod')
-            else:
-                path = os.path.join(source_path, 'pmod')
-            _copy_pkgs_files(path, dirs, prepared_image, volumes, client)
+def python_mod_req(
+    source_path, workspace, *, flags: PackFlags = None, target_dir: str = "", **kwargs
+):
+    if "image" not in kwargs:
+        raise ValueError("base image is not present in spec")
 
-            if rm_prepared_image:
-                client.images.remove(prepared_image.id)
+    with open(os.path.join(source_path, kwargs["requirements"]), "r") as file:
+        data = file.read()
+        req_file_hash = _file_hash(data)
+        pkgs = yaml.safe_load(data)
 
-        else:
-            raise NoModulesToInstall('Can`t get python modules list to be inatalled')
+    if "python_mod" not in pkgs:
+        raise NoModulesToInstall("Can`t get python modules list to be inatalled")
+
+    client = from_env()
+    # choose image where to install python pkgs
+    # by default adcm:latest but i think this may be bad practice
+    # better to use adcm_min_version of bundle
+    image = client.images.pull(kwargs["image"])
+
+    # prepared image is an image with intalled python packages
+    # that need to be packed in bundle
+    # for debug purposes there may be an prepared_image variable received from spec.yaml
+
+    prep_image_name = _prepared_image_name(kwargs["image"], req_file_hash)
+    try:
+        if not flags.prepared_image:
+            raise ImageNotFound
+        prepared_image = client.images.get(prep_image_name)
+    except ImageNotFound:
+        prepared_image = _get_prepared_image(
+            pkgs, image, client, prep_image_name.split(":")
+        )
+
+    # list of all highlevel dirs of python pkgs that must be packed
+    dirs = _get_top_dirs(image, prepared_image, client)
+
+    # volume that contains workspace
+    _copy_pkgs_files(
+        os.path.join(source_path, target_dir, "pmod"),
+        dirs,
+        prepared_image,
+        {workspace: {"bind": workspace, "mode": "rw"}},
+        client,
+    )
+
+    if not flags.prepared_image:
+        client.images.remove(prepared_image.id)
 
 
 def splitter(*args, **kwargs):
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader(args[0]),
-                             undefined=jinja2.StrictUndefined)
-    for file in kwargs['files']:
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(args[0]),
+        undefined=jinja2.StrictUndefined,
+        autoescape=True,
+    )
+    jinja_values = {
+        "edition": kwargs["edition"],
+        "release_version": kwargs["flags"].release_version,
+    }
+    for file in kwargs["files"]:
         tmpl = env.get_template(file)
-        with codecs.open(os.path.join(args[0], (os.path.splitext(file)[0])), 'w', 'utf-8') as f:
-            f.write(tmpl.render(**kwargs['jinja_values']))
+        with codecs.open(
+            os.path.join(args[0], (os.path.splitext(file)[0])), "w", "utf-8"
+        ) as file:
+            file.write(tmpl.render(**jinja_values))
 
 
 def get_type_func(tpe):
-    types = {'python_mod_req': python_mod_req, 'splitter': splitter}
+    types = {"python_mod_req": python_mod_req, "splitter": splitter}
     return types[tpe]

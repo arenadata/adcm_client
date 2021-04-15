@@ -18,17 +18,19 @@ from io import BytesIO
 from tempfile import mkdtemp
 from time import gmtime, strftime
 
-from .add_to_tar import add_to_tar
-from .naming_rules import add_build_id
-from .spec import SpecFile, spec_processing
+from adcm_client.packer.add_to_tar import add_to_tar
+from adcm_client.packer.naming_rules import add_build_id
+from adcm_client.packer.spec import SpecFile
 
 
 def _prepare_ws(reponame, workspace, src_path, spec: SpecFile):
     edition_dirs = {}
-    tmpdir = mkdtemp(prefix=reponame + '_', dir=workspace)
-    for edition in spec.data['editions']:
-        edition_dirs.update({edition['name']: os.path.join(tmpdir, str(edition['name']))})
-        copy_tree(src_path, edition_dirs[edition['name']], preserve_symlinks=True)
+    tmpdir = mkdtemp(prefix=reponame + "_", dir=workspace)
+    for edition in spec.data["editions"]:
+        edition_dirs.update(
+            {edition["name"]: os.path.join(tmpdir, str(edition["name"]))}
+        )
+        copy_tree(src_path, edition_dirs[edition["name"]], preserve_symlinks=True)
     return tmpdir, edition_dirs
 
 
@@ -36,32 +38,29 @@ def _prepare_result_dir(workspace, tarball_path):
     if tarball_path:
         os.makedirs(tarball_path, exist_ok=True)
         return tarball_path
-    else:
-        return workspace
+    return workspace
 
 
 def _pack(reponame, repopaths, tarpaths, spec: SpecFile, **kwargs):
     pack_timestamp = strftime("%Y%m%d%H%M%S", gmtime())
-    for edition in spec.data['editions']:
-        name = edition.get('name')
+    for edition in spec.data["editions"]:
+        name = edition.get("name")
         tarpath = tarpaths[name] if isinstance(tarpaths, dict) else tarpaths
         repopath = repopaths[name]
-        tar_except = edition.get('exclude', [])
+        tar_except = edition.get("exclude", [])
 
         # naming rules
         tarname = add_build_id(
-            repopath,
-            reponame,
-            name,
-            kwargs['master_branches'],
-            pack_timestamp
+            repopath, reponame, name, kwargs["master_branches"], pack_timestamp
         )
 
         stream = BytesIO()
-        tar = tarfile.open(fileobj=stream, mode='w|gz')
-        add_to_tar(spec.data['version'], repopath, tar_except, tar)
+        tar = tarfile.open(fileobj=stream, mode="w|gz")
+        add_to_tar(spec.data["version"], repopath, tar_except, tar)
         logging.info("\n#######\n Edition %s \n#######", name)
-        logging.info("\n#######\n Packed files list:\n%s\n#######", "\n".join(tar.getnames()))
+        logging.info(
+            "\n#######\n Packed files list:\n%s\n#######", "\n".join(tar.getnames())
+        )
         tar.close()
         stream.seek(0)
         # saving tarball
@@ -76,10 +75,18 @@ def _clean_ws(path):
         remove_tree(path)
 
 
-def build(reponame=None, repopath=None, workspace='/tmp',  # pylint: disable=R0913
-          tarball_path=None, loglevel='ERROR',
-          clean_ws=True, master_branches=None,
-          release_version=False, edition=None, **args):
+def build(  # pylint: disable=R0913
+    reponame: str = None,
+    repopath: str = None,
+    workspace: str = "/tmp",
+    tarball_path: str = None,
+    loglevel: str = "ERROR",
+    clean_ws: bool = True,
+    master_branches: list = None,
+    release_version: bool = False,
+    edition: str = None,
+    prepared_image: bool = False,
+):
     """Moves sources to workspace inside of temporary directory. \
     Some operations over sources cant be proceed concurent(for exemple in pytest with xdist \
     plugin) that why each thread need is own tmp dir with sources. \
@@ -107,30 +114,32 @@ def build(reponame=None, repopath=None, workspace='/tmp',  # pylint: disable=R09
     :rtype: dict
     """
     if not master_branches:
-        master_branches = ['master']
+        master_branches = ["master"]
     if not repopath:
-        raise ValueError('path to source should be defined')
+        raise ValueError("path to source should be defined")
     if not reponame:
         reponame = os.path.basename(os.path.realpath(repopath))
     workspace = os.path.abspath(workspace)
 
     logging.basicConfig(stream=sys.stdout, level=getattr(logging, loglevel))
-    spec = SpecFile(os.path.join(repopath, 'spec.yaml'))
+    spec = SpecFile(
+        os.path.join(repopath, "spec.yaml"), release_version, prepared_image
+    )
     spec.normalize_spec()
-    spec.pop_edition(edition)
+
+    # Edition parameter processing.
+    # To build only one edition we remove every one else editions.
+    if edition:
+        spec.pop_edition(edition)
 
     ws_tepm_dir, work_dir_paths = _prepare_ws(reponame, workspace, repopath, spec)
 
+    spec.spec_processing(work_dir_paths, workspace)
     tarpath = _prepare_result_dir(workspace, tarball_path)
-    spec_processing(spec, work_dir_paths, workspace, release_version)
 
     out = dict(
-        _pack(
-            reponame,
-            work_dir_paths,
-            tarpath,
-            spec,
-            master_branches=master_branches))
+        _pack(reponame, work_dir_paths, tarpath, spec, master_branches=master_branches)
+    )
 
     if clean_ws:
         _clean_ws(ws_tepm_dir)
