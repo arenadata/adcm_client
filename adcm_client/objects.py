@@ -410,12 +410,12 @@ class Cluster(_BaseObject):
         return self._child_obj(HostList, paging=paging, **args)
 
     def host_add(self, host: "Host") -> "Host":
-        with allure_step("Add host {} to cluster {}".format(host.fqdn, self.name)):
+        with allure_step(f"Add host {host.fqdn} to cluster {self.name}"):
             data = self._subcall("host", "create", host_id=host.id)
             return Host(self._api, id=data['id'])
 
     def host_delete(self, host: "Host"):
-        with allure_step("Remove host {} from cluster {}".format(host.fqdn, self.name)):
+        with allure_step(f"Remove host {host.fqdn} from cluster {self.name}"):
             self._subcall("host", "delete", host_id=host.id)
 
     def _service_old(self, **args):
@@ -438,7 +438,7 @@ class Cluster(_BaseObject):
 
     def _service_add_old(self, **args):
         proto = self.bundle().service_prototype(**args)
-        with allure_step("Add service {} to cluster {}".format(proto.name, self.name)):
+        with allure_step(f"Add service {proto.name} to cluster {self.name}"):
             data = self._subcall("service", "create", prototype_id=proto.id)
             return self._subobject(Service, service_id=data['id'])
 
@@ -447,13 +447,13 @@ class Cluster(_BaseObject):
     @legacy_server_implementaion(_service_add_old, '2020.09.25.13')
     def service_add(self, **args) -> "Service":
         proto = self.bundle().service_prototype(**args)
-        with allure_step("Add service {} to cluster {}".format(proto.name, self.name)):
+        with allure_step(f"Add service {proto.name} to cluster {self.name}"):
             data = self._subcall("service", "create", prototype_id=proto.id, cluster_id=self.id)
             return Service(self._api, id=data['id'])
 
     @min_server_version('2020.05.13.00')
     def service_delete(self, service: "Service"):
-        with allure_step("Remove service {} from cluster {}".format(service.name, self.name)):
+        with allure_step(f"Remove service {service.name} from cluster {self.name}"):
             self._subcall("service", "delete", service_id=service.id)
 
     def hostcomponent(self):
@@ -524,7 +524,7 @@ class Upgrade(BaseAPIObject):
     from_edition = None
 
     def do(self, **args):
-        with allure_step("Do upgrade {}".format(self.name)):
+        with allure_step(f"Do upgrade {self.name}"):
             self._subcall("do", "create", **args)
 
 
