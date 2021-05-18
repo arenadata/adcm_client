@@ -798,7 +798,7 @@ class Action(BaseAPIObject):
         return self._child_obj(TaskList, **args)
 
     def run(self, **args) -> "Task":
-        with allure_step("Run action {}".format(self.name)):
+        with allure_step(f"Run action {self.name}"):
 
             if 'hc' in args:
                 allure_attach_json(args.get('hc'), name="Hostcomponent map")
@@ -903,7 +903,7 @@ class Task(BaseAPIObject):
             raise WaitTimeout from e
         return status
 
-    @allure_step("Wait for task to success.")
+    @allure_step("Wait for the task to success")
     def try_wait(self, timeout=None):
         status = self.wait(timeout=timeout)
 
@@ -1040,6 +1040,7 @@ class ADCMClient:
     def __repr__(self):
         return f"<ADCM API Client for {self.url} at {id(self)}>"
 
+    @allure_step("Login to ADCM API with user={user} and password={password}")
     def auth(self, user=None, password=None):
         if user is None or password is None:
             raise NoCredentionsProvided
@@ -1133,7 +1134,7 @@ class ADCMClient:
         data = self._api.objects.stack.load.create(bundle_file="file")
         return self.bundle(bundle_id=data['id'])
 
-    @allure_step('Upload bundle from "{1}"')
+    @allure_step('Upload bundle from {dirname}')
     def upload_from_fs(self, dirname, **args) -> Bundle:
         streams = stream.file(dirname, **args)
         if len(streams) > 1:
@@ -1141,7 +1142,7 @@ class ADCMClient:
                 bundle editions from one dir. Use upload_from_fs_all instead.')
         return self._upload(streams[0])
 
-    @allure_step('Upload bundles from "{1}"')
+    @allure_step('Upload bundles from {dirname}')
     def upload_from_fs_all(self, dirname, **args) -> BundleList:
         streams = stream.file(dirname, **args)
         # Create empty bundle list by filtering on wittingly nonexisting field
@@ -1151,10 +1152,11 @@ class ADCMClient:
             result.append(self._upload(st))
         return result
 
-    @allure_step('Upload bundle from "{1}"')
+    @allure_step('Upload bundle from {url}')
     def upload_from_url(self, url) -> Bundle:
         return self._upload(stream.web(url))
 
-    @allure_step("Delete bundle")
     def bundle_delete(self, **args):
-        self._api.objects.stack.bundle.delete(bundle_id=self.bundle(**args).bundle_id)
+        bundle = self.bundle(**args)
+        with allure_step(f"Delete bundle {bundle.name}"):
+            self._api.objects.stack.bundle.delete(bundle_id=bundle.bundle_id)
