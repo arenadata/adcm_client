@@ -540,6 +540,7 @@ class Service(_BaseObject):
     IDNAME = "service_id"
     PATH = ['service']
     SUBPATH = ['service']
+    FILTERS = ['cluster_id']
 
     id = None
     service_id = None
