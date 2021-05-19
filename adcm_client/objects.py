@@ -410,12 +410,12 @@ class Cluster(_BaseObject):
         return self._child_obj(HostList, paging=paging, **args)
 
     def host_add(self, host: "Host") -> "Host":
-        with allure_step("Add host {} to cluster {}".format(host.fqdn, self.name)):
+        with allure_step(f"Add host {host.fqdn} to cluster {self.name}"):
             data = self._subcall("host", "create", host_id=host.id)
             return Host(self._api, id=data['id'])
 
     def host_delete(self, host: "Host"):
-        with allure_step("Remove host {} from cluster {}".format(host.fqdn, self.name)):
+        with allure_step(f"Remove host {host.fqdn} from cluster {self.name}"):
             self._subcall("host", "delete", host_id=host.id)
 
     def _service_old(self, **args):
@@ -438,7 +438,7 @@ class Cluster(_BaseObject):
 
     def _service_add_old(self, **args):
         proto = self.bundle().service_prototype(**args)
-        with allure_step("Add service {} to cluster {}".format(proto.name, self.name)):
+        with allure_step(f"Add service {proto.name} to cluster {self.name}"):
             data = self._subcall("service", "create", prototype_id=proto.id)
             return self._subobject(Service, service_id=data['id'])
 
@@ -447,13 +447,13 @@ class Cluster(_BaseObject):
     @legacy_server_implementaion(_service_add_old, '2020.09.25.13')
     def service_add(self, **args) -> "Service":
         proto = self.bundle().service_prototype(**args)
-        with allure_step("Add service {} to cluster {}".format(proto.name, self.name)):
+        with allure_step(f"Add service {proto.name} to cluster {self.name}"):
             data = self._subcall("service", "create", prototype_id=proto.id, cluster_id=self.id)
             return Service(self._api, id=data['id'])
 
     @min_server_version('2020.05.13.00')
     def service_delete(self, service: "Service"):
-        with allure_step("Remove service {} from cluster {}".format(service.name, self.name)):
+        with allure_step(f"Remove service {service.name} from cluster {self.name}"):
             self._subcall("service", "delete", service_id=service.id)
 
     def hostcomponent(self):
@@ -524,7 +524,7 @@ class Upgrade(BaseAPIObject):
     from_edition = None
 
     def do(self, **args):
-        with allure_step("Do upgrade {}".format(self.name)):
+        with allure_step(f"Do upgrade {self.name}"):
             self._subcall("do", "create", **args)
 
 
@@ -799,7 +799,7 @@ class Action(BaseAPIObject):
         return self._child_obj(TaskList, **args)
 
     def run(self, **args) -> "Task":
-        with allure_step("Run action {}".format(self.name)):
+        with allure_step(f"Run action {self.name}"):
 
             if 'hc' in args:
                 allure_attach_json(args.get('hc'), name="Hostcomponent map")
@@ -904,7 +904,7 @@ class Task(BaseAPIObject):
             raise WaitTimeout from e
         return status
 
-    @allure_step("Wait for task to success.")
+    @allure_step("Wait for the task to success")
     def try_wait(self, timeout=None):
         status = self.wait(timeout=timeout)
 
@@ -1041,6 +1041,7 @@ class ADCMClient:
     def __repr__(self):
         return f"<ADCM API Client for {self.url} at {id(self)}>"
 
+    @allure_step("Login to ADCM API with user={user} and password={password}")
     def auth(self, user=None, password=None):
         if user is None or password is None:
             raise NoCredentionsProvided
@@ -1134,7 +1135,7 @@ class ADCMClient:
         data = self._api.objects.stack.load.create(bundle_file="file")
         return self.bundle(bundle_id=data['id'])
 
-    @allure_step('Upload bundle from "{1}"')
+    @allure_step('Upload bundle from {dirname}')
     def upload_from_fs(self, dirname, **args) -> Bundle:
         streams = stream.file(dirname, **args)
         if len(streams) > 1:
@@ -1142,7 +1143,7 @@ class ADCMClient:
                 bundle editions from one dir. Use upload_from_fs_all instead.')
         return self._upload(streams[0])
 
-    @allure_step('Upload bundles from "{1}"')
+    @allure_step('Upload bundles from {dirname}')
     def upload_from_fs_all(self, dirname, **args) -> BundleList:
         streams = stream.file(dirname, **args)
         # Create empty bundle list by filtering on wittingly nonexisting field
@@ -1152,10 +1153,11 @@ class ADCMClient:
             result.append(self._upload(st))
         return result
 
-    @allure_step('Upload bundle from "{1}"')
+    @allure_step('Upload bundle from {url}')
     def upload_from_url(self, url) -> Bundle:
         return self._upload(stream.web(url))
 
-    @allure_step("Delete bundle")
     def bundle_delete(self, **args):
-        self._api.objects.stack.bundle.delete(bundle_id=self.bundle(**args).bundle_id)
+        bundle = self.bundle(**args)
+        with allure_step(f"Delete bundle {bundle.name}"):
+            self._api.objects.stack.bundle.delete(bundle_id=bundle.bundle_id)
