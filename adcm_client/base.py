@@ -155,15 +155,16 @@ def legacy_server_implementaion(oldfunc, turnover_version):
 
 
 class Paging:
-    def __init__(self, paged_object, limit=50, offset=0, **args):
+    def __init__(self, paged_object, limit=50, **args):
         self._paged_object = paged_object
         self._limit = limit
         self._query_params = args      # Just passing it to paged_object
-        self._offset = offset          # Offset in paging
+        self._offset = 0               # Offset in paging
         self._current_list = None      # Current page data
         self._current_iterator = None
 
     def __iter__(self):
+        self._offset = 0
         return self
 
     def __next_list(self):
@@ -273,12 +274,7 @@ class EndPoint:
 
     def search(self, paging=None, **args):
         # TODO: Add filtering on backend
-        if paging is None:
-            paging = {}
-        data = []
-        for obj in Paging(self.list, **paging, **args):
-            data.append(obj)
-        return search(data, **args)
+        return search(self.list(paging, **args), **args)
 
     def search_one(self, **args):
         # FIXME: paging
