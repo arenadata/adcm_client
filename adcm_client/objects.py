@@ -825,6 +825,11 @@ class Action(BaseAPIObject):
             if 'verbose' not in args and rpm.compare_versions(
                     self.adcm_version, '2021.02.04.13') >= 0:
                 args['verbose'] = False
+            if 'verbose' in args and rpm.compare_versions(
+                    self.adcm_version, "2021.02.04.13") == -1:
+                warnings.warn(f"ADCM {self.adcm_version} doesn't support action "
+                              f"argument 'verbose'. It will be skipped")
+                args.pop('verbose')
             try:
                 data = self._subcall("run", "create", **args)
             except ErrorMessage as error:
