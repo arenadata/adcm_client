@@ -822,11 +822,9 @@ class Action(BaseAPIObject):
                         elif not subkey and key in config_diff:
                             args['config'][key] = config_diff[key]
             # check backward compatibility for `verbose` option
-            if 'verbose' not in args and rpm.compare_versions(
-                    self.adcm_version, '2021.02.04.13') >= 0:
-                args['verbose'] = False
-            if 'verbose' in args and rpm.compare_versions(
-                    self.adcm_version, "2021.02.04.13") == -1:
+            if rpm.compare_versions(self.adcm_version, '2021.02.04.13') >= 0:
+                args.setdefault('verbose', False)
+            elif 'verbose' in args:
                 warnings.warn(f"ADCM {self.adcm_version} doesn't support action "
                               f"argument 'verbose'. It will be skipped")
                 args.pop('verbose')
