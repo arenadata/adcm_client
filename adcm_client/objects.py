@@ -933,8 +933,7 @@ class Task(BaseAPIObject):
                     if error.error._data['code'] == 'LOG_NOT_FOUND':
                         # pylint: enable=protected-access
                         continue
-                    else:
-                        raise error
+                    raise error
                 content_format = response.get("format", "txt")
                 if "type" in response:
                     log_func("Type: %s", response['type'])
