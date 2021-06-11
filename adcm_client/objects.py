@@ -22,7 +22,7 @@ from version_utils import rpm
 from adcm_client.base import (
     ActionHasIssues, ADCMApiError, BaseAPIListObject, BaseAPIObject, ObjectNotFound,
     TooManyArguments, WaitTimeout, strip_none_keys, min_server_version, allure_step,
-    allure_attach_json, legacy_server_implementaion
+    allure_attach_json, legacy_server_implementaion, EndPoint
 )
 from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
@@ -597,7 +597,7 @@ class Service(_BaseObject):
     # https://github.com/arenadata/adcm/pull/778
     # !!! If you change the version, do not forget to change it in the __new__ method
     # of the Component class as well as in the comments to them
-    @legacy_server_implementaion(_component_old, '2021.12.01.01')
+    @legacy_server_implementaion(_component_old, '2021.03.12.16')
     def component(self, **args) -> "Component":
         return self._child_obj(Component, **args)
 
@@ -608,7 +608,7 @@ class Service(_BaseObject):
     # https://github.com/arenadata/adcm/pull/778
     # !!! If you change the version, do not forget to change it in the __new__ method
     # of the Component class as well as in the comments to them
-    @legacy_server_implementaion(_component_list_old, '2021.12.01.01')
+    @legacy_server_implementaion(_component_list_old, '2021.03.12.16')
     def component_list(self, paging=None, **args) -> "ComponentList":
         return self._child_obj(ComponentList, paging=paging, **args)
 
@@ -658,14 +658,14 @@ class Component(_BaseObject):
 
     def __new__(cls, *args, **kwargs):
         """
-        Set PATH=None, if adcm version < `2021.12.01.01`. See ADCM-1439.
+        Set PATH=None, if adcm version < `2021.03.12.16`. See ADCM-1439.
         This method is associated with the action of the `legacy_server_implementaion()` decorator.
         """
         wrapper = args[0]
         instance = super().__new__(cls)
         # !!! If you change the version, do not forget to change it in the component()
         # and component_list() methods of the Service class as well as in the comments to them
-        if rpm.compare_versions(wrapper.adcm_version, '2021.12.01.01') < 0:
+        if rpm.compare_versions(wrapper.adcm_version, '2021.03.12.16') < 0:
             instance.PATH = None
         return instance
 
@@ -691,14 +691,14 @@ class ComponentList(BaseAPIListObject):
 
     def __new__(cls, *args, **kwargs):
         """
-        Set PATH=None, if adcm version < `2021.12.01.01`. See ADCM-1439.
+        Set PATH=None, if adcm version < `2021.03.12.16`. See ADCM-1439.
         This method is associated with the action of the `legacy_server_implementaion()` decorator.
         """
         wrapper = args[0]
         instance = super().__new__(cls)
         # !!! If you change the version, do not forget to change it in the component()
         # and component_list() methods of the Service class as well as in the comments to them
-        if rpm.compare_versions(wrapper.adcm_version, '2021.12.01.01') < 0:
+        if rpm.compare_versions(wrapper.adcm_version, '2021.03.12.16') < 0:
             instance.PATH = None
         return instance
 
@@ -879,7 +879,7 @@ class Task(BaseAPIObject):
 
     @min_server_version('2020.08.27.00')
     def action(self) -> "Action":
-        # for component object method will work after version `2021.12.01.01`
+        # for component object method will work after version `2021.03.12.16`
         kwargs = {f'{self.object_type}_id': self.object_id}
         return TASK_PARENT[self.object_type](
             self._api, **kwargs).action(action_id=self.action_id)
@@ -919,9 +919,21 @@ class Task(BaseAPIObject):
     def _log_jobs(self, **filters):
         for job in self.job_list(**filters):
             log_func = logger.error if job.status == "failed" else logger.info
-            log_func("Action: %s", self.action().name)
+            try:
+                action_name = self.action().name
+            except ErrorMessage:
+                action = EndPoint(self._api, 'action_id', ['stack', 'action']).read(self.action_id)
+                action_name = action['name']
+            log_func("Action: %s", action_name)
             for file in job.log_files:
-                response = self._api.client.get(file["url"])
+                try:
+                    response = self._api.client.get(file["url"])
+                except ErrorMessage as error:
+                    # pylint: disable=protected-access
+                    if error.error._data['code'] == 'LOG_NOT_FOUND':
+                        # pylint: enable=protected-access
+                        continue
+                    raise error
                 content_format = response.get("format", "txt")
                 if "type" in response:
                     log_func("Type: %s", response['type'])
