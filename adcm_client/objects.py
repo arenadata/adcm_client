@@ -22,7 +22,7 @@ from version_utils import rpm
 from adcm_client.base import (
     ActionHasIssues, ADCMApiError, BaseAPIListObject, BaseAPIObject, ObjectNotFound,
     TooManyArguments, WaitTimeout, strip_none_keys, min_server_version, allure_step,
-    allure_attach_json, legacy_server_implementaion
+    allure_attach_json, legacy_server_implementaion, EndPoint
 )
 from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
@@ -919,9 +919,22 @@ class Task(BaseAPIObject):
     def _log_jobs(self, **filters):
         for job in self.job_list(**filters):
             log_func = logger.error if job.status == "failed" else logger.info
-            log_func("Action: %s", self.action().name)
+            try:
+                action_name = self.action().name
+            except ErrorMessage:
+                action = EndPoint(self._api, 'action_id', ['stack', 'action']).read(self.action_id)
+                action_name = action['name']
+            log_func("Action: %s", action_name)
             for file in job.log_files:
-                response = self._api.client.get(file["url"])
+                try:
+                    response = self._api.client.get(file["url"])
+                except ErrorMessage as error:
+                    # pylint: disable=protected-access
+                    if error.error._data['code'] == 'LOG_NOT_FOUND':
+                        # pylint: enable=protected-access
+                        continue
+                    else:
+                        raise error
                 content_format = response.get("format", "txt")
                 if "type" in response:
                     log_func("Type: %s", response['type'])
