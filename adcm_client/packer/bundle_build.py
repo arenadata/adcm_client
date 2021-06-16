@@ -40,7 +40,7 @@ def _prepare_result_dir(workspace, tarball_path):
         return workspace
 
 
-def _pack(reponame, repopaths, tarpaths, spec: SpecFile, **kwargs):
+def _pack(reponame, repopaths, tarpaths, spec: SpecFile, timestamp_enabled, **kwargs):
     pack_timestamp = strftime("%Y%m%d%H%M%S", gmtime())
     for edition in spec.data['editions']:
         name = edition.get('name')
@@ -54,7 +54,8 @@ def _pack(reponame, repopaths, tarpaths, spec: SpecFile, **kwargs):
             reponame,
             name,
             kwargs['master_branches'],
-            pack_timestamp
+            pack_timestamp,
+            timestamp_enabled
         )
 
         stream = BytesIO()
@@ -78,7 +79,8 @@ def _clean_ws(path):
 def build(reponame=None, repopath=None, workspace='/tmp',  # pylint: disable=R0913
           tarball_path=None, loglevel='ERROR',
           clean_ws=True, master_branches=None,
-          release_version=False, edition=None, **args):
+          release_version=False, edition=None,
+          timestamp_enabled=False, **args):
     """Moves sources to workspace inside of temporary directory. \
     Some operations over sources cant be proceed concurent(for exemple in pytest with xdist \
     plugin) that why each thread need is own tmp dir with sources. \
@@ -93,6 +95,8 @@ def build(reponame=None, repopath=None, workspace='/tmp',  # pylint: disable=R09
     :type repopath: str
     :param reponame: arenadata repository name. Used for naming aftifact and tmp dir.
     :type reponame: str
+    :param timestamp_enabled: Add timestamp to version
+    :type timestamp_enabled: bool
     :param workspace: where build operations will be performed, defaults to /tmp.
     :type workspace: str, optional
     :param tarball_path: where to copy builded bundle, defaults to None.
@@ -129,6 +133,7 @@ def build(reponame=None, repopath=None, workspace='/tmp',  # pylint: disable=R09
             work_dir_paths,
             tarpath,
             spec,
+            timestamp_enabled,
             master_branches=master_branches))
 
     if clean_ws:

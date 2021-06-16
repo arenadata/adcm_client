@@ -67,7 +67,7 @@ def check_version(version):
             "-" in position %s' % version.index('-')).with_traceback(sys.exc_info()[2])
 
 
-def resolve_build_id(git_data, master_branches, timestamp):
+def resolve_build_id(git_data, master_branches, timestamp, timestamp_enabled):
     """resolves build id according to discovered git data
 
     :param git_data: discovered git data
@@ -86,12 +86,18 @@ def resolve_build_id(git_data, master_branches, timestamp):
                 build_id = '-1'
             else:
                 build_id = '-' + git_data['branch'].replace("-", "_").replace("/", "_")
+            if timestamp_enabled:
+                build_id = build_id + '_' + timestamp
     else:
         build_id = '-1'
+        # timestamp
+        if timestamp_enabled:
+            build_id = build_id + '_' + timestamp
+
     return build_id
 
 
-def add_build_id(path, reponame, edition, master_branches: list, timestamp):
+def add_build_id(path, reponame, edition, master_branches: list, timestamp, timestamp_enabled):
     def write_version(file, old_version, new_version):
         with io.open(file, 'r+') as config:
             for start_pos, line, end_pos in ReadFileWrapper(config):
@@ -123,7 +129,10 @@ def add_build_id(path, reponame, edition, master_branches: list, timestamp):
     build_id = ''
     if git_data:
         check_version(version)
-        build_id = resolve_build_id(git_data, master_branches, timestamp)
+        build_id = resolve_build_id(git_data, master_branches, timestamp, timestamp_enabled)
         write_version(bundle.file, version, version + build_id)
+    else:
+        if timestamp_enabled:
+            build_id = build_id + '_' + timestamp
 
     return str(reponame) + '_v' + str(version) + build_id + '_' + edition + '.tgz'
