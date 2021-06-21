@@ -1065,6 +1065,10 @@ class ADCMClient:
             raise ADCMApiError("Incorrect user/password. Unable to auth.")
         self._check_min_version()
 
+    def reread(self):
+        self._api.fetch()
+        self.adcm_version = self._api.adcm_version
+
     def _check_min_version(self):
         if rpm.compare_versions(self._MIN_VERSION, self._api.adcm_version) > -1:
             raise ADCMApiError(

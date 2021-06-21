@@ -106,21 +106,26 @@ class ADCMApiWrapper():
                 raise ADCMApiError(data['code'], data['desc'])
 
     def auth(self, username, password):
-        """Auth api client in ADCM and get schema"""
+        """Auth api client in ADCM and fetch schema"""
 
         result = requests.request(
             'POST', self.url + '/api/v1/token/',
             data={'username': username, 'password': password})
         token = result.json()
         self._check_for_error(token)
+        self.api_token = token['token']
         auth = coreapi.auth.TokenAuthentication(
             scheme='Token',
-            token=token['token']
+            token=self.api_token
         )
         self.client = coreapi.Client(auth=auth)
+        self.fetch()
+
+    def fetch(self):
+        """Fetch objects"""
+
         self.schema = self.client.get("{}{}schema/".format(self.url, self.api_url))
         self.objects = self._parse_schema(self.schema, is_allure=IS_ALLURE)
-        self.api_token = token['token']
         try:
             self.adcm_version = self.objects.info.list()['adcm_version']
         except (KeyError, AttributeError):
