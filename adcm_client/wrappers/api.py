@@ -113,11 +113,11 @@ class ADCMApiWrapper():
             data={'username': username, 'password': password})
         token = result.json()
         self._check_for_error(token)
+        self.api_token = token['token']
         auth = coreapi.auth.TokenAuthentication(
             scheme='Token',
-            token=token['token']
+            token=self.api_token
         )
-        self.api_token = token['token']
         self.client = coreapi.Client(auth=auth)
         self.fetch()
 
