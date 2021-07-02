@@ -1065,6 +1065,10 @@ class ADCMClient:
             raise ADCMApiError("Incorrect user/password. Unable to auth.")
         self._check_min_version()
 
+    def logout(self):
+        """API logout"""
+        self._api.objects.logout.create()
+
     def reread(self):
         self._api.fetch()
         self.adcm_version = self._api.adcm_version
