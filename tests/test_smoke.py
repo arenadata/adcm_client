@@ -203,7 +203,6 @@ def test_component(sdk_client_fs: ADCMClient):
     with allure.step('Check component'):
         component = service.component_list().pop()
         _assert_attrs(component)
-        _assert_attrs(component.prototype())
 
 
 @pytest.fixture()
