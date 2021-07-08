@@ -54,10 +54,11 @@ def test_bundle_test_list(sdk_client_fs: ADCMClient):
 def _assert_attrs(obj):
     # assert dict(obj._data).items() <= obj.__dict__.items()
     missed = []
-    for k in obj._data.keys():
-        if not hasattr(obj, k):
-            missed.append(k)
-    assert missed == []
+    with allure.step(f"Check attrs of {obj.__class__}"):
+        for k in obj._data.keys():
+            if not hasattr(obj, k):
+                missed.append(k)
+        assert missed == []
 
 
 def test_cluster_attrs(sdk_client_fs: ADCMClient):
@@ -185,12 +186,24 @@ def test_cluster_service(sdk_client_fs: ADCMClient):
     with allure.step('Create cluster with service'):
         bundle = sdk_client_fs.upload_from_fs(get_data_dir(__file__) + "/cluster_with_service")
         cluster = bundle.cluster_create(name="sample cluster")
-    with allure.step('Create service'):
+    with allure.step('Add service'):
         service = cluster.service_add(name="some_test_service")
     with allure.step('Check cluster service'):
         _assert_attrs(service)
         _assert_attrs(service.prototype())
         service.action(name="install").run().wait()
+
+
+def test_component(sdk_client_fs: ADCMClient):
+    with allure.step('Create cluster with service and components'):
+        bundle = sdk_client_fs.upload_from_fs(get_data_dir(__file__) + "/cluster_with_service")
+        cluster = bundle.cluster_create(name="sample cluster")
+    with allure.step('Add service'):
+        service = cluster.service_add(name="some_test_service")
+    with allure.step('Check component'):
+        component = service.component_list().pop()
+        _assert_attrs(component)
+        _assert_attrs(component.prototype())
 
 
 @pytest.fixture()
@@ -255,8 +268,8 @@ def test_cluster_upgrade(sdk_client_fs: ADCMClient):
             )
     with allure.step('Check upgrade list len=2'):
         assert len(cluster.upgrade_list()) == 2
-    with allure.step('Upgrade cluster'):
         _assert_attrs(cluster.upgrade(name="2"))
+    with allure.step('Upgrade cluster'):
         cluster.upgrade(name="2").do()
     with allure.step('Check upgrade list len=1'):
         assert len(cluster.upgrade_list()) == 1
