@@ -114,4 +114,4 @@ dmypy.json
 # venv
 /env/
 
-/adcm_client/packer/test_bundle_repo
+/src/adcm_client/packer/test_bundle_repo
