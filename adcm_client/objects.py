@@ -33,7 +33,7 @@ logger.setLevel(logging.DEBUG)
 
 
 class NoCredentionsProvided(Exception):
-    """There is no user/password provided. It was not passsed as init parameters
+    """There is no user/password provided. It was not passed as init parameters
     during ADCMClient initialization and was not passed as a parameter to auth()
     function
     """
@@ -47,6 +47,7 @@ class IncorrectPrototypeType(Exception):
 
 
 class Bundle(BaseAPIObject):
+    """The 'Bundle' object from the API"""
     IDNAME = "bundle_id"
     PATH = ["stack", "bundle"]
     FILTERS = ["name", "version"]
@@ -58,12 +59,15 @@ class Bundle(BaseAPIObject):
     edition = None
 
     def __repr__(self):
+        """Override base function to represent full information about bundle"""
         return f"<Bundle {self.name} {self.version} {self.edition} at {id(self)}>"
 
     def provider_prototype(self) -> "ProviderPrototype":
+        """Return ProviderPrototype objects"""
         return self._child_obj(ProviderPrototype)
 
     def provider_create(self, name, description=None) -> "Provider":
+        """Creates Provider object from the prototype"""
         try:
             prototype = self.provider_prototype()
         except ObjectNotFound:
@@ -71,6 +75,7 @@ class Bundle(BaseAPIObject):
         return prototype.provider_create(name, description)
 
     def provider_list(self, paging=None, **args) -> "ProviderList":
+        """Return an iterator over 'Provider' objects"""
         try:
             prototype = self.provider_prototype()
         except ObjectNotFound:
@@ -78,6 +83,7 @@ class Bundle(BaseAPIObject):
         return prototype.provider_list(paging=paging, **args)
 
     def provider(self, **args) -> "Provider":
+        """Return 'Provider' object from the 'ProviderPrototype' object"""
         try:
             prototype = self.provider_prototype()
         except ObjectNotFound:
@@ -85,12 +91,15 @@ class Bundle(BaseAPIObject):
         return prototype.provider(**args)
 
     def service_prototype(self, **args) -> "ServicePrototype":
+        """Return 'ServicePrototype' object"""
         return self._child_obj(ServicePrototype, **args)
 
     def cluster_prototype(self) -> "ClusterPrototype":
+        """Return 'ClusterPrototype' object"""
         return self._child_obj(ClusterPrototype)
 
     def cluster_create(self, name, description=None) -> "Cluster":
+        """Creates 'Cluster' object from the 'ClusterPrototype' object"""
         try:
             prototype = self.cluster_prototype()
         except ObjectNotFound:
@@ -98,6 +107,7 @@ class Bundle(BaseAPIObject):
         return prototype.cluster_create(name, description)
 
     def cluster_list(self, paging=None, **args) -> "ClusterList":
+        """Return an iterator over 'Cluster' objects"""
         try:
             prototype = self.cluster_prototype()
         except ObjectNotFound:
@@ -105,6 +115,7 @@ class Bundle(BaseAPIObject):
         return prototype.cluster_list(paging=paging, **args)
 
     def cluster(self, **args) -> "Cluster":
+        """Return 'Cluster' object from the 'ClusterPrototype' object"""
         try:
             prototype = self.cluster_prototype()
         except ObjectNotFound:
@@ -112,13 +123,16 @@ class Bundle(BaseAPIObject):
         return prototype.cluster(**args)
 
     def license(self):
+        """Return confirmation of license reading"""
         return self._subcall("license", "read")
 
     def license_accept(self):
+        """Return updating of license acceptance"""
         self._subcall("license", "accept", "update")
 
 
 class BundleList(BaseAPIListObject):
+    """List of 'Bundle' object from the API"""
     _ENTRY_CLASS = Bundle
 
 
@@ -126,6 +140,7 @@ class BundleList(BaseAPIListObject):
 #              P R O T O T Y P E
 ##################################################
 class Prototype(BaseAPIObject):
+    """The 'Prototype' object from the API"""
     PATH = ["stack", "prototype"]
     IDNAME = "prototype_id"
     FILTERS = ["name", "bundle_id"]
@@ -142,18 +157,22 @@ class Prototype(BaseAPIObject):
     url = None
 
     def bundle(self) -> "Bundle":
+        """Return 'Bundle' object"""
         return self._parent_obj(Bundle)
 
 
 class PrototypeList(BaseAPIListObject):
+    """List of 'Prototype' object from the API"""
     _ENTRY_CLASS = Prototype
 
 
 class ClusterPrototype(Prototype):
+    """The 'ClusterPrototype' object from the API"""
     PATH = ["stack", "cluster"]
     FILTERS = ["name", "bundle_id"]
 
     def cluster_create(self, name, description=None) -> "Cluster":
+        """Create 'Cluster' object with relevant parameters"""
         if self.type != 'cluster':
             raise IncorrectPrototypeType
         return new_cluster(
@@ -164,17 +183,21 @@ class ClusterPrototype(Prototype):
         )
 
     def cluster_list(self, paging=None, **args) -> "ClusterList":
+        """Return an iterator over 'Cluster' objects"""
         return self._child_obj(ClusterList, paging=paging, **args)
 
     def cluster(self, **args) -> "Cluster":
+        """Return 'Cluster' object"""
         return self._child_obj(Cluster, **args)
 
 
 class ClusterPrototypeList(BaseAPIListObject):
+    """List of 'ClysterPrototype' object from the API"""
     _ENTRY_CLASS = ClusterPrototype
 
 
 class ServicePrototype(Prototype):
+    """The 'ServicePrototype' object from the API"""
     PATH = ["stack", "service"]
     FILTERS = ["name", "bundle_id"]
 
@@ -188,18 +211,22 @@ class ServicePrototype(Prototype):
 
     @min_server_version('2020.09.25.13')
     def service_list(self, paging=None, **args) -> "ServiceList":
+        """Return an iterator over 'Service' objects and check its minimal version"""
         return self._child_obj(ServiceList, paging=paging, **args)
 
     @min_server_version('2020.09.25.13')
     def service(self, **args) -> "Service":
+        """Return 'Service' object and check its minimal version"""
         return self._child_obj(Service, **args)
 
 
 class ServicePrototypeList(BaseAPIListObject):
+    """List of 'ServicePrototype' object from the API"""
     _ENTRY_CLASS = ServicePrototype
 
 
 class ProviderPrototype(Prototype):
+    """The 'ProvidePrototype' object from the API"""
     PATH = ["stack", "provider"]
     FILTERS = ["name", "bundle_id"]
 
@@ -208,6 +235,7 @@ class ProviderPrototype(Prototype):
     upgrade = None
 
     def provider_create(self, name, description=None) -> "Provider":
+        """Create 'Provider' object with relevant parameters"""
         if self.type != 'provider':
             raise IncorrectPrototypeType
         return new_provider(
@@ -218,17 +246,21 @@ class ProviderPrototype(Prototype):
         )
 
     def provider_list(self, paging=None, **args) -> "ProviderList":
+        """Return an iterator over 'Provider' objects"""
         return self._child_obj(ProviderList, paging=paging, **args)
 
     def provider(self, **args) -> "Provider":
+        """Return 'Provider' object"""
         return self._child_obj(Provider, **args)
 
 
 class ProviderPrototypeList(BaseAPIListObject):
+    """List of 'ProvidePrototype' object from the API"""
     _ENTRY_CLASS = ProviderPrototype
 
 
 class HostPrototype(Prototype):
+    """The 'HostPrototype' object from the API"""
     PATH = ["stack", "host"]
     FILTERS = ["name", "bundle_id"]
 
@@ -237,13 +269,16 @@ class HostPrototype(Prototype):
     monitoring = None
 
     def host_list(self, paging=None, **args) -> "HostList":
+        """Return an iterator over 'Host' objects"""
         return self._child_obj(HostList, paging=paging, **args)
 
     def host(self, **args) -> "Host":
+        """Return 'Host' object"""
         return self._child_obj(Host, **args)
 
 
 class HostPrototypeList(BaseAPIListObject):
+    """List of 'HostPrototype' objects from the API"""
     _ENTRY_CLASS = HostPrototype
 
 
@@ -251,6 +286,10 @@ class HostPrototypeList(BaseAPIListObject):
 #           B A S E  O B J E C T
 ##################################################
 class _BaseObject(BaseAPIObject):
+    """
+    Base class 'BaseObject' for objects 'Provider',
+    'Cluster', 'Service', 'Component', 'Host' and 'ADCM'
+    """
     id = None
     url = None
     state = None
@@ -259,21 +298,26 @@ class _BaseObject(BaseAPIObject):
     button = None
 
     def prototype(self):
+        """Return Error if method or function hasn't implemented in derived class"""
         raise NotImplementedError
 
     def action(self, **args) -> "Action":
+        """Return 'Action' object"""
         return self._subobject(Action, **args)
 
     def action_list(self, paging=None, **args) -> "ActionList":
+        """Return an iterator over 'Action' objects"""
         return self._subobject(ActionList, paging=paging, **args)
 
     def action_run(self, **args) -> "Task":
+        """Run action which returns 'Task' object"""
         warnings.warn('Deprecated. The method accepts no arguments for the "action.run()" method.',
                       DeprecationWarning, stacklevel=2)
         action = self.action(**args)
         return action.run()
 
     def config(self, full=False):
+        """Check and return current config. If None - returns new one"""
         history_entry = self._subcall("config", "current", "list")
         if full:
             return history_entry
@@ -281,6 +325,7 @@ class _BaseObject(BaseAPIObject):
 
     @allure_step("Save config")
     def config_set(self, data):
+        """Save completed config in history"""
         # this check is incomplete, cases of presence of keys "config" and "attr" in config
         # are not considered
         allure_attach_json(data, name="Complete config")
@@ -295,9 +340,10 @@ class _BaseObject(BaseAPIObject):
 
     @allure_step("Save config")
     def config_set_diff(self, data):
+        """Save the difference between old and new config in history"""
 
         def update(d, u):
-            # if the old and new values are dictionaries, we try to update, otherwise we replace
+            """If the old and new values are dictionaries, we try to update, otherwise we replace"""
             for key, value in u.items():
                 if isinstance(value, abc.Mapping) and key in d and isinstance(d[key], abc.Mapping):
                     d[key] = update(d[key], value)
@@ -321,6 +367,7 @@ class _BaseObject(BaseAPIObject):
 #              P R O V I D E R
 ##################################################
 class Provider(_BaseObject):
+    """The 'Provider' object from the API"""
     IDNAME = "provider_id"
     PATH = ["provider"]
     FILTERS = ["name", "prototype_id"]
@@ -330,36 +377,46 @@ class Provider(_BaseObject):
     bundle_id = None
 
     def __repr__(self):
+        """Represent Provider name and id"""
         return f"<Provider {self.name} at {id(self)}>"
 
     def bundle(self) -> "Bundle":
+        """Return 'Bundle' object"""
         return self._parent_obj(Bundle)
 
     def host_create(self, fqdn) -> "Host":
+        """Create new 'Host' object includes information about FQDN"""
         return new_host(self._api, **self._merge(fqdn=fqdn))
 
     def host_list(self, paging=None, **args) -> "HostList":
+        """Return an iterator over 'Host' objects"""
         return self._child_obj(HostList, paging=paging, **args)
 
     def host(self, **args) -> "Host":
+        """Return 'Host' object"""
         return self._child_obj(Host, **args)
 
     def prototype(self) -> "ProviderPrototype":
+        """Return 'ProviderPrototype' object"""
         return self._parent_obj(ProviderPrototype)
 
     def upgrade(self, **args) -> "Upgrade":
+        """Return 'Upgrade' object"""
         return self._subobject(Upgrade, **args)
 
     def upgrade_list(self, paging=None, **args) -> "UpgradeList":
+        """Return an iterator over 'Upgrade' objects"""
         return self._subobject(UpgradeList, paging=paging, **args)
 
 
 class ProviderList(BaseAPIListObject):
+    """List of 'Provider' objects from the API"""
     _ENTRY_CLASS = Provider
 
 
 @allure_step('Create provider {name}')
 def new_provider(api, **args) -> "Provider":
+    """Create new 'Provider' object"""
     p = api.objects.provider.create(**strip_none_keys(args))
     return Provider(api, provider_id=p['id'])
 
@@ -368,6 +425,7 @@ def new_provider(api, **args) -> "Provider":
 #              C L U S T E R
 ##################################################
 class Cluster(_BaseObject):
+    """The 'Cluster' object from the API"""
     IDNAME = "cluster_id"
     PATH = ["cluster"]
     FILTERS = ["name", "prototype_id"]
@@ -379,12 +437,15 @@ class Cluster(_BaseObject):
     status = None
 
     def __repr__(self):
-        return f"<Cluster {self.name} form bundle - {self.bundle_id} at {id(self)}>"
+        """Represent Cluster id, name and info about parent bundle"""
+        return f"<Cluster {self.name} from bundle - {self.bundle_id} at {id(self)}>"
 
     def prototype(self) -> "ClusterPrototype":
+        """Return 'ClusterPrototype' object as its prototype"""
         return self._parent_obj(ClusterPrototype)
 
     def bind(self, target):
+        """Check target type. If it is cluster or service - create note about binding"""
         if isinstance(target, Cluster):
             self._subcall("bind", "create", export_cluster_id=target.cluster_id)
         elif isinstance(target, Service):
@@ -397,28 +458,35 @@ class Cluster(_BaseObject):
         return self._subcall("bind", "list")
 
     def bundle(self) -> "Bundle":
+        """Return 'Bundle' object from Cluster prototype"""
         proto = self.prototype()
         return proto.bundle()
 
     def button(self):
+        """Return Error if method or function hasn't implemented in derived class"""
         raise NotImplementedError
 
     def host(self, **args) -> "Host":
+        """Return 'Host' object"""
         return self._child_obj(Host, **args)
 
     def host_list(self, paging=None, **args) -> "HostList":
+        """Return an iterator over 'Host' objects"""
         return self._child_obj(HostList, paging=paging, **args)
 
     def host_add(self, host: "Host") -> "Host":
+        """Create and add new 'Host' object to Cluster"""
         with allure_step(f"Add host {host.fqdn} to cluster {self.name}"):
             data = self._subcall("host", "create", host_id=host.id)
             return Host(self._api, id=data['id'])
 
     def host_delete(self, host: "Host"):
+        """Delete 'Host' from Cluster"""
         with allure_step(f"Remove host {host.fqdn} from cluster {self.name}"):
             self._subcall("host", "delete", host_id=host.id)
 
-    def _service_old(self, **args):
+    def _service_old(self, **args) -> "Service":
+        """Return 'Service' object"""
         return self._subobject(Service, **args)
 
     # !!! If you change the version, do not forget to change it in the __new__ method
@@ -427,7 +495,7 @@ class Cluster(_BaseObject):
     def service(self, **args) -> "Service":
         return self._child_obj(Service, **args)
 
-    def _service_list_old(self, paging=None, **args):
+    def _service_list_old(self, paging=None, **args) -> "ServiceList":
         return self._subobject(ServiceList, paging=paging, **args)
 
     # !!! If you change the version, do not forget to change it in the __new__ method
@@ -436,7 +504,7 @@ class Cluster(_BaseObject):
     def service_list(self, paging=None, **args) -> "ServiceList":
         return self._child_obj(ServiceList, paging=paging, **args)
 
-    def _service_add_old(self, **args):
+    def _service_add_old(self, **args) -> "Service":
         proto = self.bundle().service_prototype(**args)
         with allure_step(f"Add service {proto.name} to cluster {self.name}"):
             data = self._subcall("service", "create", prototype_id=proto.id)
@@ -488,10 +556,12 @@ class Cluster(_BaseObject):
         return self._subobject(Upgrade, **args)
 
     def upgrade_list(self, paging=None, **args) -> "UpgradeList":
+        """Return an iterator over 'Upgrade' objects"""
         return self._subobject(UpgradeList, paging=paging, **args)
 
 
 class ClusterList(BaseAPIListObject):
+    """List of 'HostPrototype' objects from the API"""
     _ENTRY_CLASS = Cluster
 
 
@@ -505,6 +575,7 @@ def new_cluster(api: ADCMApiWrapper, **args) -> "Cluster":
 #          U P G R A D E
 ##################################################
 class Upgrade(BaseAPIObject):
+    """The 'Upgrade' object from the API"""
     IDNAME = "upgrade_id"
     PATH = None
     SUBPATH = ["upgrade"]
@@ -529,6 +600,7 @@ class Upgrade(BaseAPIObject):
 
 
 class UpgradeList(BaseAPIListObject):
+    """List of 'Upgrade' objects from the API"""
     SUBPATH = ["upgrade"]
     _ENTRY_CLASS = Upgrade
 
@@ -537,6 +609,7 @@ class UpgradeList(BaseAPIListObject):
 #           S E R V I C E S
 ##################################################
 class Service(_BaseObject):
+    """The 'Service' object from the API"""
     IDNAME = "service_id"
     PATH = ['service']
     SUBPATH = ['service']
@@ -602,6 +675,7 @@ class Service(_BaseObject):
         return self._child_obj(Component, **args)
 
     def _component_list_old(self, paging=None, **args) -> "ComponentList":
+        """Return an iterator over 'Component' objects"""
         return self._subobject(ComponentList, paging=paging, **args)
 
     # Set a real version when components feature will be merged into develop
@@ -614,6 +688,7 @@ class Service(_BaseObject):
 
 
 class ServiceList(BaseAPIListObject):
+    """List of 'Service' objects from the API"""
     PATH = ['service']
     SUBPATH = ['service']
     _ENTRY_CLASS = Service
@@ -636,6 +711,7 @@ class ServiceList(BaseAPIListObject):
 #           C O M P O N E N T S
 ##################################################
 class Component(_BaseObject):
+    """The 'Component' object from the API"""
     IDNAME = "component_id"
     PATH = ["component"]
     SUBPATH = ["component"]
@@ -685,6 +761,7 @@ class Component(_BaseObject):
 
 
 class ComponentList(BaseAPIListObject):
+    """List of 'Component' objects from the API"""
     PATH = ["component"]
     SUBPATH = ["component"]
     _ENTRY_CLASS = Component
@@ -707,6 +784,7 @@ class ComponentList(BaseAPIListObject):
 #              H O S T
 ##################################################
 class Host(_BaseObject):
+    """The 'Host' object from the API"""
     IDNAME = "host_id"
     PATH = ["host"]
     FILTERS = ["fqdn", "prototype_id", "provider_id", "cluster_id"]
@@ -737,6 +815,7 @@ class Host(_BaseObject):
 
 
 class HostList(BaseAPIListObject):
+    """List of 'Host' objects from the API"""
     _ENTRY_CLASS = Host
 
 
@@ -750,6 +829,7 @@ def new_host(api, **args) -> "Host":
 #              A C T I O N
 ##################################################
 class Action(BaseAPIObject):
+    """The 'Action' object from the API"""
     IDNAME = "action_id"
     PATH = None
     SUBPATH = ["action"]
@@ -839,6 +919,7 @@ class Action(BaseAPIObject):
 
 
 class ActionList(BaseAPIListObject):
+    """List of 'Action' objects from the API"""
     SUBPATH = ["action"]
     _ENTRY_CLASS = Action
 
@@ -860,6 +941,7 @@ TASK_PARENT = {
 
 
 class Task(BaseAPIObject):
+    """The 'Task' object from the API"""
     IDNAME = "task_id"
     PATH = ["task"]
     FILTERS = ['action_id', 'pid', 'status', 'start_date', 'finish_date']
@@ -891,6 +973,7 @@ class Task(BaseAPIObject):
         return Job(self._api, path_args=dict(task_id=self.id), **args)
 
     def job_list(self, paging=None, **args) -> "JobList":
+        """Return an iterator over 'Job' objects"""
         return JobList(self._api, paging=paging, path_args=dict(task_id=self.id), **args)
 
     @allure_step("Wait for task end")
@@ -945,6 +1028,7 @@ class Task(BaseAPIObject):
 
 
 class TaskList(BaseAPIListObject):
+    """List of 'Task' objects from the API"""
     _ENTRY_CLASS = Task
 
 
@@ -952,6 +1036,7 @@ class TaskList(BaseAPIListObject):
 #              L O G
 ##################################################
 class Log(BaseAPIObject):
+    """The 'Log' object from the API"""
     IDNAME = 'log_id'
     PATH = ['job', 'log']
     SUBPATH = ['log']
@@ -963,6 +1048,7 @@ class Log(BaseAPIObject):
 
 
 class LogList(BaseAPIListObject):
+    """List of 'Log' objects from the API"""
     _ENTRY_CLASS = Log
     SUBPATH = ['log']
 
@@ -971,6 +1057,7 @@ class LogList(BaseAPIListObject):
 #              J O B
 ##################################################
 class Job(BaseAPIObject):
+    """The 'Job' object from the API"""
     IDNAME = "job_id"
     PATH = ["job"]
     FILTERS = ['action_id', 'task_id', 'pid', 'status', 'start_date', 'finish_date']
@@ -1006,10 +1093,12 @@ class Job(BaseAPIObject):
         return self._subobject(Log, **kwargs)
 
     def log_list(self, paging=None, **kwargs) -> "LogList":
+        """Return an iterator over 'Log' objects"""
         return self._subobject(LogList, paging=paging, **kwargs)
 
 
 class JobList(BaseAPIListObject):
+    """List of 'Job' objects from the API"""
     _ENTRY_CLASS = Job
 
 
@@ -1058,6 +1147,7 @@ class ADCMClient:
 
     @allure_step("Login to ADCM API with user={user} and password={password}")
     def auth(self, user=None, password=None):
+        """Login to ADCM API with user={user} and password={password}"""
         if user is None or password is None:
             raise NoCredentionsProvided
         self._api.auth(user, password)
@@ -1070,6 +1160,7 @@ class ADCMClient:
         self.adcm_version = self._api.adcm_version
 
     def _check_min_version(self):
+        """Check client version and provide information about newer version"""
         if rpm.compare_versions(self._MIN_VERSION, self._api.adcm_version) > -1:
             raise ADCMApiError(
                 "The client supports ADCM versions newer than '{}'".format(self._MIN_VERSION)
@@ -1087,75 +1178,98 @@ class ADCMClient:
             self.adcm().config_set_diff({"global": {"adcm_url": self.url}})
 
     def bundle(self, **args) -> Bundle:
+        """Return 'Bundle' object"""
         return Bundle(self._api, **args)
 
     def bundle_list(self, paging=None, **args) -> BundleList:
+        """Return an iterator over 'Bundle' objects"""
         return BundleList(self._api, paging=paging, **args)
 
     def cluster(self, **args) -> Cluster:
+        """Return 'Cluster' object"""
         return Cluster(self._api, **args)
 
     def cluster_list(self, paging=None, **args) -> ClusterList:
+        """Return an iterator over 'Cluster' objects"""
         return ClusterList(self._api, paging=paging, **args)
 
     def cluster_prototype(self, **args) -> ClusterPrototype:
+        """Return 'ClusterPrototype' object"""
         return ClusterPrototype(self._api, **args)
 
     def cluster_prototype_list(self, paging=None, **args) -> ClusterPrototypeList:
+        """Return an iterator over 'ClusterPrototype' objects"""
         return ClusterPrototypeList(self._api, paging=paging, **args)
 
     def host(self, **args) -> Host:
+        """Return 'Host' object"""
         return Host(self._api, **args)
 
     def host_list(self, paging=None, **args) -> HostList:
+        """Return an iterator over 'Host' objects"""
         return HostList(self._api, paging=paging, **args)
 
     def host_prototype(self, **args) -> HostPrototype:
+        """Return 'HostPrototype' object"""
         return HostPrototype(self._api, **args)
 
     def host_prototype_list(self, paging=None, **args) -> HostPrototypeList:
+        """Return an iterator over 'HostPrototype' objects"""
         return HostPrototypeList(self._api, paging=paging, **args)
 
     def job(self, **args) -> Job:
+        """Return 'Job' object"""
         return Job(self._api, **args)
 
     def job_list(self, paging=None, **args) -> JobList:
+        """Return an iterator over 'Job' objects"""
         return JobList(self._api, paging=paging, **args)
 
     def prototype(self, **args) -> Prototype:
+        """Return 'Prototype' object"""
         return Prototype(self._api, **args)
 
     def prototype_list(self, paging=None, **args) -> PrototypeList:
+        """Return an iterator over 'Prototype' objects"""
         return PrototypeList(self._api, paging=paging, **args)
 
     def provider(self, **args) -> Provider:
+        """Return 'Provider' object"""
         return Provider(self._api, **args)
 
     def provider_list(self, paging=None, **args) -> ProviderList:
+        """Return an iterator over 'Provider' objects"""
         return ProviderList(self._api, paging=paging, **args)
 
     def provider_prototype(self, **args) -> ProviderPrototype:
+        """Return 'ProviderPrototype' object"""
         return ProviderPrototype(self._api, **args)
 
     def provider_prototype_list(self, paging=None, **args) -> ProviderPrototypeList:
+        """Return an iterator over 'ProviderPrototype' objects"""
         return ProviderPrototypeList(self._api, paging=paging, **args)
 
     def service(self, **args) -> Service:
+        """Return 'Service' object"""
         return Service(self._api, **args)
 
     def service_prototype(self, **args) -> ServicePrototype:
+        """Return 'ServicePrototype' object"""
         return ServicePrototype(self._api, **args)
 
     def service_prototype_list(self, paging=None, **args) -> ServicePrototypeList:
+        """Return an iterator over 'ServicePrototype' objects"""
         return ServicePrototypeList(self._api, paging=paging, **args)
 
     def _upload(self, bundle_stream) -> Bundle:
+        """Upload and create Bundle from file={bundle_stream}"""
         self._api.objects.stack.upload.create(file=bundle_stream)
         data = self._api.objects.stack.load.create(bundle_file="file")
         return self.bundle(bundle_id=data['id'])
 
     @allure_step('Upload bundle from {dirname}')
     def upload_from_fs(self, dirname, **args) -> Bundle:
+        """Upload single bundle from {dirname}"""
         streams = stream.file(dirname, **args)
         if len(streams) > 1:
             raise TooManyArguments('upload_bundle_from_fs is not capable with building multiple \
@@ -1164,9 +1278,13 @@ class ADCMClient:
 
     @allure_step('Upload bundles from {dirname}')
     def upload_from_fs_all(self, dirname, **args) -> BundleList:
+        """
+        Upload multiple bundles from {dirname}
+
+        Create empty bundle list by filtering on wittingly nonexisting field
+        and value.
+        """
         streams = stream.file(dirname, **args)
-        # Create empty bundle list by filtering on wittingly nonexisting field
-        # and value.
         result = BundleList(self._api, empty_bundlelist='not_existing_bundle')
         for st in streams:
             result.append(self._upload(st))
@@ -1174,9 +1292,11 @@ class ADCMClient:
 
     @allure_step('Upload bundle from {url}')
     def upload_from_url(self, url) -> Bundle:
+        """Upload bundle from {url}"""
         return self._upload(stream.web(url))
 
     def bundle_delete(self, **args):
+        """Deleting bundle object"""
         bundle = self.bundle(**args)
         with allure_step(f"Delete bundle {bundle.name}"):
             self._api.objects.stack.bundle.delete(bundle_id=bundle.bundle_id)
