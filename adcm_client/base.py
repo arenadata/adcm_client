@@ -182,7 +182,7 @@ class Paging:
         except PagingEnds:
             raise StopIteration from None
 
-    def __next_element(self):  # pylint: disable=W0238
+    def __next_element(self):  # pylint: disable=unused-private-member
         return next(self._current_iterator)
 
     def __next__(self):

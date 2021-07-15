@@ -21,7 +21,7 @@ def file(path, **args):
         return list(build(repopath=path, **args).values())
     else:
         stream = io.BytesIO()
-        stream.write(io.open(path, 'rb').read())  # pylint: disable=R1732
+        stream.write(io.open(path, 'rb').read())  # pylint: disable=consider-using-with
         stream.seek(0)
         return [stream]
 
