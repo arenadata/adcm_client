@@ -9,6 +9,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# pylint: disable=consider-using-with
 import fnmatch
 import glob
 import io
@@ -107,7 +108,7 @@ class ConfigData:
                 pass
         return value
 
-    def _from_tar(self, key, **kwargs):  # pylint: disable=consider-using-with
+    def _from_tar(self, key, **kwargs):
         tar = tarfile.open(self.tar) if isinstance(self.tar, str)\
             else tarfile.open(fileobj=self.tar)
 
