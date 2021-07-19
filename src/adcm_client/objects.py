@@ -240,6 +240,8 @@ class HostPrototype(Prototype):
     display_name = None
     required = None
     monitoring = None
+    path = None
+    bundle_edition = None
 
     def host_list(self, paging=None, **args) -> "HostList":
         return self._child_obj(HostList, paging=paging, **args)
