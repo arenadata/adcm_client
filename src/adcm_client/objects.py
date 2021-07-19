@@ -208,6 +208,9 @@ class ProviderPrototype(Prototype):
     display_name = None
     required = None
     upgrade = None
+    path = None
+    bundle_edition = None
+    license = None
 
     def provider_create(self, name, description=None) -> "Provider":
         if self.type != 'provider':
@@ -518,7 +521,7 @@ class Upgrade(BaseAPIObject):
     id = None
     upgrade_id = None
     bundle_id = None
-    licence_url = None
+    license_url = None
     url = None
     name = None
     description = None
