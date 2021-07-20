@@ -185,6 +185,8 @@ class ServicePrototype(Prototype):
     exports = None
     imports = None
     monitoring = None
+    path = None
+    bundle_edition = None
 
     @min_server_version('2020.09.25.13')
     def service_list(self, paging=None, **args) -> "ServiceList":
@@ -206,6 +208,9 @@ class ProviderPrototype(Prototype):
     display_name = None
     required = None
     upgrade = None
+    path = None
+    bundle_edition = None
+    license = None
 
     def provider_create(self, name, description=None) -> "Provider":
         if self.type != 'provider':
@@ -235,6 +240,8 @@ class HostPrototype(Prototype):
     display_name = None
     required = None
     monitoring = None
+    path = None
+    bundle_edition = None
 
     def host_list(self, paging=None, **args) -> "HostList":
         return self._child_obj(HostList, paging=paging, **args)
@@ -325,6 +332,8 @@ class Provider(_BaseObject):
     PATH = ["provider"]
     FILTERS = ["name", "prototype_id"]
     provider_id = None
+    edition = None
+    license = None
     name = None
     description = None
     bundle_id = None
@@ -377,6 +386,8 @@ class Cluster(_BaseObject):
     bundle_id = None
     serviceprototype = None
     status = None
+    edition = None
+    license = None
 
     def __repr__(self):
         return f"<Cluster {self.name} form bundle - {self.bundle_id} at {id(self)}>"
@@ -511,6 +522,8 @@ class Upgrade(BaseAPIObject):
 
     id = None
     upgrade_id = None
+    bundle_id = None
+    license_url = None
     url = None
     name = None
     description = None
@@ -774,6 +787,10 @@ class Action(BaseAPIObject):
     url = None
     subs = None
     config = None
+    ui_options = None
+    allow_to_terminate = None
+    partial_execution = None
+    host_action = None
 
     def __repr__(self):
         return f"<Action {self.name} at {id(self)}>"
