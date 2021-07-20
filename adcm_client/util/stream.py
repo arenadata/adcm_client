@@ -21,9 +21,10 @@ def file(path, **args):
         return list(build(repopath=path, **args).values())
     else:
         stream = io.BytesIO()
-        stream.write(io.open(path, 'rb').read())  # pylint: disable=consider-using-with
-        stream.seek(0)
-        return [stream]
+        with io.open(path, 'rb').read() as p:
+            stream.write(p)
+            stream.seek(0)
+            return [stream]
 
 
 def web(url, timeout=600):

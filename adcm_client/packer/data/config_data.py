@@ -109,15 +109,19 @@ class ConfigData:
         return value
 
     def _from_tar(self, key, **kwargs):
-        tar = tarfile.open(self.tar) if isinstance(self.tar, str)\
-            else tarfile.open(fileobj=self.tar)
-
         def conf_files(members):
             for tarinfo in members:
                 if fnmatch.fnmatch(tarinfo.name, '*config.y*ml'):
                     yield tarinfo
 
-        confs = conf_files(tar)
+        if isinstance(self.tar, str):
+            buff_value = self.tar
+        else:
+            buff_value = eval('fileobj=self.tar')
+
+        with tarfile.open(buff_value) as tar:
+            confs = conf_files(tar)
+
         value = None
 
         for conf in confs:
