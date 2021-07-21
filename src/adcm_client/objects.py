@@ -1086,6 +1086,10 @@ class ADCMClient:
         self._api.fetch()
         self.adcm_version = self._api.adcm_version
 
+    def reset(self, api=None, url=None, user=None, password=None):
+        """Re-init object. Useful in tests"""
+        self.__init__(api=api, url=url, user=user, password=password)
+
     def _check_min_version(self):
         if rpm.compare_versions(self._MIN_VERSION, self._api.adcm_version) > -1:
             raise ADCMApiError(
