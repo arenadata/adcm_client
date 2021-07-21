@@ -114,9 +114,9 @@ class ConfigData:
                     yield tarinfo
 
         if isinstance(self.tar, str):
-            conditions = {'name': 'self.tar'}
+            conditions = {'name': self.tar}
         else:
-            conditions = {'fileobj': 'self.tar'}
+            conditions = {'fileobj': self.tar}
 
         with tarfile.open(**conditions) as tar:
             confs = conf_files(tar)
