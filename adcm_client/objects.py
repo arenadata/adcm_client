@@ -62,7 +62,7 @@ class Bundle(BaseAPIObject):
         return f"<Bundle {self.name} {self.version} {self.edition} at {id(self)}>"
 
     def provider_prototype(self) -> "ProviderPrototype":
-        """Return ProviderPrototype objects"""
+        """Return ProviderPrototype object"""
         return self._child_obj(ProviderPrototype)
 
     def provider_create(self, name, description=None) -> "Provider":
