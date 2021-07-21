@@ -115,11 +115,11 @@ class ConfigData:
                     yield tarinfo
 
         if isinstance(self.tar, str):
-            buff_value = self.tar
+            kwargs = {'name': 'self.tar'}
         else:
-            buff_value = eval('fileobj=self.tar')
+            kwargs = {'fileobj': 'self.tar'}
 
-        with tarfile.open(buff_value) as tar:
+        with tarfile.open(**kwargs) as tar:
             confs = conf_files(tar)
 
         value = None

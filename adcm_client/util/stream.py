@@ -20,9 +20,10 @@ def file(path, **args):
     if os.path.isdir(path):
         return list(build(repopath=path, **args).values())
     else:
-        stream = io.BytesIO()
-        with io.open(path, 'rb').read() as p:
-            stream.write(p)
+        with io.open(path, 'rb') as p:
+            file = p.read()
+            stream = io.BytesIO()
+            stream.write(file)
             stream.seek(0)
             return [stream]
 
