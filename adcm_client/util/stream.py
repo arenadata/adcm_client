@@ -21,11 +21,11 @@ def file(path, **args):
         return list(build(repopath=path, **args).values())
     else:
         with io.open(path, 'rb') as p:
-            file = p.read()
-            stream = io.BytesIO()
-            stream.write(file)
-            stream.seek(0)
-            return [stream]
+            open_file = p.read()
+        stream = io.BytesIO()
+        stream.write(open_file)
+        stream.seek(0)
+        return [stream]
 
 
 def web(url, timeout=600):

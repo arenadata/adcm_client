@@ -9,7 +9,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# pylint: disable=consider-using-with
 import fnmatch
 import glob
 import io
@@ -115,11 +114,11 @@ class ConfigData:
                     yield tarinfo
 
         if isinstance(self.tar, str):
-            kwargs = {'name': 'self.tar'}
+            conditions = {'name': 'self.tar'}
         else:
-            kwargs = {'fileobj': 'self.tar'}
+            conditions = {'fileobj': 'self.tar'}
 
-        with tarfile.open(**kwargs) as tar:
+        with tarfile.open(**conditions) as tar:
             confs = conf_files(tar)
 
         value = None
