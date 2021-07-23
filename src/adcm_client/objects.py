@@ -368,13 +368,13 @@ class _BaseObject(BaseAPIObject):
         return self.prototype().config
 
     @min_server_version('2021.07.16.09')
-    def agenda(self):
-        agendas = AgendaList(self._api)
+    def concern(self):
+        concern_list = ConcernList(self._api)
         data = []
-        for agenda in self._data['agenda']:
-            data.append(Agenda(api=self._api, id=agenda['id']))
-        agendas.data = data
-        return agendas
+        for concern in self._data['concern']:
+            data.append(Concern(api=self._api, id=concern['id']))
+        concern_list.data = data
+        return concern_list
 
 
 ##################################################
@@ -1183,15 +1183,15 @@ class ADCM(_BaseObject):
         return Prototype(self._api, id=self.prototype_id)
 
 
-class Agenda(BaseAPIObject):
-    IDNAME = 'agenda_id'
-    PATH = ['agenda']
+class Concern(BaseAPIObject):
+    IDNAME = 'concern_id'
+    PATH = ['concern']
     id = None
     name = None
     reason = None
     url = None
 
-    def attendees(self):
+    def related_objects(self):
         objects = {
             'cluster': Cluster,
             'service': Service,
@@ -1201,15 +1201,15 @@ class Agenda(BaseAPIObject):
             'adcm': ADCM,
         }
         data = []
-        for attendee in self._data['attendees']:
-            object_type = attendee['type']
-            object_id = attendee['id']
+        for related_object in self._data['related_objects']:
+            object_type = related_object['type']
+            object_id = related_object['id']
             data.append(objects[object_type](self._api, id=object_id))
         return data
 
 
-class AgendaList(BaseAPIListObject):
-    _ENTRY_CLASS = Agenda
+class ConcernList(BaseAPIListObject):
+    _ENTRY_CLASS = Concern
 
 
 ##################################################
