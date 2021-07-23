@@ -9,3 +9,33 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+---
+
+- type: cluster
+  name: test_name_cluster
+  version: 1.4
+  description: "That is description"
+
+  config:
+    - name: xxx
+      type: group
+      activatable: true
+      active: true
+      subs:
+        - name: yyy
+          type: string
+          default: "cool-value"
+
+
+  actions:
+    install:
+      type: job
+      script_type: ansible
+      script: do.yaml
+      states:
+        available: any
+
+
+- type: service
+  name: some_test_service
+  version: 1.0
