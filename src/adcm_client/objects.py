@@ -367,6 +367,15 @@ class _BaseObject(BaseAPIObject):
     def config_prototype(self):
         return self.prototype().config
 
+    @min_server_version('2021.07.16.09')
+    def agenda(self):
+        agendas = AgendaList(self._api)
+        data = []
+        for agenda in self._data['agenda']:
+            data.append(Agenda(api=self._api, id=agenda['id']))
+        agendas.data = data
+        return agendas
+
 
 ##################################################
 #              P R O V I D E R
@@ -1172,6 +1181,35 @@ class ADCM(_BaseObject):
     def prototype(self) -> "Prototype":
         """Return 'Prototype' object with id={prototype_id}"""
         return Prototype(self._api, id=self.prototype_id)
+
+
+class Agenda(BaseAPIObject):
+    IDNAME = 'agenda_id'
+    PATH = ['agenda']
+    id = None
+    name = None
+    reason = None
+    url = None
+
+    def attendees(self):
+        objects = {
+            'cluster': Cluster,
+            'service': Service,
+            'component': Component,
+            'provider': Provider,
+            'host': Host,
+            'adcm': ADCM,
+        }
+        data = []
+        for attendee in self._data['attendees']:
+            object_type = attendee['type']
+            object_id = attendee['id']
+            data.append(objects[object_type](self._api, id=object_id))
+        return data
+
+
+class AgendaList(BaseAPIListObject):
+    _ENTRY_CLASS = Agenda
 
 
 ##################################################
