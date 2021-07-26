@@ -121,16 +121,16 @@ class ConfigData:
         with tarfile.open(**conditions) as tar:
             confs = conf_files(tar)
 
-        value = None
+            value = None
 
-        for conf in confs:
-            try:
-                self.file = conf
-                self.data = yaml.safe_load(tar.extractfile(conf).read().decode('utf-8'))
-                value = self._from_data(key)
-                break
-            except IndexError:
-                pass
+            for conf in confs:
+                try:
+                    self.file = conf
+                    self.data = yaml.safe_load(tar.extractfile(conf).read().decode('utf-8'))
+                    value = self._from_data(key)
+                    break
+                except IndexError:
+                    pass
         return value
 
     def _from_url(self, key, **kwargs):
