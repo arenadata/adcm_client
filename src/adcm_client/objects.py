@@ -14,7 +14,9 @@
 import logging
 import warnings
 from collections import abc
+from datetime import datetime
 from json import dumps
+from typing import List, Union
 
 from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
@@ -51,12 +53,12 @@ class Bundle(BaseAPIObject):
     IDNAME = "bundle_id"
     PATH = ["stack", "bundle"]
     FILTERS = ["name", "version"]
-    id = None
-    bundle_id = None
-    name = None
-    description = None
-    version = None
-    edition = None
+    id: int = None
+    bundle_id: int = None
+    name: str = None
+    description: str = None
+    version: str = None
+    edition: str = None
 
     def __repr__(self):
         return f"<Bundle {self.name} {self.version} {self.edition} at {id(self)}>"
@@ -144,16 +146,16 @@ class Prototype(BaseAPIObject):
     IDNAME = "prototype_id"
     FILTERS = ["name", "bundle_id"]
 
-    id = None
-    prototype_id = None
-    name = None
-    type = None
-    description = None
-    version = None
-    bundle_id = None
-    config = None
-    actions = None
-    url = None
+    id: int = None
+    prototype_id: int = None
+    name: str = None
+    type: str = None
+    description: str = None
+    version: str = None
+    bundle_id: int = None
+    config: dict = None
+    actions = None  # Need help with its type
+    url: str = None
 
     def bundle(self) -> "Bundle":
         """Return 'Bundle' object"""
@@ -200,15 +202,15 @@ class ServicePrototype(Prototype):
     PATH = ["stack", "service"]
     FILTERS = ["name", "bundle_id"]
 
-    shared = None
-    display_name = None
-    required = None
-    components = None
-    exports = None
-    imports = None
-    monitoring = None
-    path = None
-    bundle_edition = None
+    shared: bool = None
+    display_name: str = None
+    required: bool = None
+    components = None  # Need help with its type
+    exports = None  # Need help with its type
+    imports = None  # Need help with its type
+    monitoring: str = None
+    path: str = None
+    bundle_edition: str = None
 
     @min_server_version('2020.09.25.13')
     def service_list(self, paging=None, **args) -> "ServiceList":
@@ -231,12 +233,12 @@ class ProviderPrototype(Prototype):
     PATH = ["stack", "provider"]
     FILTERS = ["name", "bundle_id"]
 
-    display_name = None
-    required = None
-    upgrade = None
-    path = None
-    bundle_edition = None
-    license = None
+    display_name: str = None
+    required: bool = None
+    upgrade = None  # Need help with its type
+    path: str = None
+    bundle_edition: str = None
+    license: str = None
 
     def provider_create(self, name, description=None) -> "Provider":
         """Create 'Provider' object with relevant parameters"""
@@ -268,11 +270,11 @@ class HostPrototype(Prototype):
     PATH = ["stack", "host"]
     FILTERS = ["name", "bundle_id"]
 
-    display_name = None
-    required = None
-    monitoring = None
-    path = None
-    bundle_edition = None
+    display_name: str = None
+    required: bool = None
+    monitoring: str = None
+    path: str = None
+    bundle_edition: str = None
 
     def host_list(self, paging=None, **args) -> "HostList":
         """Return list of 'Host' objects"""
@@ -295,12 +297,12 @@ class _BaseObject(BaseAPIObject):
     """
     Base class 'BaseObject' for adcm_client objects
     """
-    id = None
-    url = None
-    state = None
-    prototype_id = None
-    issue = None
-    button = None
+    id: int = None
+    url: str = None
+    state: str = None
+    prototype_id: int = None
+    issue: dict = None
+    button: str = None
 
     def prototype(self):
         """Return Error if method or function hasn't implemented in derived class"""
@@ -376,12 +378,12 @@ class Provider(_BaseObject):
     IDNAME = "provider_id"
     PATH = ["provider"]
     FILTERS = ["name", "prototype_id"]
-    provider_id = None
-    edition = None
-    license = None
-    name = None
-    description = None
-    bundle_id = None
+    provider_id: int = None
+    edition: str = None
+    license: str = None
+    name: str = None
+    description: str = None
+    bundle_id: int = None
 
     def __repr__(self):
         return f"<Provider {self.name} at {id(self)}>"
@@ -435,14 +437,14 @@ class Cluster(_BaseObject):
     IDNAME = "cluster_id"
     PATH = ["cluster"]
     FILTERS = ["name", "prototype_id"]
-    cluster_id = None
-    name = None
-    description = None
-    bundle_id = None
-    serviceprototype = None
-    status = None
-    edition = None
-    license = None
+    cluster_id: int = None
+    name: str = None
+    description: str = None
+    bundle_id: int = None
+    serviceprototype = None  # Need help with its type
+    status: str = None
+    edition: str = None
+    license: str = None
 
     def __repr__(self):
         return f"<Cluster {self.name} from bundle - {self.bundle_id} at {id(self)}>"
@@ -600,21 +602,21 @@ class Upgrade(BaseAPIObject):
     PATH = None
     SUBPATH = ["upgrade"]
 
-    id = None
-    upgrade_id = None
-    bundle_id = None
-    license_url = None
-    url = None
-    name = None
-    description = None
-    min_version = None
-    max_version = None
-    min_strict = None
-    max_strict = None
-    upgradable = None
-    state_available = None
-    state_on_success = None
-    from_edition = None
+    id: int = None
+    upgrade_id: int = None
+    bundle_id: int = None
+    license_url: str = None
+    url: str = None
+    name: str = None
+    description: str = None
+    min_version: str = None
+    max_version: str = None
+    min_strict: bool = None
+    max_strict: bool = None
+    upgradable: bool = None
+    state_available: list = None
+    state_on_success: str = None
+    from_edition: List[str] = None
 
     def do(self, **args):
         """Do upgrade and provide do/create endpoint"""
@@ -638,16 +640,16 @@ class Service(_BaseObject):
     SUBPATH = ['service']
     FILTERS = ['cluster_id']
 
-    id = None
-    service_id = None
-    bundle_id = None
-    name = None
-    description = None
-    display_name = None
-    cluster_id = None
-    status = None
-    button = None
-    monitoring = None
+    id: int = None
+    service_id: int = None
+    bundle_id: int = None
+    name: str = None
+    description: str = None
+    display_name: str = None
+    cluster_id: int = None
+    status: str = None
+    button: str = None
+    monitoring: str = None
 
     def __new__(cls, *args, **kwargs):
         """
@@ -753,21 +755,21 @@ class Component(_BaseObject):
     PATH = ["component"]
     SUBPATH = ["component"]
 
-    id = None
-    component_id = None
-    cluster_id = None
-    _service_id = None
-    name = None
-    display_name = None
-    description = None
-    constraint = None
-    params = None
-    prototype_id = None
-    requires = None
-    bound_to = None
-    monitoring = None
-    status = None
-    state = None
+    id: int = None
+    component_id: int = None
+    cluster_id: int = None
+    _service_id: int = None
+    name: str = None
+    display_name: str = None
+    description: str = None
+    constraint: List[Union[int, str]] = None
+    params: dict = None
+    prototype_id: int = None
+    requires: list = None
+    bound_to: dict = None
+    monitoring: str = None
+    status: str = None
+    state: str = None
 
     def __new__(cls, *args, **kwargs):
         """
@@ -828,14 +830,14 @@ class Host(_BaseObject):
     PATH = ["host"]
     FILTERS = ["fqdn", "prototype_id", "provider_id", "cluster_id"]
 
-    id = None
-    host_id = None
-    fqdn = None
-    provider_id = None
-    cluster_id = None
-    description = None
-    bundle_id = None
-    status = None
+    id: int = None
+    host_id: int = None
+    fqdn: str = None
+    provider_id: int = None
+    cluster_id: int = None
+    description: str = None
+    bundle_id: int = None
+    status: str = None
 
     def __repr__(self):
         return f"<Host {self.fqdn} form provider - {self.provider_id} at {id(self)}>"
@@ -879,29 +881,29 @@ class Action(BaseAPIObject):
     SUBPATH = ["action"]
     FILTERS = ["name"]
 
-    action_id = None
-    button = None
-    id = None
-    name = None
-    display_name = None
-    description = None
-    params = None
-    prototype_id = None
-    required_hostcomponentmap = None
-    hostcomponentmap = None
-    script = None
-    script_type = None
-    state_available = None
-    state_on_fail = None
-    state_on_success = None
-    type = None
-    url = None
-    subs = None
-    config = None
-    ui_options = None
-    allow_to_terminate = None
-    partial_execution = None
-    host_action = None
+    action_id: int = None
+    button: str = None
+    id: int = None
+    name: str = None
+    display_name: str = None
+    description: str = None
+    params: dict = None
+    prototype_id: int = None
+    required_hostcomponentmap: list = None
+    hostcomponentmap: list = None
+    script: str = None
+    script_type: str = None
+    state_available: list = None
+    state_on_fail: str = None
+    state_on_success: str = None
+    type: str = None
+    url: str = None
+    subs = None  # Need help with its type
+    config: dict = None
+    ui_options: dict = None
+    allow_to_terminate: bool = None
+    partial_execution: bool = None
+    host_action: bool = None
 
     def __repr__(self):
         return f"<Action {self.name} at {id(self)}>"
@@ -996,18 +998,18 @@ class Task(BaseAPIObject):
     PATH = ["task"]
     FILTERS = ['action_id', 'pid', 'status', 'start_date', 'finish_date']
     _END_STATUSES = ["failed", "success"]
-    action_id = None
-    config = None
-    hostcomponentmap = None
-    task_id = None
-    id = None
-    jobs = None
-    pid = None
+    action_id: int = None
+    config: dict = None
+    hostcomponentmap: list = None
+    task_id: int = None
+    id: int = None
+    jobs = None  # Need help with its type
+    pid: int = None
     selector = None
-    status = None
-    url = None
-    object_id = None
-    object_type = None
+    status: str = None
+    url: str = None
+    object_id: int = None
+    object_type: str = None
 
     @min_server_version('2020.08.27.00')
     def action(self) -> "Action":
@@ -1091,11 +1093,11 @@ class Log(BaseAPIObject):
     IDNAME = 'log_id'
     PATH = ['job', 'log']
     SUBPATH = ['log']
-    id = None
-    name = None
-    type = None
-    format = None
-    content = None
+    id: int = None
+    name: str = None
+    type: str = None
+    format: str = None
+    content = None  # Need help with its type
 
 
 class LogList(BaseAPIListObject):
@@ -1114,16 +1116,16 @@ class Job(BaseAPIObject):
     FILTERS = ['action_id', 'task_id', 'pid', 'status', 'start_date', 'finish_date']
     _END_STATUSES = ["failed", "success"]
     _WAIT_INTERVAL = .2
-    id = None
-    job_id = None
-    pid = None
-    status = None
-    url = None
-    log_files = None
-    task_id = None
-    display_name = None
-    start_date = None
-    finish_date = None
+    id: int = None
+    job_id: int = None
+    pid: int = None
+    status: str = None
+    url: str = None
+    log_files: list = None
+    task_id: int = None
+    display_name: str = None
+    start_date: datetime = None
+    finish_date: datetime = None
 
     def __repr__(self):
         return f"<Job {self.job_id} at {id(self)}>"
@@ -1162,12 +1164,12 @@ class JobList(BaseAPIListObject):
 class ADCM(_BaseObject):
     IDNAME = "adcm_id"
     PATH = ["adcm"]
-    id = None
-    name = None
-    prototype_id = None
-    url = None
-    prototype_version = None
-    bundle_id = None
+    id: int = None
+    name: str = None
+    prototype_id: int = None
+    url: str = None
+    prototype_version: str = None
+    bundle_id: int = None
 
     def prototype(self) -> "Prototype":
         """Return 'Prototype' object with id={prototype_id}"""
