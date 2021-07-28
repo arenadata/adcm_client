@@ -16,7 +16,7 @@ import warnings
 from collections import abc
 from datetime import datetime
 from json import dumps
-from typing import List, Union
+from typing import List, Union, Optional
 
 from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
@@ -53,12 +53,12 @@ class Bundle(BaseAPIObject):
     IDNAME = "bundle_id"
     PATH = ["stack", "bundle"]
     FILTERS = ["name", "version"]
-    id: int = None
-    bundle_id: int = None
-    name: str = None
-    description: str = None
-    version: str = None
-    edition: str = None
+    id: int
+    bundle_id: int
+    name: Optional[str]
+    description: Optional[str] = None
+    version: Optional[str] = None
+    edition: Optional[str] = None
 
     def __repr__(self):
         return f"<Bundle {self.name} {self.version} {self.edition} at {id(self)}>"
@@ -146,16 +146,16 @@ class Prototype(BaseAPIObject):
     IDNAME = "prototype_id"
     FILTERS = ["name", "bundle_id"]
 
-    id: int = None
-    prototype_id: int = None
-    name: str = None
-    type: str = None
-    description: str = None
-    version: str = None
-    bundle_id: int = None
-    config: dict = None
+    id: Optional[int] = None
+    prototype_id: Optional[int] = None
+    name: Optional[str] = None
+    type: Optional[str] = None
+    description: Optional[str] = None
+    version: Optional[str] = None
+    bundle_id: Optional[int] = None
+    config: Optional[dict] = None
     actions = None  # Need help with its type
-    url: str = None
+    url: Optional[str] = None
 
     def bundle(self) -> "Bundle":
         """Return 'Bundle' object"""
@@ -202,15 +202,15 @@ class ServicePrototype(Prototype):
     PATH = ["stack", "service"]
     FILTERS = ["name", "bundle_id"]
 
-    shared: bool = None
-    display_name: str = None
-    required: bool = None
+    shared: Optional[bool] = None
+    display_name: Optional[str] = None
+    required: Optional[bool] = None
     components = None  # Need help with its type
     exports = None  # Need help with its type
     imports = None  # Need help with its type
-    monitoring: str = None
-    path: str = None
-    bundle_edition: str = None
+    monitoring: Optional[str] = None
+    path: Optional[str] = None
+    bundle_edition: Optional[str] = None
 
     @min_server_version('2020.09.25.13')
     def service_list(self, paging=None, **args) -> "ServiceList":
@@ -233,12 +233,12 @@ class ProviderPrototype(Prototype):
     PATH = ["stack", "provider"]
     FILTERS = ["name", "bundle_id"]
 
-    display_name: str = None
-    required: bool = None
+    display_name: Optional[str] = None
+    required: Optional[bool] = None
     upgrade = None  # Need help with its type
-    path: str = None
-    bundle_edition: str = None
-    license: str = None
+    path: Optional[str] = None
+    bundle_edition: Optional[str] = None
+    license: Optional[str] = None
 
     def provider_create(self, name, description=None) -> "Provider":
         """Create 'Provider' object with relevant parameters"""
@@ -270,11 +270,11 @@ class HostPrototype(Prototype):
     PATH = ["stack", "host"]
     FILTERS = ["name", "bundle_id"]
 
-    display_name: str = None
-    required: bool = None
-    monitoring: str = None
-    path: str = None
-    bundle_edition: str = None
+    display_name: Optional[str] = None
+    required: Optional[bool] = None
+    monitoring: Optional[str] = None
+    path: Optional[str] = None
+    bundle_edition: Optional[str] = None
 
     def host_list(self, paging=None, **args) -> "HostList":
         """Return list of 'Host' objects"""
@@ -297,12 +297,12 @@ class _BaseObject(BaseAPIObject):
     """
     Base class 'BaseObject' for adcm_client objects
     """
-    id: int = None
-    url: str = None
-    state: str = None
-    prototype_id: int = None
-    issue: dict = None
-    button: str = None
+    id: Optional[int] = None
+    url: Optional[str] = None
+    state: Optional[str] = None
+    prototype_id: Optional[int] = None
+    issue: Optional[dict] = None
+    button: Optional[str] = None
 
     def prototype(self):
         """Return Error if method or function hasn't implemented in derived class"""
@@ -378,12 +378,12 @@ class Provider(_BaseObject):
     IDNAME = "provider_id"
     PATH = ["provider"]
     FILTERS = ["name", "prototype_id"]
-    provider_id: int = None
-    edition: str = None
-    license: str = None
-    name: str = None
-    description: str = None
-    bundle_id: int = None
+    provider_id: Optional[int] = None
+    edition: Optional[str] = None
+    license: Optional[str] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    bundle_id: Optional[int] = None
 
     def __repr__(self):
         return f"<Provider {self.name} at {id(self)}>"
@@ -437,14 +437,14 @@ class Cluster(_BaseObject):
     IDNAME = "cluster_id"
     PATH = ["cluster"]
     FILTERS = ["name", "prototype_id"]
-    cluster_id: int = None
-    name: str = None
-    description: str = None
-    bundle_id: int = None
+    cluster_id: Optional[int] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    bundle_id: Optional[int] = None
     serviceprototype = None  # Need help with its type
-    status: str = None
-    edition: str = None
-    license: str = None
+    status: Optional[str] = None
+    edition: Optional[str] = None
+    license: Optional[str] = None
 
     def __repr__(self):
         return f"<Cluster {self.name} from bundle - {self.bundle_id} at {id(self)}>"
@@ -602,21 +602,21 @@ class Upgrade(BaseAPIObject):
     PATH = None
     SUBPATH = ["upgrade"]
 
-    id: int = None
-    upgrade_id: int = None
-    bundle_id: int = None
-    license_url: str = None
-    url: str = None
-    name: str = None
-    description: str = None
-    min_version: str = None
-    max_version: str = None
-    min_strict: bool = None
-    max_strict: bool = None
-    upgradable: bool = None
-    state_available: list = None
-    state_on_success: str = None
-    from_edition: List[str] = None
+    id: Optional[int] = None
+    upgrade_id: Optional[int] = None
+    bundle_id: Optional[int] = None
+    license_url: Optional[str] = None
+    url: Optional[str] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    min_version: Optional[str] = None
+    max_version: Optional[str] = None
+    min_strict: Optional[bool] = None
+    max_strict: Optional[bool] = None
+    upgradable: Optional[bool] = None
+    state_available: Optional[list] = None
+    state_on_success: Optional[str] = None
+    from_edition: Optional[List[str]] = None
 
     def do(self, **args):
         """Do upgrade and provide do/create endpoint"""
@@ -640,16 +640,16 @@ class Service(_BaseObject):
     SUBPATH = ['service']
     FILTERS = ['cluster_id']
 
-    id: int = None
-    service_id: int = None
-    bundle_id: int = None
-    name: str = None
-    description: str = None
-    display_name: str = None
-    cluster_id: int = None
-    status: str = None
-    button: str = None
-    monitoring: str = None
+    id: Optional[int] = None
+    service_id: Optional[int] = None
+    bundle_id: Optional[int] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    display_name: Optional[str] = None
+    cluster_id: Optional[int] = None
+    status: Optional[str] = None
+    button: Optional[str] = None
+    monitoring: Optional[str] = None
 
     def __new__(cls, *args, **kwargs):
         """
@@ -755,21 +755,21 @@ class Component(_BaseObject):
     PATH = ["component"]
     SUBPATH = ["component"]
 
-    id: int = None
-    component_id: int = None
-    cluster_id: int = None
-    _service_id: int = None
-    name: str = None
-    display_name: str = None
-    description: str = None
-    constraint: List[Union[int, str]] = None
-    params: dict = None
-    prototype_id: int = None
-    requires: list = None
-    bound_to: dict = None
-    monitoring: str = None
-    status: str = None
-    state: str = None
+    id: Optional[int] = None
+    component_id: Optional[int] = None
+    cluster_id: Optional[int] = None
+    _service_id: Optional[int] = None
+    name: Optional[str] = None
+    display_name: Optional[str] = None
+    description: Optional[str] = None
+    constraint: Optional[List[Union[int, str]]] = None
+    params: Optional[dict] = None
+    prototype_id: Optional[int] = None
+    requires: Optional[list] = None
+    bound_to: Optional[dict] = None
+    monitoring: Optional[str] = None
+    status: Optional[str] = None
+    state: Optional[str] = None
 
     def __new__(cls, *args, **kwargs):
         """
@@ -830,14 +830,14 @@ class Host(_BaseObject):
     PATH = ["host"]
     FILTERS = ["fqdn", "prototype_id", "provider_id", "cluster_id"]
 
-    id: int = None
-    host_id: int = None
-    fqdn: str = None
-    provider_id: int = None
-    cluster_id: int = None
-    description: str = None
-    bundle_id: int = None
-    status: str = None
+    id: Optional[int] = None
+    host_id: Optional[int] = None
+    fqdn: Optional[str] = None
+    provider_id: Optional[int] = None
+    cluster_id: Optional[int] = None
+    description: Optional[str] = None
+    bundle_id: Optional[int] = None
+    status: Optional[str] = None
 
     def __repr__(self):
         return f"<Host {self.fqdn} form provider - {self.provider_id} at {id(self)}>"
@@ -881,29 +881,29 @@ class Action(BaseAPIObject):
     SUBPATH = ["action"]
     FILTERS = ["name"]
 
-    action_id: int = None
-    button: str = None
-    id: int = None
-    name: str = None
-    display_name: str = None
-    description: str = None
-    params: dict = None
-    prototype_id: int = None
-    required_hostcomponentmap: list = None
-    hostcomponentmap: list = None
-    script: str = None
-    script_type: str = None
-    state_available: list = None
-    state_on_fail: str = None
-    state_on_success: str = None
-    type: str = None
-    url: str = None
-    subs = None  # Need help with its type
-    config: dict = None
-    ui_options: dict = None
-    allow_to_terminate: bool = None
-    partial_execution: bool = None
-    host_action: bool = None
+    action_id: Optional[int] = None
+    button: Optional[str] = None
+    id: Optional[int] = None
+    name: Optional[str] = None
+    display_name: Optional[str] = None
+    description: Optional[str] = None
+    params: Optional[dict] = None
+    prototype_id: Optional[int] = None
+    required_hostcomponentmap: Optional[list] = None
+    hostcomponentmap: Optional[list] = None
+    script: Optional[str] = None
+    script_type: Optional[str] = None
+    state_available: Optional[list] = None
+    state_on_fail: Optional[str] = None
+    state_on_success: Optional[str] = None
+    type: Optional[str] = None
+    url: Optional[str] = None
+    subs: Optional[list] = None
+    config: Optional[dict] = None
+    ui_options: Optional[dict] = None
+    allow_to_terminate: Optional[bool] = None
+    partial_execution: Optional[bool] = None
+    host_action: Optional[bool] = None
 
     def __repr__(self):
         return f"<Action {self.name} at {id(self)}>"
@@ -998,18 +998,18 @@ class Task(BaseAPIObject):
     PATH = ["task"]
     FILTERS = ['action_id', 'pid', 'status', 'start_date', 'finish_date']
     _END_STATUSES = ["failed", "success"]
-    action_id: int = None
-    config: dict = None
-    hostcomponentmap: list = None
-    task_id: int = None
-    id: int = None
-    jobs = None  # Need help with its type
-    pid: int = None
+    action_id: Optional[int] = None
+    config: Optional[dict] = None
+    hostcomponentmap: Optional[list] = None
+    task_id: Optional[int] = None
+    id: Optional[int] = None
+    jobs: Optional[list] = None
+    pid: Optional[int] = None
     selector = None
-    status: str = None
-    url: str = None
-    object_id: int = None
-    object_type: str = None
+    status: Optional[str] = None
+    url: Optional[str] = None
+    object_id: Optional[int] = None
+    object_type: Optional[str] = None
 
     @min_server_version('2020.08.27.00')
     def action(self) -> "Action":
@@ -1093,10 +1093,10 @@ class Log(BaseAPIObject):
     IDNAME = 'log_id'
     PATH = ['job', 'log']
     SUBPATH = ['log']
-    id: int = None
-    name: str = None
-    type: str = None
-    format: str = None
+    id: Optional[int] = None
+    name: Optional[str] = None
+    type: Optional[str] = None
+    format: Optional[str] = None
     content = None  # Need help with its type
 
 
@@ -1116,14 +1116,14 @@ class Job(BaseAPIObject):
     FILTERS = ['action_id', 'task_id', 'pid', 'status', 'start_date', 'finish_date']
     _END_STATUSES = ["failed", "success"]
     _WAIT_INTERVAL = .2
-    id: int = None
-    job_id: int = None
-    pid: int = None
-    status: str = None
-    url: str = None
-    log_files: list = None
-    task_id: int = None
-    display_name: str = None
+    id: Optional[int] = None
+    job_id: Optional[int] = None
+    pid: Optional[int] = None
+    status: Optional[str] = None
+    url: Optional[str] = None
+    log_files: Optional[list] = None
+    task_id: Optional[int] = None
+    display_name: Optional[str] = None
     start_date: datetime = None
     finish_date: datetime = None
 
@@ -1164,12 +1164,12 @@ class JobList(BaseAPIListObject):
 class ADCM(_BaseObject):
     IDNAME = "adcm_id"
     PATH = ["adcm"]
-    id: int = None
-    name: str = None
-    prototype_id: int = None
-    url: str = None
-    prototype_version: str = None
-    bundle_id: int = None
+    id: Optional[int] = None
+    name: Optional[str] = None
+    prototype_id: Optional[int] = None
+    url: Optional[str] = None
+    prototype_version: Optional[str] = None
+    bundle_id: Optional[int] = None
 
     def prototype(self) -> "Prototype":
         """Return 'Prototype' object with id={prototype_id}"""
