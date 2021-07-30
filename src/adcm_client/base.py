@@ -16,6 +16,7 @@ from contextlib import contextmanager
 from functools import wraps
 from pprint import pprint
 from time import sleep
+from typing import List, Optional
 
 import coreapi
 from version_utils import rpm
@@ -302,9 +303,9 @@ class EndPoint:
 
 class BaseAPIObject:
     """That is common object for single ADCM's object"""
-    IDNAME = None  # Will not be None in child
-    PATH = None  # Will not be None in child
-    FILTERS = []
+    IDNAME: Optional[str] = None  # Will not be None in child
+    PATH: Optional[List[str]] = None  # Will not be None in child
+    FILTERS: List[str] = []
 
     def _register_attrs(self):
         for k, v in self._data.items():

@@ -16,7 +16,7 @@ import warnings
 from collections import abc
 from datetime import datetime
 from json import dumps
-from typing import List, Union, Optional
+from typing import List, OrderedDict, Union, Optional
 
 from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
@@ -154,7 +154,7 @@ class Prototype(BaseAPIObject):
     version: Optional[str] = None
     bundle_id: Optional[int] = None
     config: Optional[dict] = None
-    actions = None  # Need help with its type
+    actions: Optional[List[OrderedDict]] = None
     url: Optional[str] = None
 
     def bundle(self) -> "Bundle":
@@ -205,9 +205,9 @@ class ServicePrototype(Prototype):
     shared: Optional[bool] = None
     display_name: Optional[str] = None
     required: Optional[bool] = None
-    components = None  # Need help with its type
-    exports = None  # Need help with its type
-    imports = None  # Need help with its type
+    components: Optional[List[OrderedDict]] = None
+    exports: Optional[List] = None
+    imports: Optional[List] = None
     monitoring: Optional[str] = None
     path: Optional[str] = None
     bundle_edition: Optional[str] = None
@@ -235,7 +235,7 @@ class ProviderPrototype(Prototype):
 
     display_name: Optional[str] = None
     required: Optional[bool] = None
-    upgrade = None  # Need help with its type
+    upgrade: Optional[List[OrderedDict]] = None
     path: Optional[str] = None
     bundle_edition: Optional[str] = None
     license: Optional[str] = None
@@ -441,7 +441,7 @@ class Cluster(_BaseObject):
     name: Optional[str] = None
     description: Optional[str] = None
     bundle_id: Optional[int] = None
-    serviceprototype = None  # Need help with its type
+    serviceprototype: Optional[str] = None
     status: Optional[str] = None
     edition: Optional[str] = None
     license: Optional[str] = None
@@ -1097,7 +1097,7 @@ class Log(BaseAPIObject):
     name: Optional[str] = None
     type: Optional[str] = None
     format: Optional[str] = None
-    content = None  # Need help with its type
+    content: Optional[str] = None
 
 
 class LogList(BaseAPIListObject):
@@ -1124,8 +1124,8 @@ class Job(BaseAPIObject):
     log_files: Optional[list] = None
     task_id: Optional[int] = None
     display_name: Optional[str] = None
-    start_date: datetime = None
-    finish_date: datetime = None
+    start_date: Optional[datetime] = None
+    finish_date: Optional[datetime] = None
 
     def __repr__(self):
         return f"<Job {self.job_id} at {id(self)}>"
