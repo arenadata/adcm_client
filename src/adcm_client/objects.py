@@ -329,11 +329,12 @@ class _BaseObject(BaseAPIObject):
         return history_entry['config']
 
     @allure_step("Save config")
-    def config_set(self, data):
+    def config_set(self, data, attach_to_allure=True):
         """Save completed config in history"""
         # this check is incomplete, cases of presence of keys "config" and "attr" in config
         # are not considered
-        allure_attach_json(data, name="Complete config")
+        if attach_to_allure:
+            allure_attach_json(data, name="Complete config")
         if "config" in data and "attr" in data:
             if data["attr"] is None:
                 data["attr"] = {}
@@ -344,7 +345,7 @@ class _BaseObject(BaseAPIObject):
         return history_entry['config']
 
     @allure_step("Save config")
-    def config_set_diff(self, data):
+    def config_set_diff(self, data, attach_to_allure=True):
         """Save the difference between old and new config in history"""
 
         def update(d, u):
@@ -358,11 +359,13 @@ class _BaseObject(BaseAPIObject):
 
         # this check is incomplete, cases of presence of keys "config" and "attr" in config
         # are not considered
-        allure_attach_json(data, name="Changed fields")
+        if attach_to_allure:
+            allure_attach_json(data, name="Changed fields")
         is_full = "config" in data and "attr" in data
         config = self.config(full=is_full)
-        allure_attach_json(config, name="Original config")
-        return self.config_set(update(config, data))
+        if attach_to_allure:
+            allure_attach_json(config, name="Original config")
+        return self.config_set(update(config, data), attach_to_allure=attach_to_allure)
 
     def config_prototype(self):
         return self.prototype().config
