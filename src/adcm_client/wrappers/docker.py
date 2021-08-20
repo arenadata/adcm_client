@@ -68,14 +68,14 @@ class DockerWrapper():
         self.client = docker.from_env()
 
     # pylint: disable=R0913
-    def run_adcm(self, image='hub.arenadata,io/adcm/adcm',
+    def run_adcm(self, image='hub.arenadata.io/adcm/adcm',
                  remove=True, pull=True, name=None, tag=None, ip=DEFAULTIP, volumes=None):
         """
         Run ADCM in docker image.
         Return ADCM instance.
 
         Example:
-        adcm = docker.run(image='hub.arenadata,io/adcm/adcm', tag=None, ip='127.0.0.1')
+        adcm = docker.run(image='hub.arenadata.io/adcm/adcm', tag=None, ip='127.0.0.1')
 
         If tag is None or is not present than it checks ADCM_TAG env
         variable and use it as image's tag. If there is no ADCM_TAG than
