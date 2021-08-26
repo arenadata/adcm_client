@@ -325,6 +325,7 @@ class _BaseObject(BaseAPIObject):
     issue = None
     button = None
     locked = None
+    multi_state = None
 
     def prototype(self):
         """Return Error if method or function hasn't implemented in derived class"""
