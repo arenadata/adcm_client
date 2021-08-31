@@ -86,13 +86,11 @@ def resolve_build_id(git_data, master_branches, timestamp, timestamp_enabled):
                 build_id = '-1'
             else:
                 build_id = '-' + git_data['branch'].replace("-", "_").replace("/", "_")
-            if timestamp_enabled:
-                build_id = build_id + '_' + timestamp
     else:
         build_id = '-1'
         # timestamp
-        if timestamp_enabled:
-            build_id = build_id + '_' + timestamp
+    if timestamp_enabled:
+        build_id = build_id + '_' + timestamp
 
     return build_id
 
