@@ -301,6 +301,7 @@ class _BaseObject(BaseAPIObject):
     prototype_id = None
     issue = None
     button = None
+    locked = None
 
     def prototype(self):
         """Return Error if method or function hasn't implemented in derived class"""
@@ -368,10 +369,10 @@ class _BaseObject(BaseAPIObject):
         return self.prototype().config
 
     @min_server_version('2021.07.16.09')
-    def concern(self):
+    def concerns(self):
         concern_list = ConcernList(self._api)
         data = []
-        for concern in self._data['concern']:
+        for concern in self._data['concerns']:
             data.append(Concern(api=self._api, id=concern['id']))
         concern_list.data = data
         return concern_list
@@ -1187,6 +1188,8 @@ class Concern(BaseAPIObject):
     IDNAME = 'concern_id'
     PATH = ['concern']
     id = None
+    type = None
+    blocking = None
     name = None
     reason = None
     url = None
