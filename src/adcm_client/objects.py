@@ -829,6 +829,7 @@ class Host(_BaseObject):
     """The 'Host' object from the API"""
     IDNAME = "host_id"
     PATH = ["host"]
+    SUBPATH = ["host"]
     FILTERS = ["fqdn", "prototype_id", "provider_id", "cluster_id"]
 
     id = None
@@ -863,6 +864,7 @@ class Host(_BaseObject):
 class HostList(BaseAPIListObject):
     """List of 'Host' objects from the API"""
     _ENTRY_CLASS = Host
+    SUBPATH = ["host"]
 
 
 @allure_step('Create host {fqdn}')
@@ -1160,6 +1162,47 @@ class JobList(BaseAPIListObject):
 
 
 ##################################################
+#              GROUP CONFIG
+##################################################
+class GroupConfig(BaseAPIObject):
+    IDNAME = 'id'
+    PATH = ['group-config']
+    FILTERS = ['object_id', 'object_type']
+    id = None
+    object_id = None
+    object_type = None
+    config_id = None
+    name = None
+    description = None
+
+    def hosts(self, paging=None, **kwargs) -> "HostList":
+        return HostList(
+            api=self._api,
+            path=self.PATH + HostList.SUBPATH,
+            path_args={'parent_lookup_group_config': self.id},
+            paging=paging,
+            **kwargs,
+        )
+
+    def config(self, full=False):
+        pass
+
+    def host_candidate(self, paging=None, **kwargs) -> "HostList":
+        return HostList(
+            api=self._api,
+            path=self.PATH + ['host-candidate'],
+            path_args={'parent_lookup_group_config': self.id},
+            paging=paging,
+            **kwargs,
+        )
+
+
+class GroupConfigList(BaseAPIListObject):
+    """List of 'GroupConfig' objects from the API"""
+    _ENTRY_CLASS = GroupConfig
+
+
+##################################################
 #              A D C M
 ##################################################
 class ADCM(_BaseObject):
@@ -1360,3 +1403,11 @@ class ADCMClient:
         bundle = self.bundle(**args)
         with allure_step(f"Delete bundle {bundle.name}"):
             self._api.objects.stack.bundle.delete(bundle_id=bundle.bundle_id)
+
+    def group_config(self, **kwargs) -> GroupConfig:
+        """Return 'GroupConfig object'"""
+        return GroupConfig(self._api, **kwargs)
+
+    def group_config_list(self, paging=None, **kwargs) -> GroupConfigList:
+        """Return list of 'GroupConfig' objects"""
+        return GroupConfigList(self._api, paging=paging, **kwargs)
