@@ -150,7 +150,7 @@ def _get_prepared_image(pkgs, image: Image, client: DockerClient) -> "Image":
 
 
 def python_mod_req(source_path, workspace, **kwargs):
-    with open(os.path.join(source_path, kwargs['requirements']), 'r') as file:
+    with open(os.path.join(source_path, kwargs['requirements']), 'r', encoding='utf-8') as file:
         pkgs = yaml.safe_load(file)
         if pkgs.get('python_mod'):
             client = from_env()

@@ -55,7 +55,7 @@ class ConfigData:
         return self.switch[provider](key, **kwargs)
 
     def _from_file(self, key, **kwargs):
-        with open(self.file, 'r') as file:
+        with open(self.file, 'r', encoding='utf-8') as file:
             self.data = yaml.safe_load(file)
         return self._from_data(key)
 

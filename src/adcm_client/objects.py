@@ -20,9 +20,19 @@ from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
 
 from adcm_client.base import (
-    ActionHasIssues, ADCMApiError, BaseAPIListObject, BaseAPIObject, ObjectNotFound,
-    TooManyArguments, WaitTimeout, strip_none_keys, min_server_version, allure_step,
-    allure_attach_json, legacy_server_implementaion, EndPoint
+    ActionHasIssues,
+    ADCMApiError,
+    BaseAPIListObject,
+    BaseAPIObject,
+    ObjectNotFound,
+    TooManyArguments,
+    WaitTimeout,
+    strip_none_keys,
+    min_server_version,
+    allure_step,
+    allure_attach_json,
+    legacy_server_implementaion,
+    EndPoint,
 )
 from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
@@ -48,6 +58,7 @@ class IncorrectPrototypeType(Exception):
 
 class Bundle(BaseAPIObject):
     """The 'Bundle' object from the API"""
+
     IDNAME = "bundle_id"
     PATH = ["stack", "bundle"]
     FILTERS = ["name", "version"]
@@ -132,6 +143,7 @@ class Bundle(BaseAPIObject):
 
 class BundleList(BaseAPIListObject):
     """List of 'Bundle' object from the API"""
+
     _ENTRY_CLASS = Bundle
 
 
@@ -140,6 +152,7 @@ class BundleList(BaseAPIListObject):
 ##################################################
 class Prototype(BaseAPIObject):
     """The 'Prototype' object from the API"""
+
     PATH = ["stack", "prototype"]
     IDNAME = "prototype_id"
     FILTERS = ["name", "bundle_id"]
@@ -162,11 +175,13 @@ class Prototype(BaseAPIObject):
 
 class PrototypeList(BaseAPIListObject):
     """List of 'Prototype' object from the API"""
+
     _ENTRY_CLASS = Prototype
 
 
 class ClusterPrototype(Prototype):
     """The 'ClusterPrototype' object from the API"""
+
     PATH = ["stack", "cluster"]
     FILTERS = ["name", "bundle_id"]
 
@@ -178,7 +193,7 @@ class ClusterPrototype(Prototype):
             self._api,
             prototype_id=self.prototype_id,
             name=name,
-            description=description
+            description=description,
         )
 
     def cluster_list(self, paging=None, **args) -> "ClusterList":
@@ -192,11 +207,13 @@ class ClusterPrototype(Prototype):
 
 class ClusterPrototypeList(BaseAPIListObject):
     """List of 'ClysterPrototype' object from the API"""
+
     _ENTRY_CLASS = ClusterPrototype
 
 
 class ServicePrototype(Prototype):
     """The 'ServicePrototype' object from the API"""
+
     PATH = ["stack", "service"]
     FILTERS = ["name", "bundle_id"]
 
@@ -223,11 +240,13 @@ class ServicePrototype(Prototype):
 
 class ServicePrototypeList(BaseAPIListObject):
     """List of 'ServicePrototype' object from the API"""
+
     _ENTRY_CLASS = ServicePrototype
 
 
 class ProviderPrototype(Prototype):
     """The 'ProvidePrototype' object from the API"""
+
     PATH = ["stack", "provider"]
     FILTERS = ["name", "bundle_id"]
 
@@ -246,7 +265,7 @@ class ProviderPrototype(Prototype):
             self._api,
             prototype_id=self.prototype_id,
             name=name,
-            description=description
+            description=description,
         )
 
     def provider_list(self, paging=None, **args) -> "ProviderList":
@@ -260,11 +279,13 @@ class ProviderPrototype(Prototype):
 
 class ProviderPrototypeList(BaseAPIListObject):
     """List of 'ProvidePrototype' object from the API"""
+
     _ENTRY_CLASS = ProviderPrototype
 
 
 class HostPrototype(Prototype):
     """The 'HostPrototype' object from the API"""
+
     PATH = ["stack", "host"]
     FILTERS = ["name", "bundle_id"]
 
@@ -285,6 +306,7 @@ class HostPrototype(Prototype):
 
 class HostPrototypeList(BaseAPIListObject):
     """List of 'HostPrototype' objects from the API"""
+
     _ENTRY_CLASS = HostPrototype
 
 
@@ -295,6 +317,7 @@ class _BaseObject(BaseAPIObject):
     """
     Base class 'BaseObject' for adcm_client objects
     """
+
     id = None
     url = None
     state = None
@@ -316,8 +339,11 @@ class _BaseObject(BaseAPIObject):
 
     def action_run(self, **args) -> "Task":
         """Run action which returns 'Task' object"""
-        warnings.warn('Deprecated. The method accepts no arguments for the "action.run()" method.',
-                      DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            'Deprecated. The method accepts no arguments for the "action.run()" method.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
         action = self.action(**args)
         return action.run()
 
@@ -339,7 +365,8 @@ class _BaseObject(BaseAPIObject):
             if data["attr"] is None:
                 data["attr"] = {}
             history_entry = self._subcall(
-                'config', 'history', 'create', config=data['config'], attr=data['attr'])
+                'config', 'history', 'create', config=data['config'], attr=data['attr']
+            )
             return {key: value for key, value in history_entry.items() if key in ['config', 'attr']}
         history_entry = self._subcall('config', 'history', 'create', config=data)
         return history_entry['config']
@@ -376,6 +403,7 @@ class _BaseObject(BaseAPIObject):
 ##################################################
 class Provider(_BaseObject):
     """The 'Provider' object from the API"""
+
     IDNAME = "provider_id"
     PATH = ["provider"]
     FILTERS = ["name", "prototype_id"]
@@ -420,6 +448,7 @@ class Provider(_BaseObject):
 
 class ProviderList(BaseAPIListObject):
     """List of 'Provider' objects from the API"""
+
     _ENTRY_CLASS = Provider
 
 
@@ -435,6 +464,7 @@ def new_provider(api, **args) -> "Provider":
 ##################################################
 class Cluster(_BaseObject):
     """The 'Cluster' object from the API"""
+
     IDNAME = "cluster_id"
     PATH = ["cluster"]
     FILTERS = ["name", "prototype_id"]
@@ -459,8 +489,12 @@ class Cluster(_BaseObject):
         if isinstance(target, Cluster):
             self._subcall("bind", "create", export_cluster_id=target.cluster_id)
         elif isinstance(target, Service):
-            self._subcall("bind", "create", export_cluster_id=target.cluster_id,
-                          export_service_id=target.service_id)
+            self._subcall(
+                "bind",
+                "create",
+                export_cluster_id=target.cluster_id,
+                export_service_id=target.service_id,
+            )
         else:
             raise NotImplementedError
 
@@ -552,15 +586,8 @@ class Cluster(_BaseObject):
         readable_hc = []
         for i in hostcomponents:
             h, c = i
-            hc.append({
-                'host_id': h.id,
-                'service_id': c.service_id,
-                'component_id': c.id
-            })
-            readable_hc.append({
-                'host_fqdn': h.fqdn,
-                'component_name': c.display_name
-            })
+            hc.append({'host_id': h.id, 'service_id': c.service_id, 'component_id': c.id})
+            readable_hc.append({'host_fqdn': h.fqdn, 'component_name': c.display_name})
         allure_attach_json(readable_hc, name="Readable hc map")
         allure_attach_json(hc, name="Complete hc map")
         return self._subcall("hostcomponent", "create", hc=hc)
@@ -584,6 +611,7 @@ class Cluster(_BaseObject):
 
 class ClusterList(BaseAPIListObject):
     """List of 'HostPrototype' objects from the API"""
+
     _ENTRY_CLASS = Cluster
 
 
@@ -599,6 +627,7 @@ def new_cluster(api: ADCMApiWrapper, **args) -> "Cluster":
 ##################################################
 class Upgrade(BaseAPIObject):
     """The 'Upgrade' object from the API"""
+
     IDNAME = "upgrade_id"
     PATH = None
     SUBPATH = ["upgrade"]
@@ -627,6 +656,7 @@ class Upgrade(BaseAPIObject):
 
 class UpgradeList(BaseAPIListObject):
     """List of 'Upgrade' objects from the API"""
+
     SUBPATH = ["upgrade"]
     _ENTRY_CLASS = Upgrade
 
@@ -636,6 +666,7 @@ class UpgradeList(BaseAPIListObject):
 ##################################################
 class Service(_BaseObject):
     """The 'Service' object from the API"""
+
     IDNAME = "service_id"
     PATH = ['service']
     SUBPATH = ['service']
@@ -673,8 +704,12 @@ class Service(_BaseObject):
         if isinstance(target, Cluster):
             self._subcall("bind", "create", export_cluster_id=target.cluster_id)
         elif isinstance(target, Service):
-            self._subcall("bind", "create", export_cluster_id=target.cluster_id,
-                          export_service_id=target.service_id)
+            self._subcall(
+                "bind",
+                "create",
+                export_cluster_id=target.cluster_id,
+                export_service_id=target.service_id,
+            )
         else:
             raise NotImplementedError
 
@@ -729,6 +764,7 @@ class Service(_BaseObject):
 
 class ServiceList(BaseAPIListObject):
     """List of 'Service' objects from the API"""
+
     PATH = ['service']
     SUBPATH = ['service']
     _ENTRY_CLASS = Service
@@ -752,6 +788,7 @@ class ServiceList(BaseAPIListObject):
 ##################################################
 class Component(_BaseObject):
     """The 'Component' object from the API"""
+
     IDNAME = "component_id"
     PATH = ["component"]
     SUBPATH = ["component"]
@@ -804,6 +841,7 @@ class Component(_BaseObject):
 
 class ComponentList(BaseAPIListObject):
     """List of 'Component' objects from the API"""
+
     PATH = ["component"]
     SUBPATH = ["component"]
     _ENTRY_CLASS = Component
@@ -827,6 +865,7 @@ class ComponentList(BaseAPIListObject):
 ##################################################
 class Host(_BaseObject):
     """The 'Host' object from the API"""
+
     IDNAME = "host_id"
     PATH = ["host"]
     SUBPATH = ["host"]
@@ -863,6 +902,7 @@ class Host(_BaseObject):
 
 class HostList(BaseAPIListObject):
     """List of 'Host' objects from the API"""
+
     _ENTRY_CLASS = Host
     SUBPATH = ["host"]
 
@@ -879,6 +919,7 @@ def new_host(api, **args) -> "Host":
 ##################################################
 class Action(BaseAPIObject):
     """The 'Action' object from the API"""
+
     IDNAME = "action_id"
     PATH = None
     SUBPATH = ["action"]
@@ -912,10 +953,10 @@ class Action(BaseAPIObject):
         return f"<Action {self.name} at {id(self)}>"
 
     def _get_config(self):
-        config = dict()
+        config = {}
         for item in self.config['config']:
             if item['type'] == 'group':
-                config[item['name']] = dict()
+                config[item['name']] = {}
             elif item['subname']:
                 config[item['name']][item['subname']] = item['value']
             else:
@@ -960,14 +1001,17 @@ class Action(BaseAPIObject):
             if rpm.compare_versions(self.adcm_version, '2021.02.04.13') >= 0:
                 args.setdefault('verbose', False)
             elif 'verbose' in args:
-                warnings.warn(f"ADCM {self.adcm_version} doesn't support action "
-                              f"argument 'verbose'. It will be skipped")
+                warnings.warn(
+                    f"ADCM {self.adcm_version} doesn't support action "
+                    f"argument 'verbose'. It will be skipped"
+                )
                 args.pop('verbose')
             try:
                 data = self._subcall("run", "create", **args)
             except ErrorMessage as error:
-                if (getattr(error.error, 'title', '') == '409 Conflict'
-                        and 'has issues' in getattr(error.error, '_data', {}).get('desc', '')):
+                if getattr(error.error, 'title', '') == '409 Conflict' and 'has issues' in getattr(
+                    error.error, '_data', {}
+                ).get('desc', ''):
                     raise ActionHasIssues from error
                 raise error
             return Task(self._api, task_id=data["id"])
@@ -975,6 +1019,7 @@ class Action(BaseAPIObject):
 
 class ActionList(BaseAPIListObject):
     """List of 'Action' objects from the API"""
+
     SUBPATH = ["action"]
     _ENTRY_CLASS = Action
 
@@ -997,6 +1042,7 @@ TASK_PARENT = {
 
 class Task(BaseAPIObject):
     """The 'Task' object from the API"""
+
     IDNAME = "task_id"
     PATH = ["task"]
     FILTERS = ['action_id', 'pid', 'status', 'start_date', 'finish_date']
@@ -1018,8 +1064,7 @@ class Task(BaseAPIObject):
     def action(self) -> "Action":
         # for component object method will work after version `2021.03.12.16`
         kwargs = {f'{self.object_type}_id': self.object_id}
-        return TASK_PARENT[self.object_type](
-            self._api, **kwargs).action(action_id=self.action_id)
+        return TASK_PARENT[self.object_type](self._api, **kwargs).action(action_id=self.action_id)
 
     def __repr__(self):
         return f"<Task {self.task_id} at {id(self)}>"
@@ -1035,9 +1080,7 @@ class Task(BaseAPIObject):
     @allure_step("Wait for task end")
     def wait(self, timeout=None, log_failed=True):
         try:
-            status = self.wait_for_attr("status",
-                                        self._END_STATUSES,
-                                        timeout=timeout)
+            status = self.wait_for_attr("status", self._END_STATUSES, timeout=timeout)
             if log_failed and status == "failed":
                 self._log_jobs(status=status)
         except WaitTimeout as e:
@@ -1085,6 +1128,7 @@ class Task(BaseAPIObject):
 
 class TaskList(BaseAPIListObject):
     """List of 'Task' objects from the API"""
+
     _ENTRY_CLASS = Task
 
 
@@ -1093,6 +1137,7 @@ class TaskList(BaseAPIListObject):
 ##################################################
 class Log(BaseAPIObject):
     """The 'Log' object from the API"""
+
     IDNAME = 'log_id'
     PATH = ['job', 'log']
     SUBPATH = ['log']
@@ -1105,8 +1150,9 @@ class Log(BaseAPIObject):
 
 class LogList(BaseAPIListObject):
     """List of 'Log' objects from the API"""
+
     _ENTRY_CLASS = Log
-    SUBPATH = ['log']
+    SUBPATH = ["log"]
 
 
 ##################################################
@@ -1114,11 +1160,12 @@ class LogList(BaseAPIListObject):
 ##################################################
 class Job(BaseAPIObject):
     """The 'Job' object from the API"""
+
     IDNAME = "job_id"
     PATH = ["job"]
     FILTERS = ['action_id', 'task_id', 'pid', 'status', 'start_date', 'finish_date']
     _END_STATUSES = ["failed", "success"]
-    _WAIT_INTERVAL = .2
+    _WAIT_INTERVAL = 0.2
     id = None
     job_id = None
     pid = None
@@ -1143,9 +1190,7 @@ class Job(BaseAPIObject):
 
     def wait(self, timeout=None):
         """Wait for the time ={timeout}"""
-        return self.wait_for_attr("status",
-                                  self._END_STATUSES,
-                                  timeout=timeout)
+        return self.wait_for_attr("status", self._END_STATUSES, timeout=timeout)
 
     def log(self, **kwargs) -> "Log":
         """Return 'Log' object"""
@@ -1158,6 +1203,7 @@ class Job(BaseAPIObject):
 
 class JobList(BaseAPIListObject):
     """List of 'Job' objects from the API"""
+
     _ENTRY_CLASS = Job
 
 
@@ -1184,8 +1230,70 @@ class GroupConfig(BaseAPIObject):
             **kwargs,
         )
 
+    def _get_object_config(self):
+        """Return 'ObjectConfig' for group"""
+        path = ("config", "read")
+        args = {"parent_lookup_group_config": self.id, "id": self.config_id}
+        return self._sub_call(*path, **args)
+
     def config(self, full=False):
-        pass
+        object_config = self._get_object_config()
+        current_id = object_config.get("current_id")
+        path = ("config", "config-log", "read")
+        args = {
+            "parent_lookup_obj_ref__group_config": self.id,
+            "parent_lookup_obj_ref": self.config_id,
+            "id": current_id,
+        }
+        current_config = self._sub_call(*path, **args)
+        if full:
+            return current_config
+        return current_config["config"]
+
+    @allure_step("Save group config")
+    def config_set(self, data, attach_to_allure=True):
+        """Save completed config in history"""
+        # this check is incomplete, cases of presence of keys "config" and "attr" in config
+        # are not considered
+        if attach_to_allure:
+            allure_attach_json(data, name="Complete group config")
+        path = ("config", "config-log", "create")
+        args = {
+            "parent_lookup_obj_ref__group_config": self.id,
+            "parent_lookup_obj_ref": self.config_id,
+        }
+        if "config" in data and "attr" in data:
+            if data["attr"] is None:
+                data["attr"] = {}
+            args.update({"config": data["config"], "attr": data["attr"]})
+            current_config = self._sub_call(*path, **args)
+            return {
+                key: value for key, value in current_config.items() if key in ["config", "attr"]
+            }
+        args.update({"config": data})
+        current_config = self._sub_call(*path, **args)
+        return current_config["config"]
+
+    @allure_step("Save group config")
+    def config_set_diff(self, data, attach_to_allure=True):
+        """Partial config update"""
+
+        def update(d, u):
+            """If the old and new values are dictionaries, we try to update, otherwise we replace"""
+            for key, value in u.items():
+                if isinstance(value, abc.Mapping) and key in d and isinstance(d[key], abc.Mapping):
+                    d[key] = update(d[key], value)
+                    continue
+                d[key] = value
+            return d
+
+        if attach_to_allure:
+            allure_attach_json(data, name="Changed fields")
+        is_full = "config" in data and "attr" in data
+        config = self.config(full=is_full)
+        if attach_to_allure:
+            allure_attach_json(config, name="Original config")
+        return self.config_set(update(config, data), attach_to_allure=attach_to_allure)
 
     def host_candidate(self, paging=None, **kwargs) -> "HostList":
         return HostList(
@@ -1199,6 +1307,7 @@ class GroupConfig(BaseAPIObject):
 
 class GroupConfigList(BaseAPIListObject):
     """List of 'GroupConfig' objects from the API"""
+
     _ENTRY_CLASS = GroupConfig
 
 
@@ -1378,8 +1487,10 @@ class ADCMClient:
         """Upload single bundle from {dirname}"""
         streams = stream.file(dirname, **args)
         if len(streams) > 1:
-            raise TooManyArguments('upload_bundle_from_fs is not capable with building multiple \
-                bundle editions from one dir. Use upload_from_fs_all instead.')
+            raise TooManyArguments(
+                'upload_bundle_from_fs is not capable with building multiple \
+                bundle editions from one dir. Use upload_from_fs_all instead.'
+            )
         return self._upload(streams[0])
 
     @allure_step('Upload bundles from {dirname}')

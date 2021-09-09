@@ -35,7 +35,7 @@ class Mapper:
             self._vars = {'external_adcm': client}
 
     def _parse(self):
-        with open(self._filename, 'r') as stream:
+        with open(self._filename, 'r', encoding='utf-8') as stream:
             self._data = yaml.load(stream)
 
     def _do_rec(self, point):
