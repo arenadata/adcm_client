@@ -23,7 +23,7 @@ class SpecFile:
 
     def __init__(self, spec):
         try:
-            with open(spec, 'r') as file:
+            with open(spec, 'r', encoding='utf-8') as file:
                 self.data = yaml.safe_load(file)
                 # TODO supported verions check
                 self.current_version = self.version = str(self.data.get('version', 0))

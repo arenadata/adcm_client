@@ -379,6 +379,12 @@ class BaseAPIObject:
         func = self._endpoint.get_subpoint(*path)
         return func(**self._merge(**args))
 
+    def _sub_call(self, *path, **args):
+        """Makes a request to the API by path with required lookup params"""
+        # the same as _subcall(), only without _merge()
+        func = self._endpoint.get_subpoint(*path)
+        return func(**args)
+
     def _child_obj(self, classname, **args):
         return classname(self._api, **_merge(args, {self.IDNAME: self.id}))
 

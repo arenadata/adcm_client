@@ -93,7 +93,7 @@ def resolve_build_id(git_data, master_branches, timestamp):
 
 def add_build_id(path, reponame, edition, master_branches: list, timestamp):
     def write_version(file, old_version, new_version):
-        with io.open(file, 'r+') as config:
+        with io.open(file, 'r+', encoding='utf-8') as config:
             for start_pos, line, end_pos in ReadFileWrapper(config):
                 if 'version:' in line and old_version in line:
                     # remember tail
