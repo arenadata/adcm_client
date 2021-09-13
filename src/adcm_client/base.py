@@ -262,7 +262,7 @@ class EndPoint:
 
         if isinstance(result, OrderedDict):
             # It's paging mode
-            if not result['results']:
+            if not result['results'] and 'offset' in paging and 'limit' in paging:
                 raise PagingEnds
             return result['results']
         elif isinstance(result, list) and 'offset' in paging and paging['offset']:
