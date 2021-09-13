@@ -324,6 +324,7 @@ class _BaseObject(BaseAPIObject):
     prototype_id = None
     issue = None
     button = None
+    locked = None
 
     def prototype(self):
         """Return Error if method or function hasn't implemented in derived class"""
@@ -408,6 +409,15 @@ class _BaseObject(BaseAPIObject):
             name=name,
             description=description
         )
+
+    @min_server_version('2021.07.16.09')
+    def concerns(self):
+        concern_list = ConcernList(self._api)
+        data = []
+        for concern in self._data['concerns']:
+            data.append(Concern(api=self._api, id=concern['id']))
+        concern_list.data = data
+        return concern_list
 
 
 ##################################################
@@ -1375,6 +1385,37 @@ class ADCM(_BaseObject):
 
     def group_config_create(self, name: str, description: str = '') -> "GroupConfig":
         raise NotImplementedError
+
+class Concern(BaseAPIObject):
+    IDNAME = 'concern_id'
+    PATH = ['concern']
+    id = None
+    type = None
+    blocking = None
+    name = None
+    reason = None
+    url = None
+
+    def related_objects(self):
+        objects = {
+            'cluster': Cluster,
+            'service': Service,
+            'component': Component,
+            'provider': Provider,
+            'host': Host,
+            'adcm': ADCM,
+        }
+        data = []
+        for related_object in self._data['related_objects']:
+            object_type = related_object['type']
+            object_id = related_object['id']
+            data.append(objects[object_type](self._api, id=object_id))
+        return data
+
+
+class ConcernList(BaseAPIListObject):
+    _ENTRY_CLASS = Concern
+
 
 ##################################################
 #              C L I E N T
