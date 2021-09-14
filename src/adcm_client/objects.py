@@ -1386,6 +1386,7 @@ class ADCM(_BaseObject):
     def group_config_create(self, name: str, description: str = '') -> "GroupConfig":
         raise NotImplementedError
 
+
 class Concern(BaseAPIObject):
     IDNAME = 'concern_id'
     PATH = ['concern']
