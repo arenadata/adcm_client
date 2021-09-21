@@ -399,6 +399,18 @@ class _BaseObject(BaseAPIObject):
     def config_prototype(self):
         return self.prototype().config
 
+    def group_config(self) -> "GroupConfigList":
+        return GroupConfigList(self._api, object_id=self.id, object_type=self.prototype().type)
+
+    def group_config_create(self, name: str, description: str = '') -> "GroupConfig":
+        return new_group_config(
+            self._api,
+            object_id=self.id,
+            object_type=self.prototype().type,
+            name=name,
+            description=description
+        )
+
     @min_server_version('2021.07.16.09')
     def concerns(self):
         concern_list = ConcernList(self._api)
@@ -833,6 +845,9 @@ class Component(_BaseObject):
             instance.PATH = None
         return instance
 
+    def prototype(self) -> "Prototype":
+        return Prototype(self._api, prototype_id=self.prototype_id)
+
     @property
     def service_id(self):
         """Return {service_id} if it isn't None"""
@@ -909,6 +924,12 @@ class Host(_BaseObject):
     def prototype(self) -> "HostPrototype":
         """Return 'HostPrototype' object"""
         return self._parent_obj(HostPrototype)
+
+    def group_config(self) -> "GroupConfigList":
+        raise NotImplementedError
+
+    def group_config_create(self, name: str, description: str = '') -> "GroupConfig":
+        raise NotImplementedError
 
 
 class HostList(BaseAPIListObject):
@@ -1241,6 +1262,19 @@ class GroupConfig(BaseAPIObject):
             **kwargs,
         )
 
+    def host_add(self, host: "Host") -> "Host":
+        with allure_step(f'Add host {host.fqdn} to group config {self.name}'):
+            path = ("host", "create")
+            args = {"parent_lookup_group_config": self.id, "id": host.id}
+            data = self._sub_call(*path, **args)
+            return Host(self._api, id=data['id'])
+
+    def host_delete(self, host: "Host"):
+        with allure_step(f'Remove host {host.fqdn} from group config {self.name}'):
+            path = ("host", "delete")
+            args = {"parent_lookup_group_config": self.id, "host_id": host.id}
+            self._sub_call(*path, **args)
+
     def _get_object_config(self):
         """Return 'ObjectConfig' for group"""
         path = ("config", "read")
@@ -1322,6 +1356,14 @@ class GroupConfigList(BaseAPIListObject):
     _ENTRY_CLASS = GroupConfig
 
 
+@allure_step('Create group config {name}')
+def new_group_config(api, **args) -> "GroupConfig":
+    """Create new 'GroupConfig' and return it"""
+    endpoint = getattr(api.objects, 'group-config')
+    group = endpoint.create(**args)
+    return GroupConfig(api, id=group['id'])
+
+
 ##################################################
 #              A D C M
 ##################################################
@@ -1338,6 +1380,12 @@ class ADCM(_BaseObject):
     def prototype(self) -> "Prototype":
         """Return 'Prototype' object with id={prototype_id}"""
         return Prototype(self._api, id=self.prototype_id)
+
+    def group_config(self) -> "GroupConfigList":
+        raise NotImplementedError
+
+    def group_config_create(self, name: str, description: str = '') -> "GroupConfig":
+        raise NotImplementedError
 
 
 class Concern(BaseAPIObject):
