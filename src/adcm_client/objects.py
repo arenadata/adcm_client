@@ -1468,7 +1468,7 @@ class ADCMClient:
         """Check client version and provide information about newer version"""
         if rpm.compare_versions(self._MIN_VERSION, self._api.adcm_version) > -1:
             raise ADCMApiError(
-                "The client supports ADCM versions newer than '{}'".format(self._MIN_VERSION)
+                f"The client supports ADCM versions newer than '{self._MIN_VERSION}'"
             )
 
     def api_token(self):
