@@ -54,7 +54,7 @@ class SpecFile:
                     }
                 )
             else:
-                sys.exit('Used unrecognized func:%s' % i.get('name'))
+                sys.exit(f'Used unrecognized func:{i.get("name")}')
         return new_spec
 
     def normalize_spec(self):

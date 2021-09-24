@@ -101,7 +101,7 @@ class ConfigData:
         for conf in configs:
             try:
                 self.remote_file = conf
-                self.data = yaml.safe_load(self.git.show("%s:%s" % (self.branch, conf)))
+                self.data = yaml.safe_load(self.git.show(f"{self.branch}:{conf}"))
                 value = self._from_data(key)
             except IndexError:
                 pass

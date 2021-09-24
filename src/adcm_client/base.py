@@ -57,6 +57,15 @@ def allure_attach_json(body, name):
         )
 
 
+def allure_attach(body, name, extension):
+    if ALLURE:
+        allure.attach(
+            body=body,
+            name=name,
+            extension=extension,
+        )
+
+
 def pp(*args, **kwargs):
     pprint("--------------------------------------------------")
     if args != []:

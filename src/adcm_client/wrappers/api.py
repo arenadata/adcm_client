@@ -124,7 +124,7 @@ class ADCMApiWrapper():
     def fetch(self):
         """Fetch objects"""
 
-        self.schema = self.client.get("{}{}schema/".format(self.url, self.api_url))
+        self.schema = self.client.get(f"{self.url}{self.api_url}schema/")
         self.objects = self._parse_schema(self.schema, is_allure=IS_ALLURE)
         try:
             self.adcm_version = self.objects.info.list()['adcm_version']

@@ -53,7 +53,7 @@ class ADCM():
         self.container = container
         self.ip = ip
         self.port = port
-        self.url = 'http://{}:{}'.format(self.ip, self.port)
+        self.url = f'http://{self.ip}:{self.port}'
         self.api = ADCMApiWrapper(self.url)
 
     def stop(self):
@@ -90,12 +90,12 @@ class DockerWrapper():
             self.client.images.pull(image, tag)
         port = _find_random_port(ip)
         container = self.client.containers.run(
-            "{}:{}".format(image, tag),
+            f"{image}:{tag}",
             ports={'8000': (ip, port)},
             volumes=volumes,
             remove=remove,
             detach=True,
             name=name
         )
-        wait_for_url("http://{}:{}/api/v1/".format(ip, port), 60)
+        wait_for_url(f"http://{ip}:{port}/api/v1/", 60)
         return ADCM(container, ip, port)

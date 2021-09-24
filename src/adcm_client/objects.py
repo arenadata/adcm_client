@@ -31,6 +31,7 @@ from adcm_client.base import (
     min_server_version,
     allure_step,
     allure_attach_json,
+    allure_attach,
     legacy_server_implementaion,
     EndPoint,
 )
@@ -1467,7 +1468,7 @@ class ADCMClient:
         """Check client version and provide information about newer version"""
         if rpm.compare_versions(self._MIN_VERSION, self._api.adcm_version) > -1:
             raise ADCMApiError(
-                "The client supports ADCM versions newer than '{}'".format(self._MIN_VERSION)
+                f"The client supports ADCM versions newer than '{self._MIN_VERSION}'"
             )
 
     def api_token(self):
@@ -1569,7 +1570,14 @@ class ADCMClient:
     def _upload(self, bundle_stream) -> Bundle:
         """Upload and create Bundle from file={bundle_stream}"""
         self._api.objects.stack.upload.create(file=bundle_stream)
+        bundle_stream.seek(0)
+        allure_attach(
+            body=bundle_stream.getvalue(),
+            name="bundle.tgz",
+            extension="tgz",
+        )
         data = self._api.objects.stack.load.create(bundle_file="file")
+        bundle_stream.close()
         return self.bundle(bundle_id=data['id'])
 
     @allure_step('Upload bundle from {dirname}')

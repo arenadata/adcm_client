@@ -284,7 +284,7 @@ def test_paging_on_hosts(sdk_client_fs: ADCMClient):
         provider = bundle.provider_prototype().provider_create(name="test_provider")
     with allure.step('Create host'):
         for i in range(1, 100):
-            provider.host_create(fqdn='host{}'.format(str(i)))
+            provider.host_create(fqdn=f'host{str(i)}')
     with allure.step('Check hosts'):
         prev_id = -1
         prev_fqdn = 'xxxx'

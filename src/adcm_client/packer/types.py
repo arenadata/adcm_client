@@ -58,7 +58,7 @@ def _get_top_dirs(image: Image, prepared_image: Image, client: DockerClient) -> 
     modules_data = yaml.safe_load_all(
         client.containers.run(
             prepared_image,
-            'pip show -f %s' % ' '.join(modules),
+            f'pip show -f {" ".join(modules)}',
             remove=True
         ).decode("utf-8")
     )
@@ -123,10 +123,8 @@ def _copy_pkgs_files(path, dirs, image: Image, volumes: dict, client: DockerClie
     :type client: DockerClient
     """
     dirs = list(dict.fromkeys(dirs))  # filter on keys of duplicate elements
-    command = '/bin/sh -c "mkdir %s; cp -r %s %s ;' % (path,
-                                                       ' '.join(dirs),
-                                                       path)
-    command += ' chown -R %s %s"' % (os.getuid(), path)
+    command = f'/bin/sh -c "mkdir {path}; cp -r {" ".join(dirs)} {path} ;'
+    command += f' chown -R {os.getuid()} {path}"'
     client.containers.run(image, command, volumes=volumes, remove=True)
 
 
