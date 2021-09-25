@@ -14,6 +14,7 @@
 import logging
 import warnings
 from collections import abc
+from io import BytesIO
 from json import dumps
 
 from coreapi.exceptions import ErrorMessage
@@ -1567,7 +1568,7 @@ class ADCMClient:
         """Return list of 'ServicePrototype' objects"""
         return ServicePrototypeList(self._api, paging=paging, **args)
 
-    def _upload(self, bundle_stream) -> Bundle:
+    def _upload(self, bundle_stream: BytesIO) -> Bundle:
         """Upload and create Bundle from file={bundle_stream}"""
         self._api.objects.stack.upload.create(file=bundle_stream)
         bundle_stream.seek(0)
@@ -1605,7 +1606,7 @@ class ADCMClient:
     @allure_step('Upload bundle from {url}')
     def upload_from_url(self, url) -> Bundle:
         """Upload bundle from {url}"""
-        return self._upload(stream.web(url))
+        return self._upload(BytesIO(stream.web(url)))
 
     def bundle_delete(self, **args):
         """Delete bundle object"""
