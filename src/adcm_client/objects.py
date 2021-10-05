@@ -1568,6 +1568,14 @@ class ADCMClient:
         """Return list of 'ServicePrototype' objects"""
         return ServicePrototypeList(self._api, paging=paging, **args)
 
+    def component(self, **args) -> Component:
+        """Return 'Component' object"""
+        return Component(self._api, **args)
+
+    def component_list(self, paging=None, **args) -> ComponentList:
+        """Return list of 'Component' objects"""
+        return ComponentList(self._api, paging=paging, **args)
+
     def _upload(self, bundle_stream: BytesIO) -> Bundle:
         """Upload and create Bundle from file={bundle_stream}"""
         self._api.objects.stack.upload.create(file=bundle_stream)
