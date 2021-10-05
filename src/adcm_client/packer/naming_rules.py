@@ -63,8 +63,8 @@ def check_version(version):
     if not isinstance(version, str):
         raise TypeError('Bundle version must be string').with_traceback(sys.exc_info()[2])
     if '-' in version:
-        raise RestrictedSymbol('Version contains restricted symbol \
-            "-" in position %s' % version.index('-')).with_traceback(sys.exc_info()[2])
+        raise RestrictedSymbol(f'Version contains restricted symbol \
+            "-" in position {version.index("-")}').with_traceback(sys.exc_info()[2])
 
 
 def resolve_build_id(git_data, master_branches, timestamp):

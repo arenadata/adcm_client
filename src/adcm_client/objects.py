@@ -14,6 +14,7 @@
 import logging
 import warnings
 from collections import abc
+from io import BytesIO
 from json import dumps
 
 from coreapi.exceptions import ErrorMessage
@@ -31,6 +32,7 @@ from adcm_client.base import (
     min_server_version,
     allure_step,
     allure_attach_json,
+    allure_attach,
     legacy_server_implementaion,
     EndPoint,
 )
@@ -1470,7 +1472,7 @@ class ADCMClient:
         """Check client version and provide information about newer version"""
         if rpm.compare_versions(self._MIN_VERSION, self._api.adcm_version) > -1:
             raise ADCMApiError(
-                "The client supports ADCM versions newer than '{}'".format(self._MIN_VERSION)
+                f"The client supports ADCM versions newer than '{self._MIN_VERSION}'"
             )
 
     def api_token(self):
@@ -1569,10 +1571,17 @@ class ADCMClient:
         """Return list of 'ServicePrototype' objects"""
         return ServicePrototypeList(self._api, paging=paging, **args)
 
-    def _upload(self, bundle_stream) -> Bundle:
+    def _upload(self, bundle_stream: BytesIO) -> Bundle:
         """Upload and create Bundle from file={bundle_stream}"""
         self._api.objects.stack.upload.create(file=bundle_stream)
+        bundle_stream.seek(0)
+        allure_attach(
+            body=bundle_stream.getvalue(),
+            name="bundle.tgz",
+            extension="tgz",
+        )
         data = self._api.objects.stack.load.create(bundle_file="file")
+        bundle_stream.close()
         return self.bundle(bundle_id=data['id'])
 
     @allure_step('Upload bundle from {dirname}')
@@ -1600,7 +1609,7 @@ class ADCMClient:
     @allure_step('Upload bundle from {url}')
     def upload_from_url(self, url) -> Bundle:
         """Upload bundle from {url}"""
-        return self._upload(stream.web(url))
+        return self._upload(BytesIO(stream.web(url)))
 
     def bundle_delete(self, **args):
         """Delete bundle object"""
