@@ -1560,6 +1560,10 @@ class ADCMClient:
         """Return 'Service' object"""
         return Service(self._api, **args)
 
+    def service_list(self, paging=None, **kwargs) -> ServiceList:
+        """Return list of 'Service' objects"""
+        return ServiceList(self._api, paging=paging, **kwargs)
+
     def service_prototype(self, **args) -> ServicePrototype:
         """Return 'ServicePrototype' object"""
         return ServicePrototype(self._api, **args)
@@ -1568,13 +1572,13 @@ class ADCMClient:
         """Return list of 'ServicePrototype' objects"""
         return ServicePrototypeList(self._api, paging=paging, **args)
 
-    def component(self, **args) -> Component:
+    def component(self, **kwargs) -> Component:
         """Return 'Component' object"""
-        return Component(self._api, **args)
+        return Component(self._api, **kwargs)
 
-    def component_list(self, paging=None, **args) -> ComponentList:
+    def component_list(self, paging=None, **kwargs) -> ComponentList:
         """Return list of 'Component' objects"""
-        return ComponentList(self._api, paging=paging, **args)
+        return ComponentList(self._api, paging=paging, **kwargs)
 
     def _upload(self, bundle_stream: BytesIO) -> Bundle:
         """Upload and create Bundle from file={bundle_stream}"""
