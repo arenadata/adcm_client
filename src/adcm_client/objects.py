@@ -917,7 +917,10 @@ class Host(_BaseObject):
 
     def cluster(self) -> "Cluster":
         """Return 'Cluster' object"""
-        return self._parent_obj(Cluster)
+        if self.cluster_id:
+            return self._parent_obj(Cluster)
+        else:
+            return None
 
     def bundle(self) -> "Bundle":
         """Return 'Bundle' object"""
