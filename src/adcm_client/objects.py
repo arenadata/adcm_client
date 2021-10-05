@@ -970,6 +970,9 @@ class Action(BaseAPIObject):
     script = None
     script_type = None
     state_available = None
+    state_unavailable = None
+    multi_state_available = None
+    multi_state_unavailable = None
     state_on_fail = None
     state_on_success = None
     type = None
