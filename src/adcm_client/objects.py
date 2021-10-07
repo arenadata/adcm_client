@@ -499,7 +499,6 @@ class Cluster(_BaseObject):
     status = None
     edition = None
     license = None
-    issue = None
 
     def __repr__(self):
         return f"<Cluster {self.name} from bundle - {self.bundle_id} at {id(self)}>"
@@ -703,7 +702,6 @@ class Service(_BaseObject):
     display_name = None
     cluster_id = None
     status = None
-    button = None
     monitoring = None
 
     def __new__(cls, *args, **kwargs):
@@ -964,7 +962,6 @@ class Action(BaseAPIObject):
     description = None
     params = None
     prototype_id = None
-    required_hostcomponentmap = None
     hostcomponentmap = None
     script = None
     script_type = None
@@ -975,7 +972,6 @@ class Action(BaseAPIObject):
     state_on_fail = None
     state_on_success = None
     type = None
-    url = None
     subs = None
     config = None
     ui_options = None
