@@ -324,8 +324,6 @@ class _BaseObject(BaseAPIObject):
     url = None
     state = None
     prototype_id = None
-    issue = None
-    button = None
     locked = None
     multi_state = None
 
@@ -501,6 +499,7 @@ class Cluster(_BaseObject):
     status = None
     edition = None
     license = None
+    issue = None
 
     def __repr__(self):
         return f"<Cluster {self.name} from bundle - {self.bundle_id} at {id(self)}>"
@@ -668,7 +667,6 @@ class Upgrade(BaseAPIObject):
     max_version = None
     min_strict = None
     max_strict = None
-    upgradable = None
     state_available = None
     state_on_success = None
     from_edition = None
@@ -826,7 +824,6 @@ class Component(_BaseObject):
     display_name = None
     description = None
     constraint = None
-    params = None
     prototype_id = None
     requires = None
     bound_to = None
