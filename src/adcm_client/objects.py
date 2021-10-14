@@ -1554,10 +1554,12 @@ class ADCMClient:
         """Return list of 'ProviderPrototype' objects"""
         return ProviderPrototypeList(self._api, paging=paging, **args)
 
+    @min_server_version('2020.12.16.15')
     def service(self, **args) -> Service:
         """Return 'Service' object"""
         return Service(self._api, **args)
 
+    @min_server_version('2020.12.16.15')
     def service_list(self, paging=None, **kwargs) -> ServiceList:
         """Return list of 'Service' objects"""
         return ServiceList(self._api, paging=paging, **kwargs)
@@ -1570,10 +1572,12 @@ class ADCMClient:
         """Return list of 'ServicePrototype' objects"""
         return ServicePrototypeList(self._api, paging=paging, **args)
 
+    @min_server_version('2021.05.26.12')
     def component(self, **kwargs) -> Component:
         """Return 'Component' object"""
         return Component(self._api, **kwargs)
 
+    @min_server_version('2021.05.26.12')
     def component_list(self, paging=None, **kwargs) -> ComponentList:
         """Return list of 'Component' objects"""
         return ComponentList(self._api, paging=paging, **kwargs)
