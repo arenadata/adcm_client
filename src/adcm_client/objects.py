@@ -324,8 +324,6 @@ class _BaseObject(BaseAPIObject):
     url = None
     state = None
     prototype_id = None
-    issue = None
-    button = None
     locked = None
     multi_state = None
 
@@ -668,7 +666,6 @@ class Upgrade(BaseAPIObject):
     max_version = None
     min_strict = None
     max_strict = None
-    upgradable = None
     state_available = None
     state_on_success = None
     from_edition = None
@@ -705,7 +702,6 @@ class Service(_BaseObject):
     display_name = None
     cluster_id = None
     status = None
-    button = None
     monitoring = None
 
     def __new__(cls, *args, **kwargs):
@@ -826,7 +822,6 @@ class Component(_BaseObject):
     display_name = None
     description = None
     constraint = None
-    params = None
     prototype_id = None
     requires = None
     bound_to = None
@@ -969,7 +964,6 @@ class Action(BaseAPIObject):
     description = None
     params = None
     prototype_id = None
-    required_hostcomponentmap = None
     hostcomponentmap = None
     script = None
     script_type = None
@@ -980,7 +974,6 @@ class Action(BaseAPIObject):
     state_on_fail = None
     state_on_success = None
     type = None
-    url = None
     subs = None
     config = None
     ui_options = None
