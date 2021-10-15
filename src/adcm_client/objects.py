@@ -357,14 +357,14 @@ class _BaseObject(BaseAPIObject):
         return history_entry['config']
 
     def previous_config(self, full=False):
-        """Provide endpoint for config/previous/ """
+        """Provide endpoint for config/previous/list. Return last previous config if it exists"""
         previous = self._subcall("config", "previous", "list")
         if full:
             return previous
         return previous['config']
 
     def config_history(self, full=False):
-        """Provide endpoint for config/history. Returns """
+        """Provide endpoint for config/history/list. Returns list of all previous configs"""
         history = self._subcall("config", "history", "list")
         if full:
             return history
@@ -372,7 +372,6 @@ class _BaseObject(BaseAPIObject):
         for story in history:
             result.append(story['config'])
         return result
-
 
     @allure_step("Save config")
     def config_set(self, data, attach_to_allure=True):
