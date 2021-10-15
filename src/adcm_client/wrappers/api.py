@@ -31,6 +31,21 @@ class ADCMApiError(Exception):
     pass
 
 
+class EnvHTTPTransport(coreapi.transports.HTTPTransport):
+    """
+    Fix the coreapi problem that prepared request do not read requests-related env variables
+    See https://docs.python-requests.org/en/latest/user/advanced/#prepared-requests
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        settings = self._session.merge_environment_settings(None, {}, None, None, None)
+        self._session.verify = settings["verify"]
+        self._session.proxies = settings["proxies"]
+        self._session.stream = settings["stream"]
+        self._session.cert = settings["cert"]
+
+
 class ADCMApiWrapper():
     """Thin wrapper over ADCM API with coreapi (search django rest framework)
     Quick start:
@@ -118,7 +133,7 @@ class ADCMApiWrapper():
             scheme='Token',
             token=self.api_token
         )
-        self.client = coreapi.Client(auth=auth)
+        self.client = coreapi.Client(transports=[EnvHTTPTransport(auth=auth)])
         self.fetch()
 
     def fetch(self):
