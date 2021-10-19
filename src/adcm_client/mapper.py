@@ -36,7 +36,7 @@ class Mapper:
 
     def _parse(self):
         with open(self._filename, 'r', encoding='utf-8') as stream:
-            self._data = yaml.load(stream)
+            self._data = yaml.safe_load(stream)
 
     def _do_rec(self, point):
         if point['object'] not in self._vars:
