@@ -830,6 +830,7 @@ class Component(_BaseObject):
     IDNAME = "component_id"
     PATH = ["component"]
     SUBPATH = ["component"]
+    FILTERS = ["service_id"]
 
     id = None
     component_id = None
