@@ -78,6 +78,9 @@ def resolve_build_id(git_data, master_branches, timestamp):
     :return: build id
     :rtype: str
     """
+    def strip_branch(git_data):
+        return git_data["branch"].replace("-", "_").replace("/", "_")
+
     if git_data:
         if 'pull_request' in git_data:
             build_id = '-rc' + git_data['pull_request'] + '.' + timestamp
@@ -85,7 +88,7 @@ def resolve_build_id(git_data, master_branches, timestamp):
             if git_data['branch'] in master_branches:
                 build_id = '-1'
             else:
-                build_id = '-' + git_data['branch'].replace("-", "_").replace("/", "_")
+                build_id = '-' + strip_branch(git_data) + "." + timestamp
     else:
         build_id = '-1'
     return build_id
