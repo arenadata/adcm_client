@@ -1,0 +1,4 @@
+pytest
+pytest-xdist
+adcm_pytest_plugin
+allure-pytest

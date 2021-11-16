@@ -52,7 +52,8 @@ setuptools.setup(
     author_email="cab@arenadata.io",
     description="ArenaData Cluster Manager Client",
     url="https://github.com/arenadata/adcm",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(where="src"),
+    package_dir={"": "src"},
     install_requires=[
         'pyyaml', 'coreapi', 'ipython', 'ad_ci_tools==0.1.5',
         'docker', 'jinja2', 'version_utils'
@@ -66,5 +67,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
-    scripts=['bin/adcm_sdk_shell', 'bin/adcm_sdk_pack'],
+    scripts=['src/bin/adcm_sdk_shell', 'src/bin/adcm_sdk_pack'],
 )
