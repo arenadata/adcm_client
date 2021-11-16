@@ -1024,7 +1024,7 @@ class Action(BaseAPIObject):
         """Return 'TaskList' object"""
         return self._child_obj(TaskList, **args)
 
-    def run(self, **args) -> "Task":
+    def run(self, **args) -> "Task":  # pylint: disable=too-many-branches
         with allure_step(f"Run action {self.name}"):
 
             if 'hc' in args:
@@ -1041,7 +1041,9 @@ class Action(BaseAPIObject):
                     if 'config' in config_diff and 'attr' in config_diff:
                         args['attr'] = {}
                         for item in self.config["attr"]:
-                            args['attr'][item] = config_diff['attr'].get(item) or self.config['attr'][item]
+                            args['attr'][item] = (
+                                config_diff['attr'].get(item) or self.config['attr'][item]
+                            )
                         config_diff = config_diff['config']
                     for item in self.config['config']:
                         if item['type'] == 'group':
