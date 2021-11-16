@@ -21,9 +21,9 @@ import urllib3
 
 
 def wait_net_service(server, port, timeout, period=1):
-    """ Wait for network service to appear
-        @param timeout: in seconds, if None or 0 wait forever
-        @return: True of False
+    """Wait for network service to appear
+    @param timeout: in seconds, if None or 0 wait forever
+    @return: True of False
     """
 
     start_time = now()
@@ -38,10 +38,10 @@ def wait_net_service(server, port, timeout, period=1):
 
 
 def wait_for_url(url, timeout, period=1):
-    """ Wait for url to responce something with http 200
-        @param timeout: in seconds
-        @param period: in seconds
-        @return: True if connect successfull, False if not
+    """Wait for url to responce something with http 200
+    @param timeout: in seconds
+    @param period: in seconds
+    @return: True if connect successfull, False if not
     """
     # Disable annoying warning:
     # connectionpool.py          662 WARNING  Retrying

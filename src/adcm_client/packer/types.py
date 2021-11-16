@@ -50,28 +50,31 @@ def _get_top_dirs(image: Image, prepared_image: Image, client: DockerClient) -> 
     modified_module_list = _get_modules_list(prepared_image, client)
 
     # list of packages tham must be installed
-    modules = list(map(
-        lambda x: x.split('==')[0],
-        set(modified_module_list).difference(default_module_list)
-    ))
+    modules = list(
+        map(lambda x: x.split('==')[0], set(modified_module_list).difference(default_module_list))
+    )
 
     modules_data = yaml.safe_load_all(
         client.containers.run(
-            prepared_image,
-            f'pip show -f {" ".join(modules)}',
-            remove=True
+            prepared_image, f'pip show -f {" ".join(modules)}', remove=True
         ).decode("utf-8")
     )
-    return list(chain.from_iterable(map(
-        lambda x: [os.path.join(x['Location'], i) for i in list(
-            dict.fromkeys(
-                map(
-                    lambda y: os.path.normpath(y).split(os.sep)[0],
-                    x['Files'].split()
-                )
-            )) if i not in ['..', '.']],
-        modules_data
-    )))
+    return list(
+        chain.from_iterable(
+            map(
+                lambda x: [
+                    os.path.join(x['Location'], i)
+                    for i in list(
+                        dict.fromkeys(
+                            map(lambda y: os.path.normpath(y).split(os.sep)[0], x['Files'].split())
+                        )
+                    )
+                    if i not in ['..', '.']
+                ],
+                modules_data,
+            )
+        )
+    )
 
 
 def _get_modules_list(image: Image, client: DockerClient) -> "list":
@@ -85,8 +88,9 @@ def _get_modules_list(image: Image, client: DockerClient) -> "list":
     :return: list of installed python pkgs in given inamge freeze format
     :rtype: list
     """
-    return client.containers.run(
-        image, '/bin/sh -c "pip freeze"', remove=True).decode("utf-8").split()
+    return (
+        client.containers.run(image, '/bin/sh -c "pip freeze"', remove=True).decode("utf-8").split()
+    )
 
 
 def _get_prepared_container(pkgs: list, image: Image, client: DockerClient) -> "Container":
@@ -139,10 +143,9 @@ def _get_prepared_image(pkgs, image: Image, client: DockerClient) -> "Image":
 
     prepared_image_name = [
         image.tags[0].split(':')[0],
-        ''.join(random.sample(string.ascii_lowercase, 5))
+        ''.join(random.sample(string.ascii_lowercase, 5)),
     ]
-    prepared_image = container.commit(repository=prepared_image_name[0],
-                                      tag=prepared_image_name[1])
+    prepared_image = container.commit(repository=prepared_image_name[0], tag=prepared_image_name[1])
     container.remove()
     return prepared_image
 
@@ -176,9 +179,7 @@ def python_mod_req(source_path, workspace, **kwargs):
             dirs = _get_top_dirs(image, prepared_image, client)
 
             # volume that contains workspace
-            volumes = {
-                workspace: {'bind': workspace, 'mode': 'rw'}
-            }
+            volumes = {workspace: {'bind': workspace, 'mode': 'rw'}}
 
             if kwargs.get('target_dir'):
                 path = os.path.join(source_path, kwargs['target_dir'], 'pmod')
@@ -194,8 +195,9 @@ def python_mod_req(source_path, workspace, **kwargs):
 
 
 def splitter(*args, **kwargs):
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader(args[0]),
-                             undefined=jinja2.StrictUndefined)
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(args[0]), undefined=jinja2.StrictUndefined
+    )
     for file in kwargs['files']:
         tmpl = env.get_template(file)
         with codecs.open(os.path.join(args[0], (os.path.splitext(file)[0])), 'w', 'utf-8') as f:
