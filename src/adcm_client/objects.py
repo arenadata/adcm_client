@@ -1038,6 +1038,11 @@ class Action(BaseAPIObject):
 
                 if 'config_diff' in args:
                     config_diff = args.pop('config_diff')
+                    if 'config' in config_diff and 'attr' in config_diff:
+                        args['attr'] = {}
+                        for item in self.config["attr"]:
+                            args['attr'][item] = config_diff['attr'].get(item) or self.config['attr'][item]
+                        config_diff = config_diff['config']
                     for item in self.config['config']:
                         if item['type'] == 'group':
                             continue
