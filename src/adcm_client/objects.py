@@ -1028,9 +1028,8 @@ class Action(BaseAPIObject):
         attach_to_allure = args.pop("attach_to_allure", True)
         with allure_step(f"Run action {self.name}"):
 
-            if 'hc' in args:
-                if attach_to_allure:
-                    allure_attach_json(args.get('hc'), name="Hostcomponent map")
+            if 'hc' in args and attach_to_allure:
+                allure_attach_json(args.get('hc'), name="Hostcomponent map")
 
             if 'config' in args and 'config_diff' in args:
                 raise TypeError("only one argument is expected 'config' or 'config_diff'")
