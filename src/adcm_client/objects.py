@@ -1025,9 +1025,10 @@ class Action(BaseAPIObject):
         return self._child_obj(TaskList, **args)
 
     def run(self, **args) -> "Task":  # pylint: disable=too-many-branches
+        attach_to_allure = args.pop("attach_to_allure", True)
         with allure_step(f"Run action {self.name}"):
 
-            if 'hc' in args:
+            if 'hc' in args and attach_to_allure:
                 allure_attach_json(args.get('hc'), name="Hostcomponent map")
 
             if 'config' in args and 'config_diff' in args:
@@ -1038,6 +1039,8 @@ class Action(BaseAPIObject):
 
                 if 'config_diff' in args:
                     config_diff = args.pop('config_diff')
+                    if attach_to_allure:
+                        allure_attach_json(config_diff, name="Action config")
                     if 'config' in config_diff and 'attr' in config_diff:
                         args['attr'] = {}
                         for item in self.config["attr"]:
