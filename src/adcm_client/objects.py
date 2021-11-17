@@ -1131,11 +1131,11 @@ class Task(BaseAPIObject):
 
     def job(self, **args) -> "Job":
         """Return 'Job' object"""
-        return Job(self._api, path_args=dict(task_id=self.id), **args)
+        return Job(self._api, task_id=self.id, **args)
 
     def job_list(self, paging=None, **args) -> "JobList":
         """Return list of 'Job' objects"""
-        return JobList(self._api, paging=paging, path_args=dict(task_id=self.id), **args)
+        return JobList(self._api, paging=paging, task_id=self.id, **args)
 
     @allure_step("Wait for task end")
     def wait(self, timeout=None, log_failed=True):
@@ -1239,10 +1239,6 @@ class Job(BaseAPIObject):
 
     def __repr__(self):
         return f"<Job {self.job_id} at {id(self)}>"
-
-    # FIXME: remove method __init__, deal with argument path_args
-    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
-        super().__init__(api, path, **args)
 
     def task(self) -> "Task":
         """Return 'Task' object"""
