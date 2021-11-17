@@ -1038,6 +1038,7 @@ class Action(BaseAPIObject):
 
                 if 'config_diff' in args:
                     config_diff = args.pop('config_diff')
+                    allure_attach_json(config_diff, name="Action config")
                     if 'config' in config_diff and 'attr' in config_diff:
                         args['attr'] = {}
                         for item in self.config["attr"]:
