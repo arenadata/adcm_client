@@ -426,7 +426,7 @@ class _BaseObject(BaseAPIObject):
             object_id=self.id,
             object_type=self.prototype().type,
             name=name,
-            description=description
+            description=description,
         )
 
     @min_server_version('2021.07.16.09')

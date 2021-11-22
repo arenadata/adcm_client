@@ -23,7 +23,7 @@ def data():
             "description": "Arenadata Database",
             "date": "2018-08-20T13:24:37.649437Z",
             "url": "http://127.0.0.1:8000/api/v1/stack/bundle/1/",
-            "update": "http://127.0.0.1:8000/api/v1/stack/bundle/1/update/"
+            "update": "http://127.0.0.1:8000/api/v1/stack/bundle/1/update/",
         },
         {
             "id": 2,
@@ -33,7 +33,7 @@ def data():
             "description": "",
             "date": "2018-08-20T13:25:19.090129Z",
             "url": "http://127.0.0.1:8000/api/v1/stack/bundle/2/",
-            "update": "http://127.0.0.1:8000/api/v1/stack/bundle/2/update/"
+            "update": "http://127.0.0.1:8000/api/v1/stack/bundle/2/update/",
         },
         {
             "id": 3,
@@ -43,7 +43,7 @@ def data():
             "description": "",
             "date": "2018-08-20T13:26:35.018593Z",
             "url": "http://127.0.0.1:8000/api/v1/stack/bundle/3/",
-            "update": "http://127.0.0.1:8000/api/v1/stack/bundle/3/update/"
+            "update": "http://127.0.0.1:8000/api/v1/stack/bundle/3/update/",
         },
         {
             "id": 4,
@@ -53,6 +53,6 @@ def data():
             "description": "Monitoring and Control Software",
             "date": "2018-08-20T13:26:41.564955Z",
             "url": "http://127.0.0.1:8000/api/v1/stack/bundle/4/",
-            "update": "http://127.0.0.1:8000/api/v1/stack/bundle/4/update/"
-        }
+            "update": "http://127.0.0.1:8000/api/v1/stack/bundle/4/update/",
+        },
     ]

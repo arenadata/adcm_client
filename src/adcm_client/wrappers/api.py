@@ -16,14 +16,16 @@ import requests
 try:
     # pylint: disable=unused-import
     from pytest import allure  # noqa: F401
+
     # pylint: disable=unused-import
     import pytest
+
     IS_ALLURE = True
 except ImportError:
     IS_ALLURE = False
 
 
-class APINode():
+class APINode:
     pass
 
 
@@ -46,7 +48,7 @@ class EnvHTTPTransport(coreapi.transports.HTTPTransport):
         self._session.cert = settings["cert"]
 
 
-class ADCMApiWrapper():
+class ADCMApiWrapper:
     """Thin wrapper over ADCM API with coreapi (search django rest framework)
     Quick start:
 
@@ -95,9 +97,11 @@ class ADCMApiWrapper():
             setattr(result, funcname, func)
 
         for subnodename in node.data.keys():
-            setattr(result,
-                    subnodename,
-                    self._parse_schema(node.data[subnodename], is_allure, path + [subnodename]))
+            setattr(
+                result,
+                subnodename,
+                self._parse_schema(node.data[subnodename], is_allure, path + [subnodename]),
+            )
         return result
 
     def __init__(self, url):
@@ -124,15 +128,12 @@ class ADCMApiWrapper():
         """Auth api client in ADCM and fetch schema"""
 
         result = requests.request(
-            'POST', self.url + '/api/v1/token/',
-            data={'username': username, 'password': password})
+            'POST', self.url + '/api/v1/token/', data={'username': username, 'password': password}
+        )
         token = result.json()
         self._check_for_error(token)
         self.api_token = token['token']
-        auth = coreapi.auth.TokenAuthentication(
-            scheme='Token',
-            token=self.api_token
-        )
+        auth = coreapi.auth.TokenAuthentication(scheme='Token', token=self.api_token)
         self.client = coreapi.Client(transports=[EnvHTTPTransport(auth=auth)])
         self.fetch()
 

@@ -23,7 +23,6 @@ class IncorrectOperation(Exception):
 
 
 class Mapper:
-
     def __init__(self, filename, client: ADCMClient = None):
         self._filename = filename
         self._workdir = os.path.dirname(filename)
