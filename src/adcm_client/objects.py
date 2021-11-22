@@ -162,6 +162,7 @@ class Prototype(BaseAPIObject):
     id = None
     prototype_id = None
     name = None
+    display_name = None
     type = None
     description = None
     version = None
