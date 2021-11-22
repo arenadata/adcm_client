@@ -43,7 +43,7 @@ def _find_random_port(ip):
     raise UnableToBind("There is no free port for Docker after 20 tries.")
 
 
-class ADCM():
+class ADCM:
     """
     Class that wraps ADCM Api operation over self.api (ADCMApiWrapper)
     and wraps docker over self.container (see docker module for info)
@@ -61,15 +61,23 @@ class ADCM():
         self.container.stop()
 
 
-class DockerWrapper():
+class DockerWrapper:
     """Allow to connect to local docker daemon and spawn ADCM intances."""
 
     def __init__(self):
         self.client = docker.from_env()
 
     # pylint: disable=R0913
-    def run_adcm(self, image='hub.arenadata.io/adcm/adcm',
-                 remove=True, pull=True, name=None, tag=None, ip=DEFAULTIP, volumes=None):
+    def run_adcm(
+        self,
+        image='hub.arenadata.io/adcm/adcm',
+        remove=True,
+        pull=True,
+        name=None,
+        tag=None,
+        ip=DEFAULTIP,
+        volumes=None,
+    ):
         """
         Run ADCM in docker image.
         Return ADCM instance.
@@ -95,7 +103,7 @@ class DockerWrapper():
             volumes=volumes,
             remove=remove,
             detach=True,
-            name=name
+            name=name,
         )
         wait_for_url(f"http://{ip}:{port}/api/v1/", 60)
         return ADCM(container, ip, port)

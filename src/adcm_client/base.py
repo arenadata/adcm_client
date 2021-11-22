@@ -76,7 +76,7 @@ def pp(*args, **kwargs):
 
 
 def strip_none_keys(args):
-    """ Usefull function to interact with coreapi.
+    """Usefull function to interact with coreapi.
 
     While it's ok to pass function arguments with default equal to None,
     it is not allowed to pass it over coreapi. So we have to strip keys
@@ -119,10 +119,13 @@ class PagingEnds(Exception):
 
 class TooOldServerVersion(Exception):
     """Incompatible version, upgrade version ADCM."""
+
     def __init__(self, method_name='', version='', message=None):
         if message is None:
-            self.message = (f'The "{method_name}" method works with versions older {version},'
-                            f' upgrade version ADCM.')
+            self.message = (
+                f'The "{method_name}" method works with versions older {version},'
+                f' upgrade version ADCM.'
+            )
         else:
             self.message = message
         super().__init__(self.message)
@@ -137,7 +140,9 @@ def min_server_version(version):
             if rpm.compare_versions(args[0].adcm_version, version) < 0:
                 raise TooOldServerVersion(func.__name__, version)
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorate
 
 
@@ -152,6 +157,7 @@ def legacy_server_implementaion(oldfunc, turnover_version):
     inner wrapper.
     But any you are not so dirty, don't you?
     """
+
     def decorator(func):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
@@ -159,7 +165,9 @@ def legacy_server_implementaion(oldfunc, turnover_version):
             if rpm.compare_versions(self.adcm_version, turnover_version) < 0:
                 return oldfunc(self, *args, **kwargs)
             return func(self, *args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -167,9 +175,9 @@ class Paging:
     def __init__(self, paged_object, limit=50, **args):
         self._paged_object = paged_object
         self._limit = limit
-        self._query_params = args      # Just passing it to paged_object
-        self._offset = 0               # Offset in paging
-        self._current_list = None      # Current page data
+        self._query_params = args  # Just passing it to paged_object
+        self._offset = 0  # Offset in paging
+        self._current_list = None  # Current page data
         self._current_iterator = None
 
     def __iter__(self):
@@ -179,11 +187,7 @@ class Paging:
     def __next_list(self):
         try:
             result = self._paged_object(
-                paging={
-                    'limit': self._limit,
-                    'offset': self._offset
-                },
-                **self._query_params
+                paging={'limit': self._limit, 'offset': self._offset}, **self._query_params
             )
             self._offset += self._limit
             self._current_list = result
@@ -311,6 +315,7 @@ class EndPoint:
 
 class BaseAPIObject:
     """That is common object for single ADCM's object"""
+
     IDNAME = None  # Will not be None in child
     PATH = None  # Will not be None in child
     FILTERS = []
@@ -379,10 +384,12 @@ class BaseAPIObject:
         raise WaitTimeout
 
     def _subobject(self, classname, **args):
-        return classname(self._api,
-                         path=self.PATH + classname.SUBPATH,
-                         path_args=self._endpoint.get_object_path(self.id),
-                         **args)
+        return classname(
+            self._api,
+            path=self.PATH + classname.SUBPATH,
+            path_args=self._endpoint.get_object_path(self.id),
+            **args,
+        )
 
     def _subcall(self, *path, **args):
         func = self._endpoint.get_subpoint(*path)
@@ -406,6 +413,7 @@ class BaseAPIObject:
 
 class BaseAPIListObject(UserList):  # pylint: disable=too-many-ancestors
     """That is common object for multiple ADCM's object"""
+
     _ENTRY_CLASS = BaseAPIObject
 
     def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, paging=None, **args):
@@ -419,15 +427,14 @@ class BaseAPIListObject(UserList):  # pylint: disable=too-many-ancestors
         if path is None:
             path = self._ENTRY_CLASS.PATH
 
-        self._endpoint = EndPoint(api,
-                                  self._ENTRY_CLASS.IDNAME,
-                                  path,
-                                  path_args,
-                                  self._ENTRY_CLASS.FILTERS)
+        self._endpoint = EndPoint(
+            api, self._ENTRY_CLASS.IDNAME, path, path_args, self._ENTRY_CLASS.FILTERS
+        )
         data = []
         for i in self._endpoint.search(**args, paging=paging):
-            data.append(self._ENTRY_CLASS(api,
-                                          path=path,
-                                          path_args=path_args,
-                                          **{self._ENTRY_CLASS.IDNAME: i['id']}))
+            data.append(
+                self._ENTRY_CLASS(
+                    api, path=path, path_args=path_args, **{self._ENTRY_CLASS.IDNAME: i['id']}
+                )
+            )
         super().__init__(data)
