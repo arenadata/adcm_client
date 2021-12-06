@@ -1462,6 +1462,7 @@ class User(BaseAPIObject):
     profile = None
 
     def group(self) -> "GroupList":
+        """Return list of `Group` object"""
         # TODO: I can't do this, because search() is not working
         # return GroupList(self._api, user=self.id)
         groups = GroupList(self._api)
@@ -1472,7 +1473,9 @@ class User(BaseAPIObject):
         return groups
 
     def change_password(self, password: str) -> None:
+        """Changing user password"""
         self._api.objects.rbac.user.partial_update(id=self.id, password=password)
+        self.reread()
 
 
 class UserList(BaseAPIListObject):
@@ -1510,6 +1513,15 @@ class Group(BaseAPIObject):
             data.append(User(self._api, id=user['id']))
         users.data = data
         return users
+
+    def add_user(self, user: User) -> None:
+        """Adding a user to a group"""
+        current_users = self.user()
+        users = [{'id': obj.id} for obj in current_users]
+        users.append({'id': user.id})
+        self._api.objects.rbac.group.partial_update(id=self.id, user=users)
+        user.reread()
+        self.reread()
 
 
 class GroupList(BaseAPIListObject):
