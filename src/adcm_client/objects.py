@@ -16,6 +16,7 @@ import warnings
 from collections import abc
 from io import BytesIO
 from json import dumps
+from typing import List, Union
 
 from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
@@ -1445,6 +1446,181 @@ class ConcernList(BaseAPIListObject):
 
 
 ##################################################
+#              U S E R
+##################################################
+class User(BaseAPIObject):
+    IDNAME = 'id'
+    PATH = ['rbac', 'user']
+    FILTERS = ['id', 'username', 'group']
+    id = None
+    username = None
+    first_name = None
+    last_name = None
+    email = None
+    is_superuser = None
+    password = None
+    profile = None
+
+    def group(self) -> "GroupList":
+        # TODO: I can't do this, because search() is not working
+        # return GroupList(self._api, user=self.id)
+        groups = GroupList(self._api)
+        data = []
+        for group in self._data['group']:
+            data.append(Group(self._api, id=group['id']))
+        groups.data = data
+        return groups
+
+    def change_password(self, password: str) -> None:
+        self._api.objects.rbac.user.partial_update(id=self.id, password=password)
+
+
+class UserList(BaseAPIListObject):
+    """List of `User` objects"""
+
+    _ENTRY_CLASS = User
+
+
+@allure_step('Create user {username}')
+def new_user(api: ADCMApiWrapper, username: str, password: str, **kwargs):
+    """Create new `User` object"""
+    user = api.objects.rbac.user.create(
+        username=username, password=password, **strip_none_keys(kwargs)
+    )
+    return User(api, id=user['id'])
+
+
+##################################################
+#              G R O U P
+##################################################
+class Group(BaseAPIObject):
+    IDNAME = 'id'
+    PATH = ['rbac', 'group']
+    FILTERS = ['user']
+    id = None
+    name = None
+    description = None
+
+    def user(self) -> "UserList":
+        # TODO: I can't do this, because search() is not working
+        # return UserList(self._api, group=self.id)
+        users = UserList(self._api)
+        data = []
+        for user in self._data['user']:
+            data.append(User(self._api, id=user['id']))
+        users.data = data
+        return users
+
+
+class GroupList(BaseAPIListObject):
+    _ENTRY_CLASS = Group
+
+
+@allure_step('Create group {name}')
+def new_group(api: ADCMApiWrapper, name: str, **kwargs):
+    """Create new `Group` object"""
+    group = api.objects.rbac.group.create(name=name, **strip_none_keys(kwargs))
+    return Group(api, id=group['id'])
+
+
+##################################################
+#              R O L E
+##################################################
+class Role(BaseAPIObject):
+    IDNAME = 'id'
+    PATH = ['rbac', 'role']
+    FILTERS = ['id', 'name', 'built_in', 'business_permit', 'child']
+    id = None
+    name = None
+    description = None
+    built_in = None
+    type = None
+    category = None
+    parametrized_by = None
+
+    def child(self) -> "RoleList":
+        # TODO: I can't do this, because search() is not working
+        # return RoleList(self._api, child=self.id)
+        roles = RoleList(self._api)
+        data = []
+        for role in self._data['child']:
+            data.append(Role(self._api, id=role['id']))
+        roles.data = data
+        return roles
+
+
+class RoleList(BaseAPIListObject):
+    _ENTRY_CLASS = Role
+
+
+@allure_step('Create role {name}')
+def new_role(api: ADCMApiWrapper, name: str, parametrized_by: List[str], **kwargs):
+    """Create new `Role` object"""
+    role = api.objects.rbac.role.create(
+        name=name, parametrized_by=parametrized_by, **strip_none_keys(kwargs)
+    )
+    return Role(api, id=role['id'])
+
+
+##################################################
+#              P O L I C Y
+##################################################
+class Policy(BaseAPIObject):
+    IDNAME = 'id'
+    PATH = ['rbac', 'policy']
+    id = None
+    name = None
+    built_in = None
+
+    def object(self) -> "List[Union[Cluster, Service, Component, Provider, Host]]":
+        data = []
+        for obj in self._data['object']:
+            data.append(TASK_PARENT[obj['type']](self._api, id=obj['id']))
+        return data
+
+    def role(self) -> "Role":
+        return Role(self._api, id=self._data['role']['id'])
+
+    def user(self) -> "UserList":
+        users = UserList(self._api)
+        data = []
+        for user in self._data['user']:
+            data.append(User(self._api, id=user['id']))
+        users.data = data
+        return users
+
+    def group(self) -> "GroupList":
+        groups = GroupList(self._api)
+        data = []
+        for group in self._data['group']:
+            data.append(Group(self._api, id=group['id']))
+        groups.data = data
+        return groups
+
+
+class PolicyList(BaseAPIListObject):
+    _ENTRY_CLASS = Policy
+
+
+def new_policy(
+    api: ADCMApiWrapper,
+    name: str,
+    role: Role,
+    user: UserList,
+    group: GroupList = None,
+    objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
+):
+    users = [{'id': obj.id} for obj in user]
+    groups = [{'id': obj.id} for obj in group or []]
+    objects = [{'id': obj.id, 'type': obj.prototype().type} for obj in objects or []]
+
+    policy = api.objects.rbac.policy.create(
+        name=name, role={'id': role.id}, user=users, group=groups, object=objects
+    )
+    return Policy(api, id=policy['id'])
+
+
+##################################################
 #              C L I E N T
 ##################################################
 class ADCMClient:
@@ -1660,3 +1836,57 @@ class ADCMClient:
     def group_config_list(self, paging=None, **kwargs) -> GroupConfigList:
         """Return list of 'GroupConfig' objects"""
         return GroupConfigList(self._api, paging=paging, **kwargs)
+
+    def user_create(self, username: str, password: str, **kwargs) -> "User":
+        """Create `User` object"""
+        return new_user(self._api, username, password, **kwargs)
+
+    def user(self, **kwargs) -> "User":
+        """Return `User` object"""
+        return User(self._api, **kwargs)
+
+    def user_list(self, paging=None, **kwargs) -> "UserList":
+        """Return list of `User` objects"""
+        return UserList(self._api, paging=paging, **kwargs)
+
+    def group_create(self, name: str, **kwargs) -> "Group":
+        """Create `Group` object"""
+        return new_group(self._api, name, **kwargs)
+
+    def group(self, **kwargs) -> "Group":
+        return Group(self._api, **kwargs)
+
+    def group_list(self, paging=None, **kwargs) -> "GroupList":
+        """Return list of `Group` object"""
+        return GroupList(self._api, paging=paging, **kwargs)
+
+    def role_create(self, name: str, parametrized_by: List[str], **kwargs) -> "Role":
+        """Create new `Role` object"""
+        return new_role(self._api, name, parametrized_by, **kwargs)
+
+    def role(self, **kwargs) -> "Role":
+        """Return `Role` object"""
+        return Role(self._api, **kwargs)
+
+    def role_list(self, paging=None, **kwargs) -> "RoleList":
+        """Return list of `Role` objects"""
+        return RoleList(self._api, paging=paging, **kwargs)
+
+    def policy_create(
+        self,
+        name: str,
+        role: Role,
+        user: UserList,
+        group: GroupList = None,
+        objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
+    ) -> "Policy":
+        """Create `Policy` object"""
+        return new_policy(self._api, name, role, user, group, objects)
+
+    def policy(self, **kwargs) -> "Policy":
+        """Return `Policy` object"""
+        return Policy(self._api, **kwargs)
+
+    def policy_list(self, paging=None, **kwargs) -> "PolicyList":
+        """Return list if `Policy` objects"""
+        return PolicyList(self._api, paging=paging, **kwargs)
