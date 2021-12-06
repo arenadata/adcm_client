@@ -68,9 +68,9 @@ def allure_attach(body, name, extension):
 
 def pp(*args, **kwargs):
     pprint("--------------------------------------------------")
-    if args != []:
+    if args:
         pprint(args)
-    if kwargs != {}:
+    if kwargs:
         pprint(kwargs)
     pprint("--------------------------------------------------")
 

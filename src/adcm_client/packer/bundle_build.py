@@ -40,8 +40,7 @@ def _prepare_result_dir(workspace, tarball_path):
         return workspace
 
 
-def _pack(reponame, repopaths, tarpaths, spec: SpecFile, **kwargs):
-    pack_timestamp = strftime("%Y%m%d%H%M%S", gmtime())
+def _pack(reponame, repopaths, tarpaths, timestamp, spec: SpecFile, **kwargs):
     for edition in spec.data['editions']:
         name = edition.get('name')
         tarpath = tarpaths[name] if isinstance(tarpaths, dict) else tarpaths
@@ -54,7 +53,7 @@ def _pack(reponame, repopaths, tarpaths, spec: SpecFile, **kwargs):
             reponame,
             name,
             kwargs['master_branches'],
-            pack_timestamp
+            timestamp,
         )
 
         stream = BytesIO()
@@ -75,15 +74,24 @@ def _clean_ws(path):
         remove_tree(path)
 
 
-def build(reponame=None, repopath=None, workspace='/tmp',  # pylint: disable=R0913
-          tarball_path=None, loglevel='ERROR',
-          clean_ws=True, master_branches=None,
-          release_version=False, edition=None, **args):
+def build( # pylint: disable=R0913,R0914
+    reponame=None,
+    repopath=None,
+    workspace='/tmp',
+    tarball_path=None,
+    loglevel='ERROR',
+    clean_ws=True,
+    master_branches=None,
+    release_version=False,
+    edition=None,
+    no_timestamp=False,
+    **args,
+):
     """Moves sources to workspace inside of temporary directory. \
     Some operations over sources cant be proceed concurent(for exemple in pytest with xdist \
     plugin) that why each thread need is own tmp dir with sources. \
     Also when there is complex docker containers launching to process some information there is \
-    necessery to share same workspace with every used container.
+    necessary to share same workspace with every used container.
     Proceed spec file.
     Writes build number to bundle config file.
     Recursively add files to bytes stream.
@@ -118,20 +126,23 @@ def build(reponame=None, repopath=None, workspace='/tmp',  # pylint: disable=R09
     spec.normalize_spec()
     spec.pop_edition(edition)
 
-    ws_tepm_dir, work_dir_paths = _prepare_ws(reponame, workspace, repopath, spec)
+    ws_temp_dir, work_dir_paths = _prepare_ws(reponame, workspace, repopath, spec)
 
     tarpath = _prepare_result_dir(workspace, tarball_path)
     spec_processing(spec, work_dir_paths, workspace, release_version)
+
+    timestamp = '' if no_timestamp else strftime("%Y%m%d%H%M%S", gmtime())
 
     out = dict(
         _pack(
             reponame,
             work_dir_paths,
             tarpath,
+            timestamp,
             spec,
             master_branches=master_branches))
 
     if clean_ws:
-        _clean_ws(ws_tepm_dir)
+        _clean_ws(ws_temp_dir)
 
     return out
