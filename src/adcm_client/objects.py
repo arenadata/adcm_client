@@ -1889,8 +1889,8 @@ class ADCMClient:
         self,
         name: str,
         role: Role,
-        user: UserList,
-        group: GroupList = None,
+        user: Union[UserList, List[User]],
+        group: Union[GroupList, List[Group]] = None,
         objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
     ) -> "Policy":
         """Create `Policy` object"""
