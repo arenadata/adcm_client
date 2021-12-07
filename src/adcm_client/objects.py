@@ -1451,7 +1451,7 @@ class ConcernList(BaseAPIListObject):
 class User(BaseAPIObject):
     IDNAME = 'id'
     PATH = ['rbac', 'user']
-    FILTERS = ['id', 'username', 'group']
+    FILTERS = ['id', 'username', 'first_name', 'last_name', 'email', 'is_superuser', 'group']
     id = None
     username = None
     first_name = None
@@ -1499,7 +1499,7 @@ def new_user(api: ADCMApiWrapper, username: str, password: str, **kwargs):
 class Group(BaseAPIObject):
     IDNAME = 'id'
     PATH = ['rbac', 'group']
-    FILTERS = ['user']
+    FILTERS = ['id', 'name', 'group']
     id = None
     name = None
     description = None
@@ -1541,7 +1541,7 @@ def new_group(api: ADCMApiWrapper, name: str, **kwargs):
 class Role(BaseAPIObject):
     IDNAME = 'id'
     PATH = ['rbac', 'role']
-    FILTERS = ['id', 'name', 'built_in', 'business_permit', 'child']
+    FILTERS = ['id', 'name', 'display_name', 'built_in', 'type', 'child']
     id = None
     name = None
     description = None
@@ -1580,6 +1580,7 @@ def new_role(api: ADCMApiWrapper, name: str, parametrized_by: List[str], **kwarg
 class Policy(BaseAPIObject):
     IDNAME = 'id'
     PATH = ['rbac', 'policy']
+    FILTERS = ['id', 'name', 'built_in', 'role', 'user', 'group']
     id = None
     name = None
     built_in = None
