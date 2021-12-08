@@ -84,6 +84,13 @@ def search(data, **attrs):
                 new_data[key] = value
                 if key in attrs:
                     new_attrs[key] = attrs[key]
-        return new_attrs.items() <= new_data.items()
+
+        result = []
+        for k, v in new_attrs.items():
+            if k in new_data and v == new_data[k]:
+                result.append(True)
+            else:
+                result.append(False)
+        return all(result)
 
     return [item for item in data if filter_data(item)]

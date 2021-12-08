@@ -36,6 +36,7 @@ from adcm_client.base import (
     allure_attach,
     legacy_server_implementaion,
     EndPoint,
+    AccessIsDenied,
 )
 from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
@@ -1461,7 +1462,7 @@ class User(BaseAPIObject):
     password = None
     profile = None
 
-    def group(self) -> "GroupList":
+    def group_list(self) -> "GroupList":
         """Return list of `Group` object"""
         # TODO: I can't do this, because search() is not working
         # return GroupList(self._api, user=self.id)
@@ -1504,7 +1505,7 @@ class Group(BaseAPIObject):
     name = None
     description = None
 
-    def user(self) -> "UserList":
+    def user_list(self) -> "UserList":
         # TODO: I can't do this, because search() is not working
         # return UserList(self._api, group=self.id)
         users = UserList(self._api)
@@ -1516,7 +1517,7 @@ class Group(BaseAPIObject):
 
     def add_user(self, user: User) -> None:
         """Adding a user to a group"""
-        current_users = self.user()
+        current_users = self.user_list()
         users = [{'id': obj.id} for obj in current_users]
         users.append({'id': user.id})
         self._api.objects.rbac.group.partial_update(id=self.id, user=users)
@@ -1544,13 +1545,14 @@ class Role(BaseAPIObject):
     FILTERS = ['id', 'name', 'display_name', 'built_in', 'type', 'child']
     id = None
     name = None
+    display_name = None
     description = None
     built_in = None
     type = None
     category = None
-    parametrized_by = None
+    parametrized_by_type = None
 
-    def child(self) -> "RoleList":
+    def child_list(self) -> "RoleList":
         # TODO: I can't do this, because search() is not working
         # return RoleList(self._api, child=self.id)
         roles = RoleList(self._api)
@@ -1585,7 +1587,7 @@ class Policy(BaseAPIObject):
     name = None
     built_in = None
 
-    def object(self) -> "List[Union[Cluster, Service, Component, Provider, Host]]":
+    def object_list(self) -> "List[Union[Cluster, Service, Component, Provider, Host]]":
         data = []
         for obj in self._data['object']:
             data.append(TASK_PARENT[obj['type']](self._api, id=obj['id']))
@@ -1594,7 +1596,7 @@ class Policy(BaseAPIObject):
     def role(self) -> "Role":
         return Role(self._api, id=self._data['role']['id'])
 
-    def user(self) -> "UserList":
+    def user_list(self) -> "UserList":
         users = UserList(self._api)
         data = []
         for user in self._data['user']:
@@ -1602,7 +1604,7 @@ class Policy(BaseAPIObject):
         users.data = data
         return users
 
-    def group(self) -> "GroupList":
+    def group_list(self) -> "GroupList":
         groups = GroupList(self._api)
         data = []
         for group in self._data['group']:
@@ -1692,7 +1694,10 @@ class ADCMClient:
         return ADCM(self._api)
 
     def guess_adcm_url(self):
-        config = self.adcm().config()
+        try:
+            config = self.adcm().config()
+        except AccessIsDenied:
+            return
         if config['global']['adcm_url'] is None:
             self.adcm().config_set_diff({"global": {"adcm_url": self.url}})
 
@@ -1850,41 +1855,51 @@ class ADCMClient:
         """Return list of 'GroupConfig' objects"""
         return GroupConfigList(self._api, paging=paging, **kwargs)
 
+    @min_server_version('2021.05.12.14')
     def user_create(self, username: str, password: str, **kwargs) -> "User":
         """Create `User` object"""
         return new_user(self._api, username, password, **kwargs)
 
+    @min_server_version('2021.05.12.14')
     def user(self, **kwargs) -> "User":
         """Return `User` object"""
         return User(self._api, **kwargs)
 
+    @min_server_version('2021.05.12.14')
     def user_list(self, paging=None, **kwargs) -> "UserList":
         """Return list of `User` objects"""
         return UserList(self._api, paging=paging, **kwargs)
 
+    @min_server_version('2021.05.12.14')
     def group_create(self, name: str, **kwargs) -> "Group":
         """Create `Group` object"""
         return new_group(self._api, name, **kwargs)
 
+    @min_server_version('2021.05.12.14')
     def group(self, **kwargs) -> "Group":
         return Group(self._api, **kwargs)
 
+    @min_server_version('2021.05.12.14')
     def group_list(self, paging=None, **kwargs) -> "GroupList":
         """Return list of `Group` object"""
         return GroupList(self._api, paging=paging, **kwargs)
 
+    @min_server_version('2021.05.12.14')
     def role_create(self, name: str, parametrized_by: List[str], **kwargs) -> "Role":
         """Create new `Role` object"""
         return new_role(self._api, name, parametrized_by, **kwargs)
 
+    @min_server_version('2021.05.12.14')
     def role(self, **kwargs) -> "Role":
         """Return `Role` object"""
         return Role(self._api, **kwargs)
 
+    @min_server_version('2021.05.12.14')
     def role_list(self, paging=None, **kwargs) -> "RoleList":
         """Return list of `Role` objects"""
         return RoleList(self._api, paging=paging, **kwargs)
 
+    @min_server_version('2021.05.12.14')
     def policy_create(
         self,
         name: str,
@@ -1896,10 +1911,12 @@ class ADCMClient:
         """Create `Policy` object"""
         return new_policy(self._api, name, role, user, group, objects)
 
+    @min_server_version('2021.05.12.14')
     def policy(self, **kwargs) -> "Policy":
         """Return `Policy` object"""
         return Policy(self._api, **kwargs)
 
+    @min_server_version('2021.05.12.14')
     def policy_list(self, paging=None, **kwargs) -> "PolicyList":
         """Return list if `Policy` objects"""
         return PolicyList(self._api, paging=paging, **kwargs)
