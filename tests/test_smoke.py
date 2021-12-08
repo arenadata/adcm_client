@@ -59,7 +59,7 @@ def _assert_attrs(obj):
         for k in obj._data.keys():
             if not hasattr(obj, k):
                 missed.append(k)
-        assert missed == []
+        assert not missed
 
     ignored_attrs = ["IDNAME", "PATH", "FILTERS", "SUBPATH", "adcm_version"]
     with allure.step(f"Check redundant attrs of {obj.__class__}"):
@@ -72,7 +72,7 @@ def _assert_attrs(obj):
         for attr in attrs:
             if attr not in obj._data.keys():
                 redundant.append(attr)
-        assert redundant == []
+        assert not redundant
 
 
 def test_cluster_attrs(sdk_client_fs: ADCMClient):

@@ -84,14 +84,15 @@ def resolve_build_id(git_data, master_branches, timestamp):
     def strip_branch(git_data):
         return git_data["branch"].replace("-", "_").replace("/", "_")
 
+    timestamp_suffix = f".{timestamp}" if timestamp else ''
     if git_data:
         if 'pull_request' in git_data:
-            build_id = '-rc' + git_data['pull_request'] + '.' + timestamp
+            build_id = '-rc' + git_data['pull_request'] + timestamp_suffix
         else:
             if git_data['branch'] in master_branches:
                 build_id = '-1'
             else:
-                build_id = '-' + strip_branch(git_data) + "." + timestamp
+                build_id = '-' + strip_branch(git_data) + timestamp_suffix
     else:
         build_id = '-1'
     return build_id

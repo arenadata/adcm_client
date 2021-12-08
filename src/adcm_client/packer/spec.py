@@ -20,7 +20,6 @@ from .types import get_type_func
 
 
 class SpecFile:
-
     def __init__(self, spec):
         try:
             with open(spec, 'r', encoding='utf-8') as file:
@@ -32,26 +31,27 @@ class SpecFile:
             self.data = {}
 
     def to_1_0(self):
-        new_spec = dict([('version', None),
-                         ('editions', [{
-                             'name': None,
-                             'exclude': self.except_var(self.data),
-                             'preprocessors': []}])])
+        new_spec = dict(
+            [
+                ('version', None),
+                (
+                    'editions',
+                    [{'name': None, 'exclude': self.except_var(self.data), 'preprocessors': []}],
+                ),
+            ]
+        )
         for i in self.data.get('processing', {}):
             if i.get('script'):
                 new_spec['editions'][0]['preprocessors'].append(
                     {
                         'type': 'script',
                         'script': join(self.data[i['name'] + '_dir'], i['script']),
-                        'args': [i['file']]
+                        'args': [i['file']],
                     }
                 )
             elif i.get('name') == 'python_mod_req':
                 new_spec['editions'][0]['preprocessors'].append(
-                    {
-                        'type': i['name'],
-                        'requirements': i['file']
-                    }
+                    {'type': i['name'], 'requirements': i['file']}
                 )
             else:
                 sys.exit(f'Used unrecognized func:{i.get("name")}')
@@ -60,8 +60,11 @@ class SpecFile:
     def normalize_spec(self):
         versions = ['1.0']
         migrations = dict([('1.0', self.to_1_0)])
-        index = versions.index(self.data.get('version')) + 1\
-            if self.data.get('version') in versions else 0
+        index = (
+            versions.index(self.data.get('version')) + 1
+            if self.data.get('version') in versions
+            else 0
+        )
         for i in versions[index:]:
             self.data = migrations[i]()
         self.current_version = versions[-1]
@@ -103,9 +106,12 @@ def spec_processing(spec: SpecFile, path, workspace, release_version):
                     logging.info(check_output(command, cwd=path[edition['name']]).decode("utf-8"))
                 else:
                     if x['type'] == 'splitter':
-                        params = {'jinja_values': {'edition': edition['name'],
-                                                   'release_version': release_version}}
+                        params = {
+                            'jinja_values': {
+                                'edition': edition['name'],
+                                'release_version': release_version,
+                            }
+                        }
                     else:
                         params = {}
-                    get_type_func(x['type'])(path[edition['name']], workspace,
-                                             **params, **x)
+                    get_type_func(x['type'])(path[edition['name']], workspace, **params, **x)
