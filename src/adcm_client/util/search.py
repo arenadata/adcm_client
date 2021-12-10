@@ -11,7 +11,7 @@
 # limitations under the License.
 
 
-from collections.abc import Mapping, Iterable
+from collections.abc import Mapping
 
 
 class TooManyResult(Exception):
@@ -80,7 +80,7 @@ def search(data, **attrs):
         new_attrs = {}
         new_data = {}
         for key, value in x.items():
-            if not isinstance(value, (Mapping, Iterable)):
+            if not isinstance(value, (Mapping, list)):
                 new_data[key] = value
                 if key in attrs:
                     new_attrs[key] = attrs[key]

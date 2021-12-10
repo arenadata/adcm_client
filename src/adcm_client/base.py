@@ -117,10 +117,6 @@ class PagingEnds(Exception):
     """There are no more data in paginated mode."""
 
 
-class AccessIsDenied(Exception):
-    """You do not have permission to perform this action."""
-
-
 class TooOldServerVersion(Exception):
     """Incompatible version, upgrade version ADCM."""
 
@@ -276,8 +272,6 @@ class EndPoint:
             if "code" in e.error._data and e.error._data["code"] == "TOO_LONG":
                 raise ResponseTooLong from e
             raise e
-        except AttributeError as error:
-            raise AccessIsDenied from error
 
         if isinstance(result, OrderedDict):
             # It's paging mode
@@ -289,10 +283,7 @@ class EndPoint:
         return result
 
     def read(self, object_id):
-        try:
-            return self.point.read(**self.get_object_path(object_id))
-        except AttributeError as error:
-            raise AccessIsDenied from error
+        return self.point.read(**self.get_object_path(object_id))
 
     def search(self, paging=None, **args):
         # TODO: Add filtering on backend
@@ -319,10 +310,7 @@ class EndPoint:
         return _find_endpoint(self.point, path)
 
     def delete(self, object_id):
-        try:
-            return self.point.delete(**self.get_object_path(object_id))
-        except AttributeError as error:
-            raise AccessIsDenied from error
+        return self.point.delete(**self.get_object_path(object_id))
 
 
 class BaseAPIObject:

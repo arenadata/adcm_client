@@ -36,7 +36,6 @@ from adcm_client.base import (
     allure_attach,
     legacy_server_implementaion,
     EndPoint,
-    AccessIsDenied,
 )
 from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
@@ -1652,7 +1651,7 @@ class ADCMClient:
             self._api = ADCMApiWrapper(self.url)
             self.auth(user, password)
 
-        if self.api_token() is not None:
+        if self.api_token() is not None and user == 'admin':
             self.guess_adcm_url()
 
         self.adcm_version = self._api.adcm_version
@@ -1694,10 +1693,7 @@ class ADCMClient:
         return ADCM(self._api)
 
     def guess_adcm_url(self):
-        try:
-            config = self.adcm().config()
-        except AccessIsDenied:
-            return
+        config = self.adcm().config()
         if config['global']['adcm_url'] is None:
             self.adcm().config_set_diff({"global": {"adcm_url": self.url}})
 
