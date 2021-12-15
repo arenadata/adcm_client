@@ -22,7 +22,6 @@ from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
 
 from adcm_client.base import (
-    ActionHasIssues,
     ADCMApiError,
     BaseAPIListObject,
     BaseAPIObject,
@@ -1078,14 +1077,7 @@ class Action(BaseAPIObject):
                     f"argument 'verbose'. It will be skipped"
                 )
                 args.pop('verbose')
-            try:
-                data = self._subcall("run", "create", **args)
-            except ErrorMessage as error:
-                if getattr(error.error, 'title', '') == '409 Conflict' and 'has issues' in getattr(
-                    error.error, '_data', {}
-                ).get('desc', ''):
-                    raise ActionHasIssues from error
-                raise error
+            data = self._subcall("run", "create", **args)
             return Task(self._api, task_id=data["id"])
 
 
@@ -1396,7 +1388,10 @@ class GroupConfigList(BaseAPIListObject):
 def new_group_config(api, **args) -> "GroupConfig":
     """Create new 'GroupConfig' and return it"""
     endpoint = getattr(api.objects, 'group-config')
-    group = endpoint.create(**args)
+    try:
+        group = endpoint.create(**args)
+    except AttributeError as error:
+        raise NoSuchEndpointOrAccessIsDenied from error
     return GroupConfig(api, id=group['id'])
 
 

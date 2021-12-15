@@ -29,6 +29,18 @@ class APINode:
     pass
 
 
+class ActionHasIssues(Exception):
+    pass
+
+
+class ResponseTooLong(Exception):
+    """Response is too long, use paginated request"""
+
+
+class AccessIsDenied(Exception):
+    pass
+
+
 class ADCMApiError(Exception):
     pass
 
@@ -173,6 +185,18 @@ class ADCMApiWrapper:
         fields = tuple(fields)
         overrides = {'fields': fields}
 
-        data = self.client.action(self.schema, *args, overrides=overrides, **kwargs)
+        try:
+            data = self.client.action(self.schema, *args, overrides=overrides, **kwargs)
+        except coreapi.exceptions.ErrorMessage as error:
+            if getattr(error.error, 'title', '') == '409 Conflict' and 'has issues' in getattr(
+                error.error, '_data', {}
+            ).get('desc', ''):
+                raise ActionHasIssues from error
+            # pylint: disable=W0212
+            if "code" in error.error._data and error.error._data["code"] == "TOO_LONG":
+                raise ResponseTooLong from error
+            if error.error.title == '403 Forbidden':
+                raise AccessIsDenied from error
+            raise error
         self._check_for_error(data)
         return data
