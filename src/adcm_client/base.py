@@ -89,7 +89,7 @@ class TooManyArguments(Exception):
     pass
 
 
-class NoSuchEndpoint(Exception):
+class NoSuchEndpointOrAccessIsDenied(Exception):
     pass
 
 
@@ -225,7 +225,7 @@ def _find_endpoint(api, path):
             if i in result.__dict__:
                 result = result.__dict__[i]
             else:
-                raise NoSuchEndpoint
+                raise NoSuchEndpointOrAccessIsDenied
     return result
 
 

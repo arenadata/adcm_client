@@ -36,6 +36,7 @@ from adcm_client.base import (
     allure_attach,
     legacy_server_implementaion,
     EndPoint,
+    NoSuchEndpointOrAccessIsDenied,
 )
 from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
@@ -497,8 +498,11 @@ class ProviderList(BaseAPIListObject):
 @allure_step('Create provider {name}')
 def new_provider(api, **args) -> "Provider":
     """Create new 'Provider' object"""
-    p = api.objects.provider.create(**strip_none_keys(args))
-    return Provider(api, provider_id=p['id'])
+    try:
+        provider = api.objects.provider.create(**strip_none_keys(args))
+    except AttributeError as error:
+        raise NoSuchEndpointOrAccessIsDenied from error
+    return Provider(api, provider_id=provider['id'])
 
 
 ##################################################
@@ -660,8 +664,11 @@ class ClusterList(BaseAPIListObject):
 @allure_step('Create cluster {name}')
 def new_cluster(api: ADCMApiWrapper, **args) -> "Cluster":
     """Create new 'Cluster' object"""
-    c = api.objects.cluster.create(**strip_none_keys(args))
-    return Cluster(api, cluster_id=c['id'])
+    try:
+        cluster = api.objects.cluster.create(**strip_none_keys(args))
+    except AttributeError as error:
+        raise NoSuchEndpointOrAccessIsDenied from error
+    return Cluster(api, cluster_id=cluster['id'])
 
 
 ##################################################
@@ -961,8 +968,11 @@ class HostList(BaseAPIListObject):
 @allure_step('Create host {fqdn}')
 def new_host(api, **args) -> "Host":
     """Create new 'Host' object and return it"""
-    h = api.objects.provider.host.create(**args)
-    return Host(api, host_id=h['id'])
+    try:
+        host = api.objects.provider.host.create(**args)
+    except AttributeError as error:
+        raise NoSuchEndpointOrAccessIsDenied from error
+    return Host(api, host_id=host['id'])
 
 
 ##################################################
@@ -1474,7 +1484,10 @@ class User(BaseAPIObject):
 
     def change_password(self, password: str) -> None:
         """Changing user password"""
-        self._api.objects.rbac.user.partial_update(id=self.id, password=password)
+        try:
+            self._api.objects.rbac.user.partial_update(id=self.id, password=password)
+        except AttributeError as error:
+            raise NoSuchEndpointOrAccessIsDenied from error
         self.reread()
 
 
@@ -1487,9 +1500,12 @@ class UserList(BaseAPIListObject):
 @allure_step('Create user {username}')
 def new_user(api: ADCMApiWrapper, username: str, password: str, **kwargs):
     """Create new `User` object"""
-    user = api.objects.rbac.user.create(
-        username=username, password=password, **strip_none_keys(kwargs)
-    )
+    try:
+        user = api.objects.rbac.user.create(
+            username=username, password=password, **strip_none_keys(kwargs)
+        )
+    except AttributeError as error:
+        raise NoSuchEndpointOrAccessIsDenied from error
     return User(api, id=user['id'])
 
 
@@ -1519,7 +1535,10 @@ class Group(BaseAPIObject):
         current_users = self.user_list()
         users = [{'id': obj.id} for obj in current_users]
         users.append({'id': user.id})
-        self._api.objects.rbac.group.partial_update(id=self.id, user=users)
+        try:
+            self._api.objects.rbac.group.partial_update(id=self.id, user=users)
+        except AttributeError as error:
+            raise NoSuchEndpointOrAccessIsDenied from error
         user.reread()
         self.reread()
 
@@ -1531,7 +1550,10 @@ class GroupList(BaseAPIListObject):
 @allure_step('Create group {name}')
 def new_group(api: ADCMApiWrapper, name: str, **kwargs):
     """Create new `Group` object"""
-    group = api.objects.rbac.group.create(name=name, **strip_none_keys(kwargs))
+    try:
+        group = api.objects.rbac.group.create(name=name, **strip_none_keys(kwargs))
+    except AttributeError as error:
+        raise NoSuchEndpointOrAccessIsDenied from error
     return Group(api, id=group['id'])
 
 
@@ -1567,11 +1589,14 @@ class RoleList(BaseAPIListObject):
 
 
 @allure_step('Create role {name}')
-def new_role(api: ADCMApiWrapper, name: str, parametrized_by: List[str], **kwargs):
+def new_role(api: ADCMApiWrapper, name: str, parametrized_by_type: List[str], **kwargs):
     """Create new `Role` object"""
-    role = api.objects.rbac.role.create(
-        name=name, parametrized_by=parametrized_by, **strip_none_keys(kwargs)
-    )
+    try:
+        role = api.objects.rbac.role.create(
+            name=name, parametrized_by_type=parametrized_by_type, **strip_none_keys(kwargs)
+        )
+    except AttributeError as error:
+        raise NoSuchEndpointOrAccessIsDenied from error
     return Role(api, id=role['id'])
 
 
@@ -1616,6 +1641,7 @@ class PolicyList(BaseAPIListObject):
     _ENTRY_CLASS = Policy
 
 
+@allure_step('Create policy {name}')
 def new_policy(
     api: ADCMApiWrapper,
     name: str,
@@ -1627,10 +1653,12 @@ def new_policy(
     users = [{'id': obj.id} for obj in user]
     groups = [{'id': obj.id} for obj in group or []]
     objects = [{'id': obj.id, 'type': obj.prototype().type} for obj in objects or []]
-
-    policy = api.objects.rbac.policy.create(
-        name=name, role={'id': role.id}, user=users, group=groups, object=objects
-    )
+    try:
+        policy = api.objects.rbac.policy.create(
+            name=name, role={'id': role.id}, user=users, group=groups, object=objects
+        )
+    except AttributeError as error:
+        raise NoSuchEndpointOrAccessIsDenied from error
     return Policy(api, id=policy['id'])
 
 
@@ -1799,14 +1827,20 @@ class ADCMClient:
 
     def _upload(self, bundle_stream: BytesIO) -> Bundle:
         """Upload and create Bundle from file={bundle_stream}"""
-        self._api.objects.stack.upload.create(file=bundle_stream)
+        try:
+            self._api.objects.stack.upload.create(file=bundle_stream)
+        except AttributeError as error:
+            raise NoSuchEndpointOrAccessIsDenied from error
         bundle_stream.seek(0)
         allure_attach(
             body=bundle_stream.getvalue(),
             name="bundle.tgz",
             extension="tgz",
         )
-        data = self._api.objects.stack.load.create(bundle_file="file")
+        try:
+            data = self._api.objects.stack.load.create(bundle_file="file")
+        except AttributeError as error:
+            raise NoSuchEndpointOrAccessIsDenied from error
         bundle_stream.close()
         return self.bundle(bundle_id=data['id'])
 
@@ -1841,7 +1875,10 @@ class ADCMClient:
         """Delete bundle object"""
         bundle = self.bundle(**args)
         with allure_step(f"Delete bundle {bundle.name}"):
-            self._api.objects.stack.bundle.delete(bundle_id=bundle.bundle_id)
+            try:
+                self._api.objects.stack.bundle.delete(bundle_id=bundle.bundle_id)
+            except AttributeError as error:
+                raise NoSuchEndpointOrAccessIsDenied from error
 
     def group_config(self, **kwargs) -> GroupConfig:
         """Return 'GroupConfig object'"""
