@@ -22,6 +22,11 @@ from version_utils import rpm
 from adcm_client.util.search import search_one, search
 from adcm_client.wrappers.api import ADCMApiWrapper
 
+# necessary for backward compatibility
+# pylint: disable=unused-import
+from adcm_client.wrappers.api import ActionHasIssues, ResponseTooLong
+
+
 # If we are running the client from tests with Allure we expected that code
 # to trace steps in Allure UI.
 # But in case of running client outside of testing Allure is useless in virtualenv.
