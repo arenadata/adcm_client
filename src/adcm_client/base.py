@@ -24,7 +24,6 @@ from adcm_client.wrappers.api import ADCMApiWrapper
 
 # necessary for backward compatibility
 # pylint: disable=unused-import
-from adcm_client.wrappers.api import ActionHasIssues, ResponseTooLong
 
 
 # If we are running the client from tests with Allure we expected that code
@@ -311,6 +310,13 @@ class EndPoint:
         except AttributeError as error:
             raise NoSuchEndpointOrAccessIsDenied from error
 
+    def update(self, object_id, **kwargs):
+        try:
+            kwargs.update(self.get_object_path(object_id))
+            return self.point.partial_update(**kwargs)
+        except AttributeError as error:
+            raise NoSuchEndpointOrAccessIsDenied from error
+
 
 class BaseAPIObject:
     """That is common object for single ADCM's object"""
@@ -408,6 +414,10 @@ class BaseAPIObject:
 
     def delete(self):
         return self._endpoint.delete(self.id)
+
+    def update(self, **kwargs) -> None:
+        self._endpoint.update(self.id, **kwargs)
+        self.reread()
 
 
 class BaseAPIListObject(UserList):  # pylint: disable=too-many-ancestors

@@ -177,12 +177,23 @@ class ADCMApiWrapper:
         for item in path[1:]:
             link = link[item]
 
-        fields = []
         path_fields = [field.name for field in link.fields if field.location == 'path']
-        for field in link.fields:
-            if not (field.location in ('query', 'form') and field.name in path_fields):
-                fields.append(field)
-        fields = tuple(fields)
+
+        if path[-1] == 'list':
+            fields = tuple(
+                field
+                for field in link.fields
+                if field.location == 'query' and field.name not in path_fields
+            )
+        elif path[-1] == 'create':
+            fields = tuple(field for field in link.fields if field.location in ['path', 'form'])
+        elif path[-1] in ['read', 'delete']:
+            fields = tuple(field for field in link.fields if field.location == 'path')
+        elif path[-1] in ['update', 'partial_update']:
+            fields = tuple(field for field in link.fields if field.location in ['path', 'form'])
+        else:
+            fields = link.fields
+
         overrides = {'fields': fields}
 
         try:
