@@ -183,7 +183,8 @@ class ADCMApiWrapper:
             fields = tuple(
                 field
                 for field in link.fields
-                if field.location == 'query' and field.name not in path_fields
+                if field.location == 'path'
+                or (field.location == 'query' and field.name not in path_fields)
             )
         elif path[-1] == 'create':
             fields = tuple(field for field in link.fields if field.location in ['path', 'form'])
