@@ -186,12 +186,15 @@ class ADCMApiWrapper:
                 if field.location == 'path'
                 or (field.location == 'query' and field.name not in path_fields)
             )
-        elif path[-1] == 'create':
-            fields = tuple(field for field in link.fields if field.location in ['path', 'form'])
+        elif path[-1] in ['create', 'update', 'partial_update']:
+            fields = tuple(
+                field
+                for field in link.fields
+                if field.location == 'path'
+                or (field.location == 'form' and field.name not in path_fields)
+            )
         elif path[-1] in ['read', 'delete']:
             fields = tuple(field for field in link.fields if field.location == 'path')
-        elif path[-1] in ['update', 'partial_update']:
-            fields = tuple(field for field in link.fields if field.location in ['path', 'form'])
         else:
             fields = link.fields
 
