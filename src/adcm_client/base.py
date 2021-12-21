@@ -24,7 +24,7 @@ from adcm_client.wrappers.api import ADCMApiWrapper
 
 # necessary for backward compatibility
 # pylint: disable=unused-import
-
+from adcm_client.wrappers.api import ActionHasIssues, ResponseTooLong
 
 # If we are running the client from tests with Allure we expected that code
 # to trace steps in Allure UI.
