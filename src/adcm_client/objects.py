@@ -1584,11 +1584,11 @@ class RoleList(BaseAPIListObject):
 
 
 @allure_step('Create role {name}')
-def new_role(api: ADCMApiWrapper, name: str, parametrized_by_type: List[str], **kwargs):
+def new_role(api: ADCMApiWrapper, name: str, **kwargs):
     """Create new `Role` object"""
     try:
         role = api.objects.rbac.role.create(
-            name=name, parametrized_by_type=parametrized_by_type, **strip_none_keys(kwargs)
+            name=name, **strip_none_keys(kwargs)
         )
     except AttributeError as error:
         raise NoSuchEndpointOrAccessIsDenied from error
@@ -1913,9 +1913,9 @@ class ADCMClient:
         return GroupList(self._api, paging=paging, **kwargs)
 
     @min_server_version('2021.05.12.14')
-    def role_create(self, name: str, parametrized_by: List[str], **kwargs) -> "Role":
+    def role_create(self, name: str, **kwargs) -> "Role":
         """Create new `Role` object"""
-        return new_role(self._api, name, parametrized_by, **kwargs)
+        return new_role(self._api, name, **kwargs)
 
     @min_server_version('2021.05.12.14')
     def role(self, **kwargs) -> "Role":
