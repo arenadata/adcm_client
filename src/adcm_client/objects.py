@@ -1587,9 +1587,7 @@ class RoleList(BaseAPIListObject):
 def new_role(api: ADCMApiWrapper, name: str, **kwargs):
     """Create new `Role` object"""
     try:
-        role = api.objects.rbac.role.create(
-            name=name, **strip_none_keys(kwargs)
-        )
+        role = api.objects.rbac.role.create(name=name, **strip_none_keys(kwargs))
     except AttributeError as error:
         raise NoSuchEndpointOrAccessIsDenied from error
     return Role(api, id=role['id'])
