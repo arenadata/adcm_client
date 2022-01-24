@@ -455,6 +455,7 @@ class Provider(_BaseObject):
     name = None
     description = None
     bundle_id = None
+    before_upgrade = None
 
     def __repr__(self):
         return f"<Provider {self.name} at {id(self)}>"
@@ -521,6 +522,7 @@ class Cluster(_BaseObject):
     status = None
     edition = None
     license = None
+    before_upgrade = None
 
     def __repr__(self):
         return f"<Cluster {self.name} from bundle - {self.bundle_id} at {id(self)}>"
