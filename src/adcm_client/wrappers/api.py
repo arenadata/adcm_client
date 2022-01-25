@@ -45,6 +45,10 @@ class ADCMApiError(Exception):
     pass
 
 
+class MethodNotAllowed(Exception):
+    pass
+
+
 class EnvHTTPTransport(coreapi.transports.HTTPTransport):
     """
     Fix the coreapi problem that prepared request do not read requests-related env variables
@@ -203,15 +207,19 @@ class ADCMApiWrapper:
         try:
             data = self.client.action(self.schema, *args, overrides=overrides, **kwargs)
         except coreapi.exceptions.ErrorMessage as error:
-            if getattr(error.error, 'title', '') == '409 Conflict' and 'has issues' in getattr(
-                error.error, '_data', {}
-            ).get('desc', ''):
+            title = getattr(error.error, 'title', '')
+            error_data = getattr(error.error, '_data', {})
+            desc = error_data.get('desc', '')
+            code = error_data.get('code', '')
+
+            if title == '409 Conflict' and 'has issues' in desc:
                 raise ActionHasIssues from error
-            # pylint: disable=W0212
-            if "code" in error.error._data and error.error._data["code"] == "TOO_LONG":
+            if code == "TOO_LONG":
                 raise ResponseTooLong from error
-            if error.error.title == '403 Forbidden':
+            if title == '403 Forbidden':
                 raise AccessIsDenied from error
+            if title == '405 Method Not Allowed':
+                raise MethodNotAllowed from error
             raise error
         self._check_for_error(data)
         return data

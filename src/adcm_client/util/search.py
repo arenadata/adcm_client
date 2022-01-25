@@ -76,6 +76,10 @@ def search(data, **attrs):
     search returns None if no result found
     """
 
+    # for backward compatibility
+    if not attrs:
+        return data
+
     def filter_data(x):
         new_attrs = {}
         new_data = {}
@@ -91,6 +95,8 @@ def search(data, **attrs):
                 result.append(True)
             else:
                 result.append(False)
-        return all(result)
+        if result:
+            return all(result)
+        return False
 
-    return [item for item in data if filter_data(item)]
+    return (item for item in data if filter_data(item))
