@@ -11,6 +11,9 @@
 # limitations under the License.
 
 
+from collections.abc import Mapping
+
+
 class TooManyResult(Exception):
     pass
 
@@ -72,4 +75,28 @@ def search(data, **attrs):
 
     search returns None if no result found
     """
-    return filter(lambda x: attrs.items() <= x.items(), data)
+
+    # for backward compatibility
+    if not attrs:
+        return data
+
+    def filter_data(x):
+        new_attrs = {}
+        new_data = {}
+        for key, value in x.items():
+            if not isinstance(value, (Mapping, list)):
+                new_data[key] = value
+                if key in attrs:
+                    new_attrs[key] = attrs[key]
+
+        result = []
+        for k, v in new_attrs.items():
+            if k in new_data and v == new_data[k]:
+                result.append(True)
+            else:
+                result.append(False)
+        if result:
+            return all(result)
+        return False
+
+    return (item for item in data if filter_data(item))

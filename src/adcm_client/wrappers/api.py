@@ -29,7 +29,23 @@ class APINode:
     pass
 
 
+class ActionHasIssues(Exception):
+    pass
+
+
+class ResponseTooLong(Exception):
+    """Response is too long, use paginated request"""
+
+
+class AccessIsDenied(Exception):
+    pass
+
+
 class ADCMApiError(Exception):
+    pass
+
+
+class MethodNotAllowed(Exception):
     pass
 
 
@@ -165,14 +181,45 @@ class ADCMApiWrapper:
         for item in path[1:]:
             link = link[item]
 
-        fields = []
         path_fields = [field.name for field in link.fields if field.location == 'path']
-        for field in link.fields:
-            if not (field.location in ('query', 'form') and field.name in path_fields):
-                fields.append(field)
-        fields = tuple(fields)
+
+        if path[-1] == 'list':
+            fields = tuple(
+                field
+                for field in link.fields
+                if field.location == 'path'
+                or (field.location == 'query' and field.name not in path_fields)
+            )
+        elif path[-1] in ['create', 'update', 'partial_update']:
+            fields = tuple(
+                field
+                for field in link.fields
+                if field.location == 'path'
+                or (field.location == 'form' and field.name not in path_fields)
+            )
+        elif path[-1] in ['read', 'delete']:
+            fields = tuple(field for field in link.fields if field.location == 'path')
+        else:
+            fields = link.fields
+
         overrides = {'fields': fields}
 
-        data = self.client.action(self.schema, *args, overrides=overrides, **kwargs)
+        try:
+            data = self.client.action(self.schema, *args, overrides=overrides, **kwargs)
+        except coreapi.exceptions.ErrorMessage as error:
+            title = getattr(error.error, 'title', '')
+            error_data = getattr(error.error, '_data', {})
+            desc = error_data.get('desc', '')
+            code = error_data.get('code', '')
+
+            if title == '409 Conflict' and 'has issues' in desc:
+                raise ActionHasIssues from error
+            if code == "TOO_LONG":
+                raise ResponseTooLong from error
+            if title == '403 Forbidden':
+                raise AccessIsDenied from error
+            if title == '405 Method Not Allowed':
+                raise MethodNotAllowed from error
+            raise error
         self._check_for_error(data)
         return data

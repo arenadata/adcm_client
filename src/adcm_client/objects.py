@@ -16,12 +16,12 @@ import warnings
 from collections import abc
 from io import BytesIO
 from json import dumps
+from typing import List, Union
 
 from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
 
 from adcm_client.base import (
-    ActionHasIssues,
     ADCMApiError,
     BaseAPIListObject,
     BaseAPIObject,
@@ -35,6 +35,7 @@ from adcm_client.base import (
     allure_attach,
     legacy_server_implementaion,
     EndPoint,
+    NoSuchEndpointOrAccessIsDenied,
 )
 from adcm_client.util import stream
 from adcm_client.wrappers.api import ADCMApiWrapper
@@ -497,8 +498,11 @@ class ProviderList(BaseAPIListObject):
 @allure_step('Create provider {name}')
 def new_provider(api, **args) -> "Provider":
     """Create new 'Provider' object"""
-    p = api.objects.provider.create(**strip_none_keys(args))
-    return Provider(api, provider_id=p['id'])
+    try:
+        provider = api.objects.provider.create(**strip_none_keys(args))
+    except AttributeError as error:
+        raise NoSuchEndpointOrAccessIsDenied from error
+    return Provider(api, provider_id=provider['id'])
 
 
 ##################################################
@@ -661,8 +665,11 @@ class ClusterList(BaseAPIListObject):
 @allure_step('Create cluster {name}')
 def new_cluster(api: ADCMApiWrapper, **args) -> "Cluster":
     """Create new 'Cluster' object"""
-    c = api.objects.cluster.create(**strip_none_keys(args))
-    return Cluster(api, cluster_id=c['id'])
+    try:
+        cluster = api.objects.cluster.create(**strip_none_keys(args))
+    except AttributeError as error:
+        raise NoSuchEndpointOrAccessIsDenied from error
+    return Cluster(api, cluster_id=cluster['id'])
 
 
 ##################################################
@@ -962,8 +969,11 @@ class HostList(BaseAPIListObject):
 @allure_step('Create host {fqdn}')
 def new_host(api, **args) -> "Host":
     """Create new 'Host' object and return it"""
-    h = api.objects.provider.host.create(**args)
-    return Host(api, host_id=h['id'])
+    try:
+        host = api.objects.provider.host.create(**args)
+    except AttributeError as error:
+        raise NoSuchEndpointOrAccessIsDenied from error
+    return Host(api, host_id=host['id'])
 
 
 ##################################################
@@ -1069,14 +1079,7 @@ class Action(BaseAPIObject):
                     f"argument 'verbose'. It will be skipped"
                 )
                 args.pop('verbose')
-            try:
-                data = self._subcall("run", "create", **args)
-            except ErrorMessage as error:
-                if getattr(error.error, 'title', '') == '409 Conflict' and 'has issues' in getattr(
-                    error.error, '_data', {}
-                ).get('desc', ''):
-                    raise ActionHasIssues from error
-                raise error
+            data = self._subcall("run", "create", **args)
             return Task(self._api, task_id=data["id"])
 
 
@@ -1387,7 +1390,10 @@ class GroupConfigList(BaseAPIListObject):
 def new_group_config(api, **args) -> "GroupConfig":
     """Create new 'GroupConfig' and return it"""
     endpoint = getattr(api.objects, 'group-config')
-    group = endpoint.create(**args)
+    try:
+        group = endpoint.create(**args)
+    except AttributeError as error:
+        raise NoSuchEndpointOrAccessIsDenied from error
     return GroupConfig(api, id=group['id'])
 
 
@@ -1447,6 +1453,211 @@ class ConcernList(BaseAPIListObject):
 
 
 ##################################################
+#              U S E R
+##################################################
+class User(BaseAPIObject):
+    IDNAME = 'id'
+    PATH = ['rbac', 'user']
+    FILTERS = ['id', 'username', 'first_name', 'last_name', 'email', 'is_superuser', 'group']
+    id = None
+    username = None
+    first_name = None
+    last_name = None
+    email = None
+    is_superuser = None
+    password = None
+    profile = None
+
+    def group_list(self) -> "GroupList":
+        """Return list of `Group` object"""
+        # TODO: I can't do this, because search() is not working
+        # return GroupList(self._api, user=self.id)
+        groups = GroupList(self._api)
+        data = []
+        for group in self._data['group']:
+            data.append(Group(self._api, id=group['id']))
+        groups.data = data
+        return groups
+
+    def change_password(self, password: str) -> None:
+        """Changing user password"""
+        try:
+            self._api.objects.rbac.user.partial_update(id=self.id, password=password)
+        except AttributeError as error:
+            raise NoSuchEndpointOrAccessIsDenied from error
+        self.reread()
+
+
+class UserList(BaseAPIListObject):
+    """List of `User` objects"""
+
+    _ENTRY_CLASS = User
+
+
+@allure_step('Create user {username}')
+def new_user(api: ADCMApiWrapper, username: str, password: str, **kwargs):
+    """Create new `User` object"""
+    try:
+        user = api.objects.rbac.user.create(
+            username=username, password=password, **strip_none_keys(kwargs)
+        )
+    except AttributeError as error:
+        raise NoSuchEndpointOrAccessIsDenied from error
+    return User(api, id=user['id'])
+
+
+##################################################
+#              G R O U P
+##################################################
+class Group(BaseAPIObject):
+    IDNAME = 'id'
+    PATH = ['rbac', 'group']
+    FILTERS = ['id', 'name', 'group']
+    id = None
+    name = None
+    description = None
+
+    def user_list(self) -> "UserList":
+        # TODO: I can't do this, because search() is not working
+        # return UserList(self._api, group=self.id)
+        users = UserList(self._api)
+        data = []
+        for user in self._data['user']:
+            data.append(User(self._api, id=user['id']))
+        users.data = data
+        return users
+
+    def add_user(self, user: User) -> None:
+        """Adding a user to a group"""
+        current_users = self.user_list()
+        users = [{'id': obj.id} for obj in current_users]
+        users.append({'id': user.id})
+        try:
+            self._api.objects.rbac.group.partial_update(id=self.id, user=users)
+        except AttributeError as error:
+            raise NoSuchEndpointOrAccessIsDenied from error
+        user.reread()
+        self.reread()
+
+
+class GroupList(BaseAPIListObject):
+    _ENTRY_CLASS = Group
+
+
+@allure_step('Create group {name}')
+def new_group(api: ADCMApiWrapper, name: str, **kwargs):
+    """Create new `Group` object"""
+    try:
+        group = api.objects.rbac.group.create(name=name, **strip_none_keys(kwargs))
+    except AttributeError as error:
+        raise NoSuchEndpointOrAccessIsDenied from error
+    return Group(api, id=group['id'])
+
+
+##################################################
+#              R O L E
+##################################################
+class Role(BaseAPIObject):
+    IDNAME = 'id'
+    PATH = ['rbac', 'role']
+    FILTERS = ['id', 'name', 'display_name', 'built_in', 'type', 'child']
+    id = None
+    name = None
+    display_name = None
+    description = None
+    built_in = None
+    type = None
+    category = None
+    parametrized_by_type = None
+
+    def child_list(self) -> "RoleList":
+        # TODO: I can't do this, because search() is not working
+        # return RoleList(self._api, child=self.id)
+        roles = RoleList(self._api)
+        data = []
+        for role in self._data['child']:
+            data.append(Role(self._api, id=role['id']))
+        roles.data = data
+        return roles
+
+
+class RoleList(BaseAPIListObject):
+    _ENTRY_CLASS = Role
+
+
+@allure_step('Create role {name}')
+def new_role(api: ADCMApiWrapper, name: str, **kwargs):
+    """Create new `Role` object"""
+    try:
+        role = api.objects.rbac.role.create(name=name, **strip_none_keys(kwargs))
+    except AttributeError as error:
+        raise NoSuchEndpointOrAccessIsDenied from error
+    return Role(api, id=role['id'])
+
+
+##################################################
+#              P O L I C Y
+##################################################
+class Policy(BaseAPIObject):
+    IDNAME = 'id'
+    PATH = ['rbac', 'policy']
+    FILTERS = ['id', 'name', 'built_in', 'role', 'user', 'group']
+    id = None
+    name = None
+    built_in = None
+
+    def object_list(self) -> "List[Union[Cluster, Service, Component, Provider, Host]]":
+        data = []
+        for obj in self._data['object']:
+            data.append(TASK_PARENT[obj['type']](self._api, id=obj['id']))
+        return data
+
+    def role(self) -> "Role":
+        return Role(self._api, id=self._data['role']['id'])
+
+    def user_list(self) -> "UserList":
+        users = UserList(self._api)
+        data = []
+        for user in self._data['user']:
+            data.append(User(self._api, id=user['id']))
+        users.data = data
+        return users
+
+    def group_list(self) -> "GroupList":
+        groups = GroupList(self._api)
+        data = []
+        for group in self._data['group']:
+            data.append(Group(self._api, id=group['id']))
+        groups.data = data
+        return groups
+
+
+class PolicyList(BaseAPIListObject):
+    _ENTRY_CLASS = Policy
+
+
+@allure_step('Create policy {name}')
+def new_policy(
+    api: ADCMApiWrapper,
+    name: str,
+    role: Role,
+    user: UserList,
+    group: GroupList = None,
+    objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
+):
+    users = [{'id': obj.id} for obj in user]
+    groups = [{'id': obj.id} for obj in group or []]
+    objects = [{'id': obj.id, 'type': obj.prototype().type} for obj in objects or []]
+    try:
+        policy = api.objects.rbac.policy.create(
+            name=name, role={'id': role.id}, user=users, group=groups, object=objects
+        )
+    except AttributeError as error:
+        raise NoSuchEndpointOrAccessIsDenied from error
+    return Policy(api, id=policy['id'])
+
+
+##################################################
 #              C L I E N T
 ##################################################
 class ADCMClient:
@@ -1463,7 +1674,7 @@ class ADCMClient:
             self._api = ADCMApiWrapper(self.url)
             self.auth(user, password)
 
-        if self.api_token() is not None:
+        if self.api_token() is not None and user == 'admin':
             self.guess_adcm_url()
 
         self.adcm_version = self._api.adcm_version
@@ -1611,14 +1822,20 @@ class ADCMClient:
 
     def _upload(self, bundle_stream: BytesIO) -> Bundle:
         """Upload and create Bundle from file={bundle_stream}"""
-        self._api.objects.stack.upload.create(file=bundle_stream)
+        try:
+            self._api.objects.stack.upload.create(file=bundle_stream)
+        except AttributeError as error:
+            raise NoSuchEndpointOrAccessIsDenied from error
         bundle_stream.seek(0)
         allure_attach(
             body=bundle_stream.getvalue(),
             name="bundle.tgz",
             extension="tgz",
         )
-        data = self._api.objects.stack.load.create(bundle_file="file")
+        try:
+            data = self._api.objects.stack.load.create(bundle_file="file")
+        except AttributeError as error:
+            raise NoSuchEndpointOrAccessIsDenied from error
         bundle_stream.close()
         return self.bundle(bundle_id=data['id'])
 
@@ -1653,7 +1870,10 @@ class ADCMClient:
         """Delete bundle object"""
         bundle = self.bundle(**args)
         with allure_step(f"Delete bundle {bundle.name}"):
-            self._api.objects.stack.bundle.delete(bundle_id=bundle.bundle_id)
+            try:
+                self._api.objects.stack.bundle.delete(bundle_id=bundle.bundle_id)
+            except AttributeError as error:
+                raise NoSuchEndpointOrAccessIsDenied from error
 
     def group_config(self, **kwargs) -> GroupConfig:
         """Return 'GroupConfig object'"""
@@ -1662,3 +1882,69 @@ class ADCMClient:
     def group_config_list(self, paging=None, **kwargs) -> GroupConfigList:
         """Return list of 'GroupConfig' objects"""
         return GroupConfigList(self._api, paging=paging, **kwargs)
+
+    @min_server_version('2021.05.12.14')
+    def user_create(self, username: str, password: str, **kwargs) -> "User":
+        """Create `User` object"""
+        return new_user(self._api, username, password, **kwargs)
+
+    @min_server_version('2021.05.12.14')
+    def user(self, **kwargs) -> "User":
+        """Return `User` object"""
+        return User(self._api, **kwargs)
+
+    @min_server_version('2021.05.12.14')
+    def user_list(self, paging=None, **kwargs) -> "UserList":
+        """Return list of `User` objects"""
+        return UserList(self._api, paging=paging, **kwargs)
+
+    @min_server_version('2021.05.12.14')
+    def group_create(self, name: str, **kwargs) -> "Group":
+        """Create `Group` object"""
+        return new_group(self._api, name, **kwargs)
+
+    @min_server_version('2021.05.12.14')
+    def group(self, **kwargs) -> "Group":
+        return Group(self._api, **kwargs)
+
+    @min_server_version('2021.05.12.14')
+    def group_list(self, paging=None, **kwargs) -> "GroupList":
+        """Return list of `Group` object"""
+        return GroupList(self._api, paging=paging, **kwargs)
+
+    @min_server_version('2021.05.12.14')
+    def role_create(self, name: str, **kwargs) -> "Role":
+        """Create new `Role` object"""
+        return new_role(self._api, name, **kwargs)
+
+    @min_server_version('2021.05.12.14')
+    def role(self, **kwargs) -> "Role":
+        """Return `Role` object"""
+        return Role(self._api, **kwargs)
+
+    @min_server_version('2021.05.12.14')
+    def role_list(self, paging=None, **kwargs) -> "RoleList":
+        """Return list of `Role` objects"""
+        return RoleList(self._api, paging=paging, **kwargs)
+
+    @min_server_version('2021.05.12.14')
+    def policy_create(
+        self,
+        name: str,
+        role: Role,
+        user: Union[UserList, List[User]],
+        group: Union[GroupList, List[Group]] = None,
+        objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
+    ) -> "Policy":
+        """Create `Policy` object"""
+        return new_policy(self._api, name, role, user, group, objects)
+
+    @min_server_version('2021.05.12.14')
+    def policy(self, **kwargs) -> "Policy":
+        """Return `Policy` object"""
+        return Policy(self._api, **kwargs)
+
+    @min_server_version('2021.05.12.14')
+    def policy_list(self, paging=None, **kwargs) -> "PolicyList":
+        """Return list if `Policy` objects"""
+        return PolicyList(self._api, paging=paging, **kwargs)

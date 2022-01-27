@@ -17,11 +17,14 @@ from functools import wraps
 from pprint import pprint
 from time import sleep
 
-import coreapi
 from version_utils import rpm
 
 from adcm_client.util.search import search_one, search
 from adcm_client.wrappers.api import ADCMApiWrapper
+
+# necessary for backward compatibility
+# pylint: disable=unused-import
+from adcm_client.wrappers.api import ActionHasIssues, ResponseTooLong
 
 # If we are running the client from tests with Allure we expected that code
 # to trace steps in Allure UI.
@@ -89,15 +92,11 @@ class TooManyArguments(Exception):
     pass
 
 
-class NoSuchEndpoint(Exception):
+class NoSuchEndpointOrAccessIsDenied(Exception):
     pass
 
 
 class ObjectNotFound(Exception):
-    pass
-
-
-class ActionHasIssues(Exception):
     pass
 
 
@@ -107,10 +106,6 @@ class WaitTimeout(Exception):
 
 class ADCMApiError(Exception):
     pass
-
-
-class ResponseTooLong(Exception):
-    """Response is too long, use paginated request"""
 
 
 class PagingEnds(Exception):
@@ -225,7 +220,7 @@ def _find_endpoint(api, path):
             if i in result.__dict__:
                 result = result.__dict__[i]
             else:
-                raise NoSuchEndpoint
+                raise NoSuchEndpointOrAccessIsDenied
     return result
 
 
@@ -267,11 +262,8 @@ class EndPoint:
         filters = self._get_filters_value(**args)
         try:
             result = self.point.list(**self.path_args, **paging, **filters)
-        except coreapi.exceptions.ErrorMessage as e:
-            # pylint: disable=W0212
-            if "code" in e.error._data and e.error._data["code"] == "TOO_LONG":
-                raise ResponseTooLong from e
-            raise e
+        except AttributeError as error:
+            raise NoSuchEndpointOrAccessIsDenied from error
 
         if isinstance(result, OrderedDict):
             # It's paging mode
@@ -283,7 +275,10 @@ class EndPoint:
         return result
 
     def read(self, object_id):
-        return self.point.read(**self.get_object_path(object_id))
+        try:
+            return self.point.read(**self.get_object_path(object_id))
+        except AttributeError as error:
+            raise NoSuchEndpointOrAccessIsDenied from error
 
     def search(self, paging=None, **args):
         # TODO: Add filtering on backend
@@ -310,7 +305,17 @@ class EndPoint:
         return _find_endpoint(self.point, path)
 
     def delete(self, object_id):
-        return self.point.delete(**self.get_object_path(object_id))
+        try:
+            return self.point.delete(**self.get_object_path(object_id))
+        except AttributeError as error:
+            raise NoSuchEndpointOrAccessIsDenied from error
+
+    def update(self, object_id, **kwargs):
+        try:
+            kwargs.update(self.get_object_path(object_id))
+            return self.point.partial_update(**kwargs)
+        except AttributeError as error:
+            raise NoSuchEndpointOrAccessIsDenied from error
 
 
 class BaseAPIObject:
@@ -409,6 +414,10 @@ class BaseAPIObject:
 
     def delete(self):
         return self._endpoint.delete(self.id)
+
+    def update(self, **kwargs) -> None:
+        self._endpoint.update(self.id, **kwargs)
+        self.reread()
 
 
 class BaseAPIListObject(UserList):  # pylint: disable=too-many-ancestors
