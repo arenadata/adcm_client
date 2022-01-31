@@ -1883,51 +1883,51 @@ class ADCMClient:
         """Return list of 'GroupConfig' objects"""
         return GroupConfigList(self._api, paging=paging, **kwargs)
 
-    @min_server_version('2021.05.12.14')
+    @min_server_version('2022.01.31.00')
     def user_create(self, username: str, password: str, **kwargs) -> "User":
         """Create `User` object"""
         return new_user(self._api, username, password, **kwargs)
 
-    @min_server_version('2021.05.12.14')
+    @min_server_version('2022.01.31.00')
     def user(self, **kwargs) -> "User":
         """Return `User` object"""
         return User(self._api, **kwargs)
 
-    @min_server_version('2021.05.12.14')
+    @min_server_version('2022.01.31.00')
     def user_list(self, paging=None, **kwargs) -> "UserList":
         """Return list of `User` objects"""
         return UserList(self._api, paging=paging, **kwargs)
 
-    @min_server_version('2021.05.12.14')
+    @min_server_version('2022.01.31.00')
     def group_create(self, name: str, **kwargs) -> "Group":
         """Create `Group` object"""
         return new_group(self._api, name, **kwargs)
 
-    @min_server_version('2021.05.12.14')
+    @min_server_version('2022.01.31.00')
     def group(self, **kwargs) -> "Group":
         return Group(self._api, **kwargs)
 
-    @min_server_version('2021.05.12.14')
+    @min_server_version('2022.01.31.00')
     def group_list(self, paging=None, **kwargs) -> "GroupList":
         """Return list of `Group` object"""
         return GroupList(self._api, paging=paging, **kwargs)
 
-    @min_server_version('2021.05.12.14')
+    @min_server_version('2022.01.31.00')
     def role_create(self, name: str, **kwargs) -> "Role":
         """Create new `Role` object"""
         return new_role(self._api, name, **kwargs)
 
-    @min_server_version('2021.05.12.14')
+    @min_server_version('2022.01.31.00')
     def role(self, **kwargs) -> "Role":
         """Return `Role` object"""
         return Role(self._api, **kwargs)
 
-    @min_server_version('2021.05.12.14')
+    @min_server_version('2022.01.31.00')
     def role_list(self, paging=None, **kwargs) -> "RoleList":
         """Return list of `Role` objects"""
         return RoleList(self._api, paging=paging, **kwargs)
 
-    @min_server_version('2021.05.12.14')
+    @min_server_version('2022.01.31.00')
     def policy_create(
         self,
         name: str,
@@ -1939,12 +1939,12 @@ class ADCMClient:
         """Create `Policy` object"""
         return new_policy(self._api, name, role, user, group, objects)
 
-    @min_server_version('2021.05.12.14')
+    @min_server_version('2022.01.31.00')
     def policy(self, **kwargs) -> "Policy":
         """Return `Policy` object"""
         return Policy(self._api, **kwargs)
 
-    @min_server_version('2021.05.12.14')
+    @min_server_version('2022.01.31.00')
     def policy_list(self, paging=None, **kwargs) -> "PolicyList":
         """Return list if `Policy` objects"""
         return PolicyList(self._api, paging=paging, **kwargs)
