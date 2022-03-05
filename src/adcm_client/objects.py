@@ -545,6 +545,10 @@ class Cluster(_BaseObject):
         else:
             raise NotImplementedError
 
+    def bind_delete(self, bind):
+        with allure_step(f"Remove bind {bind} from cluster {self.name}"):
+            self._subcall("bind", "delete", bind_id=bind['id'])
+
     def bind_list(self, paging=None):
         """Provide endpoint to bind/list"""
         return self._subcall("bind", "list")
@@ -760,6 +764,10 @@ class Service(_BaseObject):
             )
         else:
             raise NotImplementedError
+
+    def bind_delete(self, bind):
+        with allure_step(f"Remove bind {bind} from service {self.name}"):
+            self._subcall("bind", "delete", bind_id=bind['id'])
 
     def prototype(self) -> "ServicePrototype":
         """Return new 'ServicePrototype' object"""
