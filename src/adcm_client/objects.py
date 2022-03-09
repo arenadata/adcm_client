@@ -531,7 +531,7 @@ class Cluster(_BaseObject):
         """Return 'ClusterPrototype' object as its prototype"""
         return self._parent_obj(ClusterPrototype)
 
-    def bind(self, target):
+    def _bind_old(self, target):
         """Check target type. If it is cluster or service - provide matching endpoint"""
         if isinstance(target, Cluster):
             self._subcall("bind", "create", export_cluster_id=target.cluster_id)
@@ -545,13 +545,39 @@ class Cluster(_BaseObject):
         else:
             raise NotImplementedError
 
-    def bind_delete(self, bind):
-        with allure_step(f"Remove bind {bind} from cluster {self.name}"):
-            self._subcall("bind", "delete", bind_id=bind['id'])
-
-    def bind_list(self, paging=None):
+    def _bind_list_old(self, paging=None):
         """Provide endpoint to bind/list"""
         return self._subcall("bind", "list")
+
+    @legacy_server_implementaion(_bind_old, '2022.02.1.00')
+    def bind(self, target) -> "ClusterBind":
+        """Create new ClusterBind object and return it"""
+        if isinstance(target, Cluster):
+            data = self._subcall("bind", "create", export_cluster_id=target.cluster_id)
+        elif isinstance(target, Service):
+            data = self._subcall(
+                "bind",
+                "create",
+                export_cluster_id=target.cluster_id,
+                export_service_id=target.service_id,
+            )
+        return ClusterBind(self._api, id=data['id'])
+
+    @min_server_version('2022.02.1.00')
+    def bind_delete(self, bind: "ClusterBind"):
+        """Delete service from cluster"""
+        with allure_step(f"Remove bind {bind.id} from cluster {self.name}"):
+            self._subcall("bind", "delete", bind_id=bind.id)
+
+    @min_server_version('2022.02.1.00')
+    def get_bind(self, **kwargs):
+        """Return 'ClusterBind' object already created on cluster"""
+        return self._subobject(ClusterBind, **kwargs)
+
+    @legacy_server_implementaion(_bind_list_old, '2022.02.1.00')
+    def bind_list(self, paging=None, **kwargs) -> "ClusterBindList":
+        """Return list of 'ClusterBind' objects"""
+        return self._subobject(ClusterBindList, paging=paging, **kwargs)
 
     def bundle(self) -> "Bundle":
         """Return 'Bundle' object from Cluster prototype"""
@@ -713,6 +739,38 @@ class UpgradeList(BaseAPIListObject):
     SUBPATH = ["upgrade"]
     _ENTRY_CLASS = Upgrade
 
+##################################################
+#          C L U S T E R B I N D
+##################################################
+
+
+class ClusterBind(BaseAPIObject):
+    """The 'ClusterBind' object from the API"""
+
+    IDNAME = "bind_id"
+    PATH = None
+    SUBPATH = ["bind"]
+
+    id = None
+    bind_id = None
+    export_cluster_id = None
+    export_cluster_name = None
+    export_cluster_prototype_name = None
+    export_service_id = None
+    export_service_name = None
+    import_service_id = None
+    import_service_name = None
+
+    def delete(self):
+        with allure_step(f"Remove bind {self.bind_id}"):
+            self._subcall("delete", bind_id=self.id)
+
+
+class ClusterBindList(BaseAPIListObject):
+    """List of 'ClusterBind' objects from the API"""
+
+    SUBPATH = ["bind"]
+    _ENTRY_CLASS = ClusterBind
 
 ##################################################
 #           S E R V I C E S
@@ -751,7 +809,7 @@ class Service(_BaseObject):
     def __repr__(self):
         return f"<Service {self.name} form cluster - {self.cluster_id} at {id(self)}>"
 
-    def bind(self, target):
+    def _bind_old(self, target):
         """Check target type. If it is cluster or service - provide matching endpoint"""
         if isinstance(target, Cluster):
             self._subcall("bind", "create", export_cluster_id=target.cluster_id)
@@ -765,9 +823,40 @@ class Service(_BaseObject):
         else:
             raise NotImplementedError
 
-    def bind_delete(self, bind):
-        with allure_step(f"Remove bind {bind} from service {self.name}"):
-            self._subcall("bind", "delete", bind_id=bind['id'])
+    def _bind_list_old(self, paging=None):
+        """Provide endpoint bind/list"""
+        return self._subcall("bind", "list")
+
+    @legacy_server_implementaion(_bind_old, '2022.02.1.00')
+    def bind(self, target) -> "ClusterBind":
+        """Create new ClusterBind object and return it"""
+        if isinstance(target, Cluster):
+            data = self._subcall("bind", "create", export_cluster_id=target.cluster_id)
+        elif isinstance(target, Service):
+            data = self._subcall(
+                "bind",
+                "create",
+                export_cluster_id=target.cluster_id,
+                export_service_id=target.service_id,
+            )
+        return ClusterBind(self._api, id=data['id'])
+
+    @min_server_version('2022.02.1.00')
+    def bind_delete(self, bind: "ClusterBind"):
+        """Delete service from cluster"""
+        with allure_step(f"Remove bind {bind.id} from service {self.name}"):
+            self._subcall("bind", "delete", bind_id=bind.id)
+
+    @min_server_version('2022.02.1.00')
+    def get_bind(self, **kwargs):
+        """Return 'ClusterBind' object already created on cluster"""
+        return self._subobject(ClusterBind, **kwargs)
+
+    @legacy_server_implementaion(_bind_list_old, '2022.02.1.00')
+    def bind_list(self, paging=None, **kwargs) -> "ClusterBindList":
+        """Return list of 'ClusterBind' objects"""
+        return self._subobject(ClusterBindList, paging=paging, **kwargs)
+
 
     def prototype(self) -> "ServicePrototype":
         """Return new 'ServicePrototype' object"""
@@ -780,10 +869,6 @@ class Service(_BaseObject):
     def imports(self):
         """Provide endpoint to import/list"""
         return self._subcall("import", "list")
-
-    def bind_list(self, paging=None):
-        """Provide endpoint bind/list"""
-        return self._subcall("bind", "list")
 
     def _component_old(self, **args) -> "Component":
         """Return 'Component' object"""
