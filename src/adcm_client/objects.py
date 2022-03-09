@@ -739,6 +739,7 @@ class UpgradeList(BaseAPIListObject):
     SUBPATH = ["upgrade"]
     _ENTRY_CLASS = Upgrade
 
+
 ##################################################
 #          C L U S T E R B I N D
 ##################################################
@@ -771,6 +772,7 @@ class ClusterBindList(BaseAPIListObject):
 
     SUBPATH = ["bind"]
     _ENTRY_CLASS = ClusterBind
+
 
 ##################################################
 #           S E R V I C E S
@@ -856,7 +858,6 @@ class Service(_BaseObject):
     def bind_list(self, paging=None, **kwargs) -> "ClusterBindList":
         """Return list of 'ClusterBind' objects"""
         return self._subobject(ClusterBindList, paging=paging, **kwargs)
-
 
     def prototype(self) -> "ServicePrototype":
         """Return new 'ServicePrototype' object"""
