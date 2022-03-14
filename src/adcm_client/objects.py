@@ -13,7 +13,7 @@
 
 import logging
 import warnings
-from collections import abc
+from collections import abc, namedtuple
 from io import BytesIO
 from json import dumps
 from typing import List, Union
@@ -43,6 +43,11 @@ from adcm_client.wrappers.api import ADCMApiWrapper
 # Init logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+Me = namedtuple(
+    'Me',
+    ('id', 'username', 'first_name', 'last_name', 'email', 'is_superuser', 'password', 'profile'),
+)
 
 
 class NoCredentionsProvided(Exception):
@@ -1882,6 +1887,10 @@ class ADCMClient:
     def group_config_list(self, paging=None, **kwargs) -> GroupConfigList:
         """Return list of 'GroupConfig' objects"""
         return GroupConfigList(self._api, paging=paging, **kwargs)
+
+    @min_server_version('2022.01.31.00')
+    def me(self) -> "Me":
+        return Me(**self._api.action(['rbac', 'me', 'read']))
 
     @min_server_version('2022.01.31.00')
     def user_create(self, username: str, password: str, **kwargs) -> "User":
