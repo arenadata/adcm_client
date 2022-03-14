@@ -1,4 +1,4 @@
-pytest
+pytest~=6.0
 pytest-xdist
 adcm_pytest_plugin
 allure-pytest
