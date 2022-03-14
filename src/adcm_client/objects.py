@@ -550,8 +550,8 @@ class Cluster(_BaseObject):
         return self._subcall("bind", "list")
 
     @legacy_server_implementaion(_bind_old, '2022.02.1.00')
-    def bind(self, target) -> "ClusterBind":
-        """Create new ClusterBind object and return it"""
+    def bind(self, target) -> "Bind":
+        """Create new Bind object and return it"""
         if isinstance(target, Cluster):
             data = self._subcall("bind", "create", export_cluster_id=target.cluster_id)
         elif isinstance(target, Service):
@@ -561,23 +561,12 @@ class Cluster(_BaseObject):
                 export_cluster_id=target.cluster_id,
                 export_service_id=target.service_id,
             )
-        return ClusterBind(self._api, id=data['id'])
-
-    @min_server_version('2022.02.1.00')
-    def bind_delete(self, bind: "ClusterBind"):
-        """Delete service from cluster"""
-        with allure_step(f"Remove bind {bind.id} from cluster {self.name}"):
-            self._subcall("bind", "delete", bind_id=bind.id)
-
-    @min_server_version('2022.02.1.00')
-    def get_bind(self, **kwargs):
-        """Return 'ClusterBind' object already created on cluster"""
-        return self._subobject(ClusterBind, **kwargs)
+        return Bind(self._api, id=data['id'])
 
     @legacy_server_implementaion(_bind_list_old, '2022.02.1.00')
-    def bind_list(self, paging=None, **kwargs) -> "ClusterBindList":
-        """Return list of 'ClusterBind' objects"""
-        return self._subobject(ClusterBindList, paging=paging, **kwargs)
+    def bind_list(self, paging=None, **kwargs) -> "BindList":
+        """Return list of 'Bind' objects"""
+        return self._subobject(BindList, paging=paging, **kwargs)
 
     def bundle(self) -> "Bundle":
         """Return 'Bundle' object from Cluster prototype"""
@@ -741,12 +730,12 @@ class UpgradeList(BaseAPIListObject):
 
 
 ##################################################
-#          C L U S T E R B I N D
+#                B I N D
 ##################################################
 
 
-class ClusterBind(BaseAPIObject):
-    """The 'ClusterBind' object from the API"""
+class Bind(BaseAPIObject):
+    """The 'Bind' object from the API"""
 
     IDNAME = "bind_id"
     PATH = None
@@ -767,11 +756,11 @@ class ClusterBind(BaseAPIObject):
             self._subcall("delete", bind_id=self.id)
 
 
-class ClusterBindList(BaseAPIListObject):
-    """List of 'ClusterBind' objects from the API"""
+class BindList(BaseAPIListObject):
+    """List of 'Bind' objects from the API"""
 
     SUBPATH = ["bind"]
-    _ENTRY_CLASS = ClusterBind
+    _ENTRY_CLASS = Bind
 
 
 ##################################################
@@ -830,8 +819,8 @@ class Service(_BaseObject):
         return self._subcall("bind", "list")
 
     @legacy_server_implementaion(_bind_old, '2022.02.1.00')
-    def bind(self, target) -> "ClusterBind":
-        """Create new ClusterBind object and return it"""
+    def bind(self, target) -> "Bind":
+        """Create new Bind object and return it"""
         if isinstance(target, Cluster):
             data = self._subcall("bind", "create", export_cluster_id=target.cluster_id)
         elif isinstance(target, Service):
@@ -841,23 +830,23 @@ class Service(_BaseObject):
                 export_cluster_id=target.cluster_id,
                 export_service_id=target.service_id,
             )
-        return ClusterBind(self._api, id=data['id'])
+        return Bind(self._api, id=data['id'])
 
     @min_server_version('2022.02.1.00')
-    def bind_delete(self, bind: "ClusterBind"):
+    def bind_delete(self, bind: "Bind"):
         """Delete service from cluster"""
         with allure_step(f"Remove bind {bind.id} from service {self.name}"):
             self._subcall("bind", "delete", bind_id=bind.id)
 
     @min_server_version('2022.02.1.00')
     def get_bind(self, **kwargs):
-        """Return 'ClusterBind' object already created on cluster"""
-        return self._subobject(ClusterBind, **kwargs)
+        """Return 'Bind' object already created on cluster"""
+        return self._subobject(Bind, **kwargs)
 
     @legacy_server_implementaion(_bind_list_old, '2022.02.1.00')
-    def bind_list(self, paging=None, **kwargs) -> "ClusterBindList":
-        """Return list of 'ClusterBind' objects"""
-        return self._subobject(ClusterBindList, paging=paging, **kwargs)
+    def bind_list(self, paging=None, **kwargs) -> "BindList":
+        """Return list of 'Bind' objects"""
+        return self._subobject(BindList, paging=paging, **kwargs)
 
     def prototype(self) -> "ServicePrototype":
         """Return new 'ServicePrototype' object"""
