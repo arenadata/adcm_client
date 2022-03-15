@@ -553,15 +553,15 @@ class Cluster(_BaseObject):
     def bind(self, target) -> "Bind":
         """Create new Bind object and return it"""
         if isinstance(target, Cluster):
-            data = self._subcall("bind", "create", export_cluster_id=target.cluster_id)
+            self._subcall("bind", "create", export_cluster_id=target.cluster_id)
         elif isinstance(target, Service):
-            data = self._subcall(
+            self._subcall(
                 "bind",
                 "create",
                 export_cluster_id=target.cluster_id,
                 export_service_id=target.service_id,
             )
-        return Bind(self._api, id=data['id'])
+        return self._subobject(Bind)
 
     @legacy_server_implementaion(_bind_list_old, '2022.02.1.00')
     def bind_list(self, paging=None, **kwargs) -> "BindList":
@@ -822,26 +822,15 @@ class Service(_BaseObject):
     def bind(self, target) -> "Bind":
         """Create new Bind object and return it"""
         if isinstance(target, Cluster):
-            data = self._subcall("bind", "create", export_cluster_id=target.cluster_id)
+            self._subcall("bind", "create", export_cluster_id=target.cluster_id)
         elif isinstance(target, Service):
-            data = self._subcall(
+            self._subcall(
                 "bind",
                 "create",
                 export_cluster_id=target.cluster_id,
                 export_service_id=target.service_id,
             )
-        return Bind(self._api, id=data['id'])
-
-    @min_server_version('2022.02.1.00')
-    def bind_delete(self, bind: "Bind"):
-        """Delete service from cluster"""
-        with allure_step(f"Remove bind {bind.id} from service {self.name}"):
-            self._subcall("bind", "delete", bind_id=bind.id)
-
-    @min_server_version('2022.02.1.00')
-    def get_bind(self, **kwargs):
-        """Return 'Bind' object already created on cluster"""
-        return self._subobject(Bind, **kwargs)
+        return self._subobject(Bind)
 
     @legacy_server_implementaion(_bind_list_old, '2022.02.1.00')
     def bind_list(self, paging=None, **kwargs) -> "BindList":
