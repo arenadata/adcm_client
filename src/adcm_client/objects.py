@@ -536,7 +536,7 @@ class Cluster(_BaseObject):
         """Return 'ClusterPrototype' object as its prototype"""
         return self._parent_obj(ClusterPrototype)
 
-    def bind(self, target):
+    def _bind_old(self, target):
         """Check target type. If it is cluster or service - provide matching endpoint"""
         if isinstance(target, Cluster):
             self._subcall("bind", "create", export_cluster_id=target.cluster_id)
@@ -550,9 +550,28 @@ class Cluster(_BaseObject):
         else:
             raise NotImplementedError
 
-    def bind_list(self, paging=None):
+    def _bind_list_old(self, paging=None):
         """Provide endpoint to bind/list"""
         return self._subcall("bind", "list")
+
+    @legacy_server_implementaion(_bind_old, '2022.02.1.00')
+    def bind(self, target) -> "Bind":
+        """Create new Bind object and return it"""
+        if isinstance(target, Cluster):
+            self._subcall("bind", "create", export_cluster_id=target.cluster_id)
+        elif isinstance(target, Service):
+            self._subcall(
+                "bind",
+                "create",
+                export_cluster_id=target.cluster_id,
+                export_service_id=target.service_id,
+            )
+        return self._subobject(Bind)
+
+    @legacy_server_implementaion(_bind_list_old, '2022.02.1.00')
+    def bind_list(self, paging=None, **kwargs) -> "BindList":
+        """Return list of 'Bind' objects"""
+        return self._subobject(BindList, paging=paging, **kwargs)
 
     def bundle(self) -> "Bundle":
         """Return 'Bundle' object from Cluster prototype"""
@@ -716,6 +735,40 @@ class UpgradeList(BaseAPIListObject):
 
 
 ##################################################
+#                B I N D
+##################################################
+
+
+class Bind(BaseAPIObject):
+    """The 'Bind' object from the API"""
+
+    IDNAME = "bind_id"
+    PATH = None
+    SUBPATH = ["bind"]
+
+    id = None
+    bind_id = None
+    export_cluster_id = None
+    export_cluster_name = None
+    export_cluster_prototype_name = None
+    export_service_id = None
+    export_service_name = None
+    import_service_id = None
+    import_service_name = None
+
+    def delete(self):
+        with allure_step(f"Remove bind {self.bind_id}"):
+            self._subcall("delete", bind_id=self.id)
+
+
+class BindList(BaseAPIListObject):
+    """List of 'Bind' objects from the API"""
+
+    SUBPATH = ["bind"]
+    _ENTRY_CLASS = Bind
+
+
+##################################################
 #           S E R V I C E S
 ##################################################
 class Service(_BaseObject):
@@ -752,7 +805,7 @@ class Service(_BaseObject):
     def __repr__(self):
         return f"<Service {self.name} form cluster - {self.cluster_id} at {id(self)}>"
 
-    def bind(self, target):
+    def _bind_old(self, target):
         """Check target type. If it is cluster or service - provide matching endpoint"""
         if isinstance(target, Cluster):
             self._subcall("bind", "create", export_cluster_id=target.cluster_id)
@@ -766,6 +819,29 @@ class Service(_BaseObject):
         else:
             raise NotImplementedError
 
+    def _bind_list_old(self, paging=None):
+        """Provide endpoint bind/list"""
+        return self._subcall("bind", "list")
+
+    @legacy_server_implementaion(_bind_old, '2022.02.1.00')
+    def bind(self, target) -> "Bind":
+        """Create new Bind object and return it"""
+        if isinstance(target, Cluster):
+            self._subcall("bind", "create", export_cluster_id=target.cluster_id)
+        elif isinstance(target, Service):
+            self._subcall(
+                "bind",
+                "create",
+                export_cluster_id=target.cluster_id,
+                export_service_id=target.service_id,
+            )
+        return self._subobject(Bind)
+
+    @legacy_server_implementaion(_bind_list_old, '2022.02.1.00')
+    def bind_list(self, paging=None, **kwargs) -> "BindList":
+        """Return list of 'Bind' objects"""
+        return self._subobject(BindList, paging=paging, **kwargs)
+
     def prototype(self) -> "ServicePrototype":
         """Return new 'ServicePrototype' object"""
         return ServicePrototype(self._api, id=self.prototype_id)
@@ -777,10 +853,6 @@ class Service(_BaseObject):
     def imports(self):
         """Provide endpoint to import/list"""
         return self._subcall("import", "list")
-
-    def bind_list(self, paging=None):
-        """Provide endpoint bind/list"""
-        return self._subcall("bind", "list")
 
     def _component_old(self, **args) -> "Component":
         """Return 'Component' object"""
