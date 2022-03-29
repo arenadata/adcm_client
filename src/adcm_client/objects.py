@@ -724,7 +724,11 @@ class Upgrade(BaseAPIObject):
     def do(self, **args):
         """Do upgrade and provide do/create endpoint"""
         with allure_step(f"Do upgrade {self.name}"):
-            self._subcall("do", "create", **args)
+            data = self._subcall("do", "create", **args)
+        task = None
+        if data['task_id'] is not None:
+            task = Task(self._api, task_id=data['task_id'])
+        return task
 
 
 class UpgradeList(BaseAPIListObject):
