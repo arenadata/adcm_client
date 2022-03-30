@@ -9,7 +9,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# pylint: disable=too-many-lines, too-many-public-methods, too-many-ancestors, unused-import
+# pylint: disable=too-many-lines, too-many-public-methods, too-many-ancestors
 
 import logging
 import warnings
@@ -721,7 +721,7 @@ class Upgrade(BaseAPIObject):
     state_on_success = None
     from_edition = None
 
-    def do(self, **args) -> 'Optional[Task]':
+    def do(self, **args) -> Optional['Task']:
         """
         Do upgrade and provide do/create endpoint.
         Returns a task if an action was fired on the upgrade, or None otherwise
