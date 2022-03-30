@@ -726,7 +726,7 @@ class Upgrade(BaseAPIObject):
         with allure_step(f"Do upgrade {self.name}"):
             data = self._subcall("do", "create", **args)
         task = None
-        if data['task_id'] is not None:
+        if data.get('task_id') is not None:
             task = Task(self._api, task_id=data['task_id'])
         return task
 
