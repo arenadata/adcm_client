@@ -23,6 +23,7 @@ from docker.client import DockerClient
 from docker.errors import ImageNotFound
 from docker.models.containers import Container  # pylint: disable=unused-import
 from docker.models.images import Image
+from markupsafe import Markup
 
 
 class NoModulesToInstall(Exception):
@@ -195,9 +196,15 @@ def python_mod_req(source_path, workspace, **kwargs):
 
 
 def splitter(*args, **kwargs):
-    env = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(args[0]), undefined=jinja2.StrictUndefined
-    )
+    loader = jinja2.FileSystemLoader(args[0])
+    env = jinja2.Environment(loader=loader, undefined=jinja2.StrictUndefined)
+
+    def include_raw(name):
+        """Format: {{ include_raw('<template_name>') }}"""
+        return Markup(loader.get_source(env, name)[0])
+
+    env.globals['include_raw'] = include_raw
+
     for file in kwargs['files']:
         tmpl = env.get_template(file)
         with codecs.open(os.path.join(args[0], (os.path.splitext(file)[0])), 'w', 'utf-8') as f:
