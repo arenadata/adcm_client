@@ -16,7 +16,7 @@ import warnings
 from collections import abc, namedtuple
 from io import BytesIO
 from json import dumps
-from typing import List, Union
+from typing import List, Union, Optional
 
 from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
@@ -721,10 +721,22 @@ class Upgrade(BaseAPIObject):
     state_on_success = None
     from_edition = None
 
-    def do(self, **args):
-        """Do upgrade and provide do/create endpoint"""
+    def do(self, **args) -> Optional['Task']:
+        """
+        Do upgrade and provide do/create endpoint.
+        Returns a task if an action was fired on the upgrade, or None otherwise
+
+        :param args: config - configuration for action
+        :type args: dict
+        :return: task
+        :rtype: Optional[Task]
+        """
         with allure_step(f"Do upgrade {self.name}"):
-            self._subcall("do", "create", **args)
+            data = self._subcall("do", "create", **args)
+        task = None
+        if data.get('task_id') is not None:
+            task = Task(self._api, task_id=data['task_id'])
+        return task
 
 
 class UpgradeList(BaseAPIListObject):
