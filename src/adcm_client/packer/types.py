@@ -199,7 +199,7 @@ def python_mod_req(source_path, workspace, **kwargs):
 
 def splitter(*args, **kwargs):
     loader = FileSystemLoader(args[0])
-    env = Environment(loader=loader, undefined=StrictUndefined, autoescape=True)
+    env = Environment(loader=loader, undefined=StrictUndefined)
 
     def include_raw(name):
         """Format: {{ include_raw('<template_name>') }}"""
