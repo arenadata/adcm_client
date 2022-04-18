@@ -1019,6 +1019,7 @@ class Host(_BaseObject):
     description = None
     bundle_id = None
     status = None
+    maintenance_mode = None
 
     def __repr__(self):
         return f"<Host {self.fqdn} form provider - {self.provider_id} at {id(self)}>"
