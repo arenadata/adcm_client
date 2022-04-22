@@ -1019,7 +1019,15 @@ class Host(_BaseObject):
     description = None
     bundle_id = None
     status = None
-    maintenance_mode = None
+
+    @property
+    def maintenance_mode(self):
+        return self._data['maintenance_mode']
+
+    @maintenance_mode.setter
+    def maintenance_mode(self, value):
+        self._api.objects.host.partial_update(host_id=self.id, maintenance_mode=value)
+        self._data['maintenance_mode'] = value
 
     def __repr__(self):
         return f"<Host {self.fqdn} form provider - {self.provider_id} at {id(self)}>"
