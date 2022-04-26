@@ -1021,7 +1021,7 @@ class Host(_BaseObject):
     status = None
     maintenance_mode: str = None
 
-    def set_maintenance_mode(self, value: str) -> None:
+    def maintenance_mode_set(self, value: str) -> None:
         self._api.objects.host.partial_update(host_id=self.id, maintenance_mode=value)
         self.reread()
 
@@ -1105,6 +1105,7 @@ class Action(BaseAPIObject):
     allow_to_terminate = None
     partial_execution = None
     host_action = None
+    disabling_cause = None
 
     def __repr__(self):
         return f"<Action {self.name} at {id(self)}>"
