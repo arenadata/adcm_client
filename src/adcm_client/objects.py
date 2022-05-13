@@ -720,6 +720,8 @@ class Upgrade(BaseAPIObject):
     state_available = None
     state_on_success = None
     from_edition = None
+    ui_options = None
+    config = None
 
     def do(self, **args) -> Optional['Task']:
         """
