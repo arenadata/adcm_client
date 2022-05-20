@@ -720,6 +720,8 @@ class Upgrade(BaseAPIObject):
     state_available = None
     state_on_success = None
     from_edition = None
+    ui_options = None
+    config = None
 
     def do(self, **args) -> Optional['Task']:
         """
@@ -1019,6 +1021,11 @@ class Host(_BaseObject):
     description = None
     bundle_id = None
     status = None
+    maintenance_mode: str = None
+
+    def maintenance_mode_set(self, value: str) -> None:
+        self._api.objects.host.partial_update(host_id=self.id, maintenance_mode=value)
+        self.reread()
 
     def __repr__(self):
         return f"<Host {self.fqdn} form provider - {self.provider_id} at {id(self)}>"
@@ -1100,6 +1107,7 @@ class Action(BaseAPIObject):
     allow_to_terminate = None
     partial_execution = None
     host_action = None
+    disabling_cause = None
 
     def __repr__(self):
         return f"<Action {self.name} at {id(self)}>"
