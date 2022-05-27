@@ -13,6 +13,7 @@
 
 import logging
 import warnings
+from abc import ABC, abstractmethod
 from collections import abc, namedtuple
 from io import BytesIO
 from json import dumps
@@ -38,6 +39,7 @@ from adcm_client.base import (
     NoSuchEndpointOrAccessIsDenied,
 )
 from adcm_client.util import stream
+from adcm_client.util.config import update
 from adcm_client.wrappers.api import ADCMApiWrapper
 
 # Init logger
@@ -322,6 +324,27 @@ class HostPrototypeList(BaseAPIListObject):
 ##################################################
 #           B A S E  O B J E C T
 ##################################################
+
+
+def _config_set_diff(object_with_config, data: dict, attach_to_allure: bool = True) -> dict:
+    """
+    General method to use when config should be updated without passing the full config.
+
+    :param object_with_config: Object with methods `config(self, *a, **kw, full: bool) -> dict`
+                               and `config_set(self, data, *a, **kw, attach_to_allure: bool) -> dict`
+    :param data: Dictionary with new config fields (may or may not contain "config" and "attr" fields)
+    :param attach_to_allure: Flag to decide whether attach changed fields and original config or not
+    """
+    if attach_to_allure:
+        allure_attach_json(data, name="Changed fields")
+    if "attr" not in data:
+        data = {"config": {**data.get("config", data)}, "attr": {}}
+    config = object_with_config.config(full=True)
+    if attach_to_allure:
+        allure_attach_json(config, name="Original config")
+    return object_with_config.config_set(update(config, data), attach_to_allure=attach_to_allure)
+
+
 class _BaseObject(BaseAPIObject):
     """
     Base class 'BaseObject' for adcm_client objects
@@ -400,25 +423,7 @@ class _BaseObject(BaseAPIObject):
     @allure_step("Save config")
     def config_set_diff(self, data, attach_to_allure=True):
         """Save the difference between old and new config in history"""
-
-        def update(d, u):
-            """If the old and new values are dictionaries, we try to update, otherwise we replace"""
-            for key, value in u.items():
-                if isinstance(value, abc.Mapping) and key in d and isinstance(d[key], abc.Mapping):
-                    d[key] = update(d[key], value)
-                    continue
-                d[key] = value
-            return d
-
-        # this check is incomplete, cases of presence of keys "config" and "attr" in config
-        # are not considered
-        if attach_to_allure:
-            allure_attach_json(data, name="Changed fields")
-        is_full = "config" in data and "attr" in data
-        config = self.config(full=is_full)
-        if attach_to_allure:
-            allure_attach_json(config, name="Original config")
-        return self.config_set(update(config, data), attach_to_allure=attach_to_allure)
+        return _config_set_diff(self, data, attach_to_allure)
 
     def config_prototype(self):
         return self.prototype().config
@@ -1447,25 +1452,9 @@ class GroupConfig(BaseAPIObject):
         return current_config["config"]
 
     @allure_step("Save group config")
-    def config_set_diff(self, data, attach_to_allure=True):
+    def config_set_diff(self, data: dict, attach_to_allure: bool = True) -> dict:
         """Partial config update"""
-
-        def update(d, u):
-            """If the old and new values are dictionaries, we try to update, otherwise we replace"""
-            for key, value in u.items():
-                if isinstance(value, abc.Mapping) and key in d and isinstance(d[key], abc.Mapping):
-                    d[key] = update(d[key], value)
-                    continue
-                d[key] = value
-            return d
-
-        if attach_to_allure:
-            allure_attach_json(data, name="Changed fields")
-        is_full = "config" in data and "attr" in data
-        config = self.config(full=is_full)
-        if attach_to_allure:
-            allure_attach_json(config, name="Original config")
-        return self.config_set(update(config, data), attach_to_allure=attach_to_allure)
+        return _config_set_diff(self, data, attach_to_allure)
 
     def host_candidate(self, paging=None, **kwargs) -> "HostList":
         return HostList(
