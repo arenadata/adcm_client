@@ -13,8 +13,7 @@
 
 import logging
 import warnings
-from abc import ABC, abstractmethod
-from collections import abc, namedtuple
+from collections import namedtuple
 from io import BytesIO
 from json import dumps
 from typing import List, Union, Optional
@@ -330,10 +329,12 @@ def _config_set_diff(object_with_config, data: dict, attach_to_allure: bool = Tr
     """
     General method to use when config should be updated without passing the full config.
 
-    :param object_with_config: Object with methods `config(self, *a, **kw, full: bool) -> dict`
-                               and `config_set(self, data, *a, **kw, attach_to_allure: bool) -> dict`
-    :param data: Dictionary with new config fields (may or may not contain "config" and "attr" fields)
-    :param attach_to_allure: Flag to decide whether attach changed fields and original config or not
+    :param object_with_config: Object with methods `config(..., full: bool) -> dict`
+                               and `config_set(data, attach_to_allure, ...) -> dict`
+    :param data: Dictionary with new config fields
+                 (may or may not contain "config" and "attr" fields)
+    :param attach_to_allure: Flag to decide whether attach
+                             changed fields and original config or not
     """
     if attach_to_allure:
         allure_attach_json(data, name="Changed fields")
