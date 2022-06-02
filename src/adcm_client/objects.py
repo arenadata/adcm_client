@@ -1802,7 +1802,7 @@ class ADCMClient:
 
     def reset(self, api=None, url=None, user=None, password=None):
         """Re-init object. Useful in tests"""
-        self.__init__(api=api, url=url, user=user, password=password)
+        self.__init__(api=api, url=url, user=user, password=password)  # pylint: disable=unnecessary-dunder-call
 
     def _check_min_version(self):
         """Check client version and provide information about newer version"""

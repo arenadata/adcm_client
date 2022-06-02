@@ -62,7 +62,7 @@ class ConfigData:
 
     def _from_data(self, key, **kwargs):
         try:
-            value = [
+            values = [
                 entry.get(key)
                 for entry in self.data
                 if (
@@ -72,15 +72,15 @@ class ConfigData:
                 )
             ]
         except (TypeError, AttributeError):
-            value = [
+            values = [
                 entry[1].get(key)
                 for entry in self.data.items()
                 if (entry[0] == 'cluster' or entry[0] == 'host' or entry[0] == 'provider')
             ]
-        for idx, _ in enumerate(value):
-            if value[idx]:
-                value[0] = value[idx]
-        return value[0]
+        for val in values:
+            if val:
+                values[0] = val
+        return values[0]
 
     # get bundle version
     def _from_fs(self, key, **kwargs):
