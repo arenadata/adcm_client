@@ -1453,16 +1453,27 @@ class GroupConfig(BaseAPIObject):
         """Partial config update"""
         return _config_set_diff(self, data, attach_to_allure)
 
-    def config_history(self, full=False) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+    def config_history(
+        self, full: bool = False, **kwargs
+    ) -> List[Dict[str, Any]]:
         """
         Provide endpoint for config/history/list.
-        :returns: If `full` is True, returns dict from response AS IS.
-                  Otherwise, returns list of 'config' fields of all configs in the result.
+
+        By default, returns only 50 first results,
+        so to get more use `limit` and `offset` key arguments.
+        Notice that those may work not quite the same as `paging` on other endpoints
+        which returns "XList" instances.
+
+        :returns: If `full` is True, returns list with raw entries (dict)
+                  from "results" field of the response AS IS.
+                  Otherwise, returns list of "config" fields of all configs in the "results".
         """
-        history = self._sub_call("config", "config-log", "list", **self._get_basic_config_args())
+        history = self._sub_call(
+            "config", "config-log", "list", **self._get_basic_config_args(), **kwargs
+        )
         if full:
-            return history
-        return [config_entry['config'] for config_entry in history['results']]
+            return history["results"]
+        return [config_entry["config"] for config_entry in history["results"]]
 
     def host_candidate(self, paging=None, **kwargs) -> "HostList":
         return HostList(
