@@ -1453,9 +1453,7 @@ class GroupConfig(BaseAPIObject):
         """Partial config update"""
         return _config_set_diff(self, data, attach_to_allure)
 
-    def config_history(
-        self, full: bool = False, **kwargs
-    ) -> List[Dict[str, Any]]:
+    def config_history(self, full: bool = False, **kwargs) -> List[Dict[str, Any]]:
         """
         Provide endpoint for config/history/list.
 
