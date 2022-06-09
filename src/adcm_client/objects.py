@@ -16,7 +16,7 @@ import warnings
 from collections import namedtuple
 from io import BytesIO
 from json import dumps
-from typing import List, Union, Optional
+from typing import List, Union, Optional, Dict, Any
 
 from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
@@ -399,10 +399,7 @@ class _BaseObject(BaseAPIObject):
         history = self._subcall("config", "history", "list")
         if full:
             return history
-        result = []
-        for story in history:
-            result.append(story['config'])
-        return result
+        return [story['config'] for story in history]
 
     @allure_step("Save config")
     def config_set(self, data, attach_to_allure=True):
@@ -1420,9 +1417,8 @@ class GroupConfig(BaseAPIObject):
         current_id = object_config.get("current_id")
         path = ("config", "config-log", "read")
         args = {
-            "parent_lookup_obj_ref__group_config": self.id,
-            "parent_lookup_obj_ref": self.config_id,
             "id": current_id,
+            **self._get_basic_config_args(),
         }
         current_config = self._sub_call(*path, **args)
         if full:
@@ -1458,6 +1454,26 @@ class GroupConfig(BaseAPIObject):
         """Partial config update"""
         return _config_set_diff(self, data, attach_to_allure)
 
+    def config_history(self, full: bool = False, **kwargs) -> List[Dict[str, Any]]:
+        """
+        Provide endpoint for config/history/list.
+
+        By default, returns only 50 first results,
+        so to get more use `limit` and `offset` key arguments.
+        Notice that those may work not quite the same as `paging` on other endpoints
+        which returns "XList" instances.
+
+        :returns: If `full` is True, returns list with raw entries (dict)
+                  from "results" field of the response AS IS.
+                  Otherwise, returns list of "config" fields of all configs in the "results".
+        """
+        history = self._sub_call(
+            "config", "config-log", "list", **self._get_basic_config_args(), **kwargs
+        )
+        if full:
+            return history["results"]
+        return [config_entry["config"] for config_entry in history["results"]]
+
     def host_candidate(self, paging=None, **kwargs) -> "HostList":
         return HostList(
             api=self._api,
@@ -1466,6 +1482,15 @@ class GroupConfig(BaseAPIObject):
             paging=paging,
             **kwargs,
         )
+
+    def _get_basic_config_args(self) -> Dict[str, int]:
+        """
+        Get arguments map that are required for retrieving group config object
+        """
+        return {
+            "parent_lookup_obj_ref__group_config": self.id,
+            "parent_lookup_obj_ref": self.config_id,
+        }
 
 
 class GroupConfigList(BaseAPIListObject):
@@ -1787,7 +1812,9 @@ class ADCMClient:
 
     def reset(self, api=None, url=None, user=None, password=None):
         """Re-init object. Useful in tests"""
-        self.__init__(api=api, url=url, user=user, password=password)
+        self.__init__(  # pylint: disable=unnecessary-dunder-call
+            api=api, url=url, user=user, password=password
+        )
 
     def _check_min_version(self):
         """Check client version and provide information about newer version"""
