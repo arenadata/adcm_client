@@ -24,6 +24,8 @@ try:
 except ImportError:
     IS_ALLURE = False
 
+from src.adcm_client.base import ADCMApiError
+
 
 class APINode:
     pass
@@ -38,10 +40,6 @@ class ResponseTooLong(Exception):
 
 
 class AccessIsDenied(Exception):
-    pass
-
-
-class ADCMApiError(Exception):
     pass
 
 
