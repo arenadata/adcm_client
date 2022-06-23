@@ -20,7 +20,7 @@ from time import sleep
 from version_utils import rpm
 
 from adcm_client.util.search import search_one, search
-from adcm_client.wrappers.api import ADCMApiWrapper
+from adcm_client.wrappers.api import ADCMApiWrapper, ADCMApiError
 
 # necessary for backward compatibility
 # pylint: disable=unused-import
@@ -101,10 +101,6 @@ class ObjectNotFound(Exception):
 
 
 class WaitTimeout(Exception):
-    pass
-
-
-class ADCMApiError(Exception):
     pass
 
 
