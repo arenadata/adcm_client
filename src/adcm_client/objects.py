@@ -1583,6 +1583,7 @@ class User(BaseAPIObject):
     is_superuser = None
     password = None
     profile = None
+    type = None
 
     def group_list(self) -> "GroupList":
         """Return list of `Group` object"""
@@ -1632,6 +1633,7 @@ class Group(BaseAPIObject):
     id = None
     name = None
     description = None
+    type = None
 
     def user_list(self) -> "UserList":
         # TODO: I can't do this, because search() is not working
