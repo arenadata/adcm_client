@@ -1264,6 +1264,10 @@ class Task(BaseAPIObject):
 
         return status
 
+    def cancel(self) -> None:
+        """Cancel task"""
+        self._subcall("cancel", "update")
+
     def _log_jobs(self, **filters):
         for job in self.job_list(**filters):
             log_func = logger.error if job.status == "failed" else logger.info
@@ -1533,6 +1537,9 @@ class ADCM(_BaseObject):
         raise NotImplementedError
 
 
+TASK_PARENT['adcm'] = ADCM
+
+
 class Concern(BaseAPIObject):
     IDNAME = 'concern_id'
     PATH = ['concern']
@@ -1579,6 +1586,7 @@ class User(BaseAPIObject):
     is_superuser = None
     password = None
     profile = None
+    type = None
 
     def group_list(self) -> "GroupList":
         """Return list of `Group` object"""
@@ -1628,6 +1636,7 @@ class Group(BaseAPIObject):
     id = None
     name = None
     description = None
+    type = None
 
     def user_list(self) -> "UserList":
         # TODO: I can't do this, because search() is not working
