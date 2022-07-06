@@ -1537,6 +1537,9 @@ class ADCM(_BaseObject):
         raise NotImplementedError
 
 
+TASK_PARENT['adcm'] = ADCM
+
+
 class Concern(BaseAPIObject):
     IDNAME = 'concern_id'
     PATH = ['concern']
