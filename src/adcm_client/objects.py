@@ -1264,6 +1264,10 @@ class Task(BaseAPIObject):
 
         return status
 
+    def cancel(self) -> None:
+        """Cancel task"""
+        self._subcall("cancel", "update")
+
     def _log_jobs(self, **filters):
         for job in self.job_list(**filters):
             log_func = logger.error if job.status == "failed" else logger.info
