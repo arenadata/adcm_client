@@ -45,21 +45,20 @@ from adcm_client.wrappers.api import ADCMApiWrapper
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-Me = namedtuple(
-    'Me',
-    (
-        'id',
-        'username',
-        'first_name',
-        'last_name',
-        'email',
-        'is_superuser',
-        'password',
-        'profile',
-        'type',
-        'is_active',
-    ),
+ME_FIELDS = (
+    'id',
+    'username',
+    'first_name',
+    'last_name',
+    'email',
+    'is_superuser',
+    'password',
+    'profile',
+    'type',
+    'is_active',
 )
+
+Me = namedtuple('Me', ME_FIELDS, defaults=(None,) * len(ME_FIELDS))
 
 
 class NoCredentionsProvided(Exception):
