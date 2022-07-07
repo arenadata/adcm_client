@@ -45,10 +45,20 @@ from adcm_client.wrappers.api import ADCMApiWrapper
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-Me = namedtuple(
-    'Me',
-    ('id', 'username', 'first_name', 'last_name', 'email', 'is_superuser', 'password', 'profile'),
+ME_FIELDS = (
+    'id',
+    'username',
+    'first_name',
+    'last_name',
+    'email',
+    'is_superuser',
+    'password',
+    'profile',
+    'type',
+    'is_active',
 )
+
+Me = namedtuple('Me', ME_FIELDS, defaults=(None,) * len(ME_FIELDS))
 
 
 class NoCredentionsProvided(Exception):
@@ -1587,6 +1597,7 @@ class User(BaseAPIObject):
     password = None
     profile = None
     type = None
+    is_active = None
 
     def group_list(self) -> "GroupList":
         """Return list of `Group` object"""
@@ -1632,7 +1643,7 @@ def new_user(api: ADCMApiWrapper, username: str, password: str, **kwargs):
 class Group(BaseAPIObject):
     IDNAME = 'id'
     PATH = ['rbac', 'group']
-    FILTERS = ['id', 'name', 'group']
+    FILTERS = ['id', 'name', 'group', 'type']
     id = None
     name = None
     description = None
