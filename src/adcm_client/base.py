@@ -11,11 +11,15 @@
 # limitations under the License.
 # pylint: disable=R0901
 import json
+import warnings
+from abc import ABC, abstractmethod
 from collections import UserList, OrderedDict
 from contextlib import contextmanager
+from enum import Enum
 from functools import wraps
 from pprint import pprint
 from time import sleep
+from typing import Type
 
 from version_utils import rpm
 
@@ -443,3 +447,30 @@ class BaseAPIListObject(UserList):  # pylint: disable=too-many-ancestors
                 )
             )
         super().__init__(data)
+
+
+class RichlyTypedObject(ABC):
+    """
+    Use this class as a mixin for your objects
+    when you want to convert some fields to a complex objects
+    like Enum, datetime, etc.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._convert()
+
+    @abstractmethod
+    def _convert(self):
+        """Explicitly convert each field that has complex type after the data was fetched"""
+        raise NotImplementedError
+
+    def _convert_enum(self, field: str, enum_cls: Type[Enum]):
+        raw_value = getattr(self, field)
+        try:
+            setattr(self, field, enum_cls(raw_value))
+        except ValueError:
+            warnings.warn(
+                f'Failed to convert field {field} to enum {enum_cls}.\n'
+                'You might be using client version not fully compatible with ADCM version.'
+            )

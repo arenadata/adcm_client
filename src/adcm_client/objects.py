@@ -21,6 +21,7 @@ from typing import List, Union, Optional, Dict, Any
 from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
 
+from adcm_client.audit import AuditOperationList, AuditLoginList, AuditOperation, AuditLogin
 from adcm_client.base import (
     ADCMApiError,
     BaseAPIListObject,
@@ -2084,5 +2085,25 @@ class ADCMClient:
 
     @min_server_version('2022.01.31.00')
     def policy_list(self, paging=None, **kwargs) -> "PolicyList":
-        """Return list if `Policy` objects"""
+        """Return list of `Policy` objects"""
         return PolicyList(self._api, paging=paging, **kwargs)
+
+    @min_server_version('2022.08.01.00')
+    def audit_operation(self, **kwargs) -> AuditOperation:
+        """Return `AuditOperation` object"""
+        return AuditOperation(self._api, **kwargs)
+
+    @min_server_version('2022.08.01.00')
+    def audit_operation_list(self, paging=None, **kwargs) -> AuditOperationList:
+        """Return list of `AuditOperation` objects"""
+        return AuditOperationList(self._api, paging=paging, **kwargs)
+
+    @min_server_version('2022.08.01.00')
+    def audit_login(self, **kwargs) -> AuditLogin:
+        """Return `AuditLogin` object"""
+        return AuditLogin(self._api, **kwargs)
+
+    @min_server_version('2022.08.01.00')
+    def audit_login_list(self, paging=None, **kwargs) -> AuditLoginList:
+        """Return list of `AuditLoginList` objects"""
+        return AuditLoginList(self._api, paging=paging, **kwargs)
