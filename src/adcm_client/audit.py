@@ -89,6 +89,8 @@ class AuditOperation(BaseAPIObject, RichlyTypedObject):
     operation_result: OperationResult = None
     operation_time: datetime.datetime = None
 
+    user_id: int = None
+
     def _convert(self):
         self._convert_enum('object_type', ObjectType)
         self._convert_enum('operation_type', OperationType)
@@ -122,7 +124,7 @@ class AuditLogin(BaseAPIObject, RichlyTypedObject):
     PATH = ['audit', 'login-session']
 
     id: int = None
-    username: str = None
+    user_id: int = None
     login_result: LoginResult = None
     login_time: datetime.datetime = None
 
