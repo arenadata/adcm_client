@@ -57,7 +57,7 @@ class OperationResult(Enum):
     DENIED = 'denied'
 
 
-class AuditOperation(BaseAPIObject, RichlyTypedObject):
+class AuditOperation(RichlyTypedObject, BaseAPIObject):
     """
     Audit operation object with info about operation/action result.
 
@@ -65,6 +65,7 @@ class AuditOperation(BaseAPIObject, RichlyTypedObject):
     If type conversion fails, type may "degrade" to a string.
     """
 
+    IDNAME = 'id'
     PATH = ['audit', 'operation']
     FILTERS = [
         'object_type',
@@ -95,7 +96,7 @@ class AuditOperation(BaseAPIObject, RichlyTypedObject):
         self._convert_enum('object_type', ObjectType)
         self._convert_enum('operation_type', OperationType)
         self._convert_enum('operation_result', OperationResult)
-        self.operation_time = datetime.datetime.fromisoformat(self.operation_time)
+        self._convert_datetime('operation_time')
 
 
 class AuditOperationList(BaseAPIListObject):
@@ -118,9 +119,10 @@ class LoginResult(Enum):
     DISABLED = 'account disabled'
 
 
-class AuditLogin(BaseAPIObject, RichlyTypedObject):
+class AuditLogin(RichlyTypedObject, BaseAPIObject):
     """Audit record with login result"""
 
+    IDNAME = 'id'
     PATH = ['audit', 'login-session']
 
     id: int = None
@@ -130,7 +132,7 @@ class AuditLogin(BaseAPIObject, RichlyTypedObject):
 
     def _convert(self):
         self._convert_enum('login_result', LoginResult)
-        self.login_time = datetime.datetime.fromisoformat(self.login_time)
+        self._convert_datetime('login_time')
 
 
 class AuditLoginList(BaseAPIListObject):

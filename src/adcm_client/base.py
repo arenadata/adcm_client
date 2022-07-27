@@ -10,6 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # pylint: disable=R0901
+import datetime
 import json
 import warnings
 from abc import ABC, abstractmethod
@@ -458,7 +459,10 @@ class RichlyTypedObject(ABC):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._convert()
+        try:
+            self._convert()
+        except Exception as e:  # pylint: disable=broad-except
+            warnings.warn(f'Some of the fields left was not converted due to error: {e}\n')
 
     @abstractmethod
     def _convert(self):
@@ -474,3 +478,34 @@ class RichlyTypedObject(ABC):
                 f'Failed to convert field {field} to enum {enum_cls}.\n'
                 'You might be using client version not fully compatible with ADCM version.'
             )
+
+    def _convert_datetime(self, field: str) -> None:
+        """Convert string to datetime in iso format"""
+        raw_value = getattr(self, field)
+        # most likely DRF format
+        try:
+            setattr(
+                self,
+                field,
+                datetime.datetime.strptime(raw_value, "%Y-%m-%dT%H:%M:%S.%fZ").astimezone(
+                    tz=datetime.timezone.utc
+                ),
+            )
+            return
+        except ValueError:
+            pass
+        try:
+            setattr(self, field, datetime.datetime.fromisoformat(raw_value))
+            return
+        except ValueError:
+            pass
+        for date_format in ("%Y-%m-%dT%H:%M:%S.%f%Z", "%Y-%m-%dT%H:%M:%S%Z"):
+            try:
+                setattr(self, field, datetime.datetime.strptime(raw_value, date_format))
+                return
+            except ValueError:
+                pass
+        warnings.warn(
+            f'Failed to convert field {field} to datetime.\n'
+            f'Probably no correct datetime format found for the value: {raw_value}.'
+        )
