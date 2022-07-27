@@ -13,7 +13,7 @@
 import datetime
 import json
 import warnings
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections import UserList, OrderedDict
 from contextlib import contextmanager
 from enum import Enum
@@ -283,7 +283,14 @@ class EndPoint:
 
     def search(self, paging=None, **args):
         # TODO: Add filtering on backend
-        return search(self.list(paging, **args), **args)
+        result = self.list(paging, **args)
+        if len(result) == 0:
+            return result
+        # TODO: Check comment for `search_one`.
+        # I dislike basing on one object,
+        # but it's a fair assumption that all objects have the same set of fields.
+        # Otherwise we'll need to collect all possible fields from them (e.g. in set)
+        return search(result, **{k: v for k, v in args.items() if k in result[0]})
 
     def search_one(self, **args):
         # FIXME: paging
@@ -291,7 +298,10 @@ class EndPoint:
             return self.read(args[self.idname])
         data = None
         for obj in Paging(self.list, **args):
-            data = search_one([obj], **args)
+            # TODO: Those searches need to  be refactored
+            #  so there won't be such workarounds
+            # leave only "object field" keys
+            data = search_one([obj], **{k: v for k, v in args.items() if k in obj})
             if data is not None:
                 break
         if data is None:
@@ -450,14 +460,38 @@ class BaseAPIListObject(UserList):  # pylint: disable=too-many-ancestors
         super().__init__(data)
 
 
-class RichlyTypedObject(ABC):
+##################################################
+#              R I C H L Y   T Y P E D
+##################################################
+
+
+def _simplify_filter(value):
     """
-    Use this class as a mixin for your objects
+    Try to convert complex value like Enum/date/datetime to an int/str,
+    so the API will take it as a filter argument
+    """
+    if isinstance(value, (str, int)):
+        return value
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, datetime.date):
+        return value.strftime("%Y-%m-%d")
+    if isinstance(value, datetime.datetime):
+        return value.isoformat()
+    return value
+
+
+class RichlyTypedAPIObject(BaseAPIObject):
+    """
+    Use this class instead of `BaseAPIObject` for your objects
     when you want to convert some fields to a complex objects
     like Enum, datetime, etc.
     """
 
     def __init__(self, *args, **kwargs):
+        # for host cluster_id can be a part of a path of a filter,
+        # but since it's an int, there shouldn't be a problem anyway
+        kwargs.update({k: _simplify_filter(v) for k, v in kwargs.items() if k in self.FILTERS})
         super().__init__(*args, **kwargs)
         try:
             self._convert()
@@ -509,3 +543,15 @@ class RichlyTypedObject(ABC):
             f'Failed to convert field {field} to datetime.\n'
             f'Probably no correct datetime format found for the value: {raw_value}.'
         )
+
+
+class RichlyTypedAPIList(BaseAPIListObject):
+    """That is a richly-typed alternative for basic object for multiple ADCM's object"""
+
+    _ENTRY_CLASS = BaseAPIObject
+
+    def __init__(self, *args, **kwargs):
+        kwargs.update(
+            {k: _simplify_filter(v) for k, v in kwargs.items() if k in self._ENTRY_CLASS.FILTERS}
+        )
+        super().__init__(*args, **kwargs)

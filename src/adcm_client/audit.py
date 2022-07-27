@@ -16,7 +16,7 @@ import datetime
 from enum import Enum
 from typing import Dict, Optional
 
-from adcm_client.base import BaseAPIObject, BaseAPIListObject, RichlyTypedObject
+from adcm_client.base import RichlyTypedAPIObject, RichlyTypedAPIList
 
 
 ##################################################
@@ -53,11 +53,11 @@ class OperationResult(Enum):
     """Result of audited operation"""
 
     SUCCESS = 'success'
-    FAILURE = 'fail'
+    FAIL = 'fail'
     DENIED = 'denied'
 
 
-class AuditOperation(RichlyTypedObject, BaseAPIObject):
+class AuditOperation(RichlyTypedAPIObject):
     """
     Audit operation object with info about operation/action result.
 
@@ -73,7 +73,7 @@ class AuditOperation(RichlyTypedObject, BaseAPIObject):
         'operation_type',
         'operation_name',
         'operation_result',
-        'operation_time',
+        'operation_date',
         'username',
     ]
 
@@ -99,7 +99,7 @@ class AuditOperation(RichlyTypedObject, BaseAPIObject):
         self._convert_datetime('operation_time')
 
 
-class AuditOperationList(BaseAPIListObject):
+class AuditOperationList(RichlyTypedAPIList):
     """List of `AuditOperation` objects"""
 
     _ENTRY_CLASS = AuditOperation
@@ -119,7 +119,7 @@ class LoginResult(Enum):
     DISABLED = 'account disabled'
 
 
-class AuditLogin(RichlyTypedObject, BaseAPIObject):
+class AuditLogin(RichlyTypedAPIObject):
     """Audit record with login result"""
 
     IDNAME = 'id'
@@ -135,7 +135,7 @@ class AuditLogin(RichlyTypedObject, BaseAPIObject):
         self._convert_datetime('login_time')
 
 
-class AuditLoginList(BaseAPIListObject):
+class AuditLoginList(RichlyTypedAPIList):
     """List of `AuditLogin` objects"""
 
     _ENTRY_CLASS = AuditLogin
