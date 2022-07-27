@@ -2088,22 +2088,22 @@ class ADCMClient:
         """Return list of `Policy` objects"""
         return PolicyList(self._api, paging=paging, **kwargs)
 
-    @min_server_version('2022.08.01.00')
+    # TODO @min_server_version('2022.08.01.00')
     def audit_operation(self, **kwargs) -> AuditOperation:
         """Return `AuditOperation` object"""
         return AuditOperation(self._api, **kwargs)
 
-    @min_server_version('2022.08.01.00')
+    # TODO @min_server_version('2022.08.01.00')
     def audit_operation_list(self, paging=None, **kwargs) -> AuditOperationList:
         """Return list of `AuditOperation` objects"""
         return AuditOperationList(self._api, paging=paging, **kwargs)
 
-    @min_server_version('2022.08.01.00')
+    # TODO @min_server_version('2022.08.01.00')
     def audit_login(self, **kwargs) -> AuditLogin:
         """Return `AuditLogin` object"""
         return AuditLogin(self._api, **kwargs)
 
-    @min_server_version('2022.08.01.00')
+    # TODO @min_server_version('2022.08.01.00')
     def audit_login_list(self, paging=None, **kwargs) -> AuditLoginList:
         """Return list of `AuditLoginList` objects"""
         return AuditLoginList(self._api, paging=paging, **kwargs)
