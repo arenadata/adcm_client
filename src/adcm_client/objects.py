@@ -45,10 +45,20 @@ from adcm_client.wrappers.api import ADCMApiWrapper
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-Me = namedtuple(
-    'Me',
-    ('id', 'username', 'first_name', 'last_name', 'email', 'is_superuser', 'password', 'profile'),
+ME_FIELDS = (
+    'id',
+    'username',
+    'first_name',
+    'last_name',
+    'email',
+    'is_superuser',
+    'password',
+    'profile',
+    'type',
+    'is_active',
 )
+
+Me = namedtuple('Me', ME_FIELDS, defaults=(None,) * len(ME_FIELDS))
 
 
 class NoCredentionsProvided(Exception):
@@ -1265,6 +1275,10 @@ class Task(BaseAPIObject):
 
         return status
 
+    def cancel(self) -> None:
+        """Cancel task"""
+        self._subcall("cancel", "update")
+
     def _log_jobs(self, **filters):
         for job in self.job_list(**filters):
             log_func = logger.error if job.status == "failed" else logger.info
@@ -1534,6 +1548,9 @@ class ADCM(_BaseObject):
         raise NotImplementedError
 
 
+TASK_PARENT['adcm'] = ADCM
+
+
 class Concern(BaseAPIObject):
     IDNAME = 'concern_id'
     PATH = ['concern']
@@ -1580,6 +1597,8 @@ class User(BaseAPIObject):
     is_superuser = None
     password = None
     profile = None
+    type = None
+    is_active = None
 
     def group_list(self) -> "GroupList":
         """Return list of `Group` object"""
@@ -1625,10 +1644,11 @@ def new_user(api: ADCMApiWrapper, username: str, password: str, **kwargs):
 class Group(BaseAPIObject):
     IDNAME = 'id'
     PATH = ['rbac', 'group']
-    FILTERS = ['id', 'name', 'group']
+    FILTERS = ['id', 'name', 'group', 'type']
     id = None
     name = None
     description = None
+    type = None
 
     def user_list(self) -> "UserList":
         # TODO: I can't do this, because search() is not working
