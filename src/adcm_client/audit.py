@@ -123,7 +123,7 @@ class AuditLogin(RichlyTypedAPIObject):
     """Audit record with login result"""
 
     IDNAME = 'id'
-    PATH = ['audit', 'login-session']
+    PATH = ['audit', 'login']
 
     id: int = None
     user_id: int = None
