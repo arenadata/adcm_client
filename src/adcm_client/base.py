@@ -524,8 +524,8 @@ class RichlyTypedAPIObject(BaseAPIObject):
             setattr(
                 self,
                 field,
-                datetime.datetime.strptime(raw_value, "%Y-%m-%dT%H:%M:%S.%fZ").astimezone(
-                    tz=datetime.timezone.utc
+                datetime.datetime.strptime(raw_value, "%Y-%m-%dT%H:%M:%S.%fZ").replace(
+                    tzinfo=datetime.timezone.utc
                 ),
             )
             return
