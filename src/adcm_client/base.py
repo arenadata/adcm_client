@@ -493,6 +493,9 @@ class RichlyTypedAPIObject(BaseAPIObject):
         # but since it's an int, there shouldn't be a problem anyway
         kwargs.update({k: _simplify_filter(v) for k, v in kwargs.items() if k in self.FILTERS})
         super().__init__(*args, **kwargs)
+
+    def _register_attrs(self):
+        super()._register_attrs()
         try:
             self._convert()
         except Exception as e:  # pylint: disable=broad-except
