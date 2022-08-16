@@ -130,6 +130,7 @@ class AuditLogin(RichlyTypedAPIObject):
     user_id: int = None
     login_result: LoginResult = None
     login_time: datetime.datetime = None
+    login_details: dict = None
 
     def _convert(self):
         self._convert_enum('login_result', LoginResult)
