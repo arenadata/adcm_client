@@ -1737,6 +1737,7 @@ class Policy(BaseAPIObject):
     FILTERS = ['id', 'name', 'built_in', 'role', 'user', 'group']
     id = None
     name = None
+    description = None
     built_in = None
 
     def object_list(self) -> "List[Union[Cluster, Service, Component, Provider, Host]]":
@@ -1777,13 +1778,19 @@ def new_policy(
     user: UserList,
     group: GroupList = None,
     objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
+    description: str = '',
 ):
     users = [{'id': obj.id} for obj in user]
     groups = [{'id': obj.id} for obj in group or []]
     objects = [{'id': obj.id, 'type': obj.prototype().type} for obj in objects or []]
     try:
         policy = api.objects.rbac.policy.create(
-            name=name, role={'id': role.id}, user=users, group=groups, object=objects
+            name=name,
+            role={'id': role.id},
+            user=users,
+            group=groups,
+            object=objects,
+            description=description,
         )
     except AttributeError as error:
         raise NoSuchEndpointOrAccessIsDenied from error
@@ -2074,9 +2081,10 @@ class ADCMClient:
         user: Union[UserList, List[User]],
         group: Union[GroupList, List[Group]] = None,
         objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
+        description: str = '',
     ) -> "Policy":
         """Create `Policy` object"""
-        return new_policy(self._api, name, role, user, group, objects)
+        return new_policy(self._api, name, role, user, group, objects, description)
 
     @min_server_version('2022.01.31.00')
     def policy(self, **kwargs) -> "Policy":
