@@ -735,6 +735,7 @@ class Upgrade(BaseAPIObject):
     from_edition = None
     ui_options = None
     config = None
+    hostcomponentmap = None
 
     def do(self, **args) -> Optional['Task']:
         """
