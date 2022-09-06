@@ -10,12 +10,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # pylint: disable=R0901
-import datetime
+
 import json
 import warnings
 from abc import abstractmethod
-from collections import UserList, OrderedDict
+from collections import OrderedDict, UserList
 from contextlib import contextmanager
+from datetime import date, datetime, timezone
 from enum import Enum
 from functools import wraps
 from pprint import pprint
@@ -24,12 +25,16 @@ from typing import Type
 
 from version_utils import rpm
 
-from adcm_client.util.search import search_one, search
-from adcm_client.wrappers.api import ADCMApiWrapper
+from adcm_client.util.search import search, search_one
 
 # necessary for backward compatibility
 # pylint: disable=unused-import
-from adcm_client.wrappers.api import ActionHasIssues, ResponseTooLong, ADCMApiError
+from adcm_client.wrappers.api import (
+    ActionHasIssues,
+    ADCMApiError,
+    ADCMApiWrapper,
+    ResponseTooLong,
+)
 
 # If we are running the client from tests with Allure we expected that code
 # to trace steps in Allure UI.
@@ -474,9 +479,9 @@ def _simplify_filter(value):
         return value
     if isinstance(value, Enum):
         return value.value
-    if isinstance(value, datetime.date):
+    if isinstance(value, date):
         return value.strftime("%Y-%m-%d")
-    if isinstance(value, datetime.datetime):
+    if isinstance(value, datetime):
         return value.isoformat()
     return value
 
@@ -524,21 +529,19 @@ class RichlyTypedAPIObject(BaseAPIObject):
             setattr(
                 self,
                 field,
-                datetime.datetime.strptime(raw_value, "%Y-%m-%dT%H:%M:%S.%fZ").replace(
-                    tzinfo=datetime.timezone.utc
-                ),
+                datetime.strptime(raw_value, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc),
             )
             return
         except ValueError:
             pass
         try:
-            setattr(self, field, datetime.datetime.fromisoformat(raw_value))
+            setattr(self, field, datetime.fromisoformat(raw_value))
             return
         except ValueError:
             pass
         for date_format in ("%Y-%m-%dT%H:%M:%S.%f%Z", "%Y-%m-%dT%H:%M:%S%Z"):
             try:
-                setattr(self, field, datetime.datetime.strptime(raw_value, date_format))
+                setattr(self, field, datetime.strptime(raw_value, date_format))
                 return
             except ValueError:
                 pass
