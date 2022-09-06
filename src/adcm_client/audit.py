@@ -12,12 +12,11 @@
 
 """Audit-related objects"""
 
-import datetime
+from datetime import datetime
 from enum import Enum
 from typing import Dict, Optional
 
-from adcm_client.base import RichlyTypedAPIObject, RichlyTypedAPIList
-
+from adcm_client.base import RichlyTypedAPIList, RichlyTypedAPIObject
 
 ##################################################
 #              O P E R A T I O N
@@ -77,18 +76,18 @@ class AuditOperation(RichlyTypedAPIObject):
         'username',
     ]
 
-    id: int = None
+    id: Optional[int] = None
 
-    object_id: int = None
-    object_type: ObjectType = None
-    object_name: str = None
+    object_id: Optional[int] = None
+    object_type: Optional[ObjectType] = None
+    object_name: Optional[str] = None
     # keys are: current, previous
     object_changes: Optional[Dict[str, dict]] = None
 
-    operation_type: OperationType = None
-    operation_name: str = None
-    operation_result: OperationResult = None
-    operation_time: datetime.datetime = None
+    operation_type: Optional[OperationType] = None
+    operation_name: Optional[str] = None
+    operation_result: Optional[OperationResult] = None
+    operation_time: Optional[datetime] = None
 
     user_id: int = None
 
@@ -126,11 +125,11 @@ class AuditLogin(RichlyTypedAPIObject):
     PATH = ['audit', 'login']
     FILTERS = ['login_result', 'login_date', 'username']
 
-    id: int = None
-    user_id: int = None
-    login_result: LoginResult = None
-    login_time: datetime.datetime = None
-    login_details: dict = None
+    id: Optional[int] = None
+    user_id: Optional[int] = None
+    login_result: Optional[LoginResult] = None
+    login_time: Optional[datetime] = None
+    login_details: Optional[dict] = None
 
     def _convert(self):
         self._convert_enum('login_result', LoginResult)
