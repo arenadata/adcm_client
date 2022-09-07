@@ -21,7 +21,7 @@ from enum import Enum
 from functools import wraps
 from pprint import pprint
 from time import sleep
-from typing import Type
+from typing import Type, Optional
 
 from version_utils import rpm
 
@@ -511,7 +511,9 @@ class RichlyTypedAPIObject(BaseAPIObject):
         """Explicitly convert each field that has complex type after the data was fetched"""
         raise NotImplementedError
 
-    def _convert_enum(self, field: str, enum_cls: Type[Enum]):
+    def _convert_enum(self, field: Optional[str], enum_cls: Type[Enum]):
+        if field is None:
+            return
         raw_value = getattr(self, field)
         try:
             setattr(self, field, enum_cls(raw_value))
@@ -539,7 +541,7 @@ class RichlyTypedAPIObject(BaseAPIObject):
             return
         except ValueError:
             pass
-        for date_format in ("%Y-%m-%dT%H:%M:%S.%f%Z", "%Y-%m-%dT%H:%M:%S%Z"):
+        for date_format in ("%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M:%S%z"):
             try:
                 setattr(self, field, datetime.strptime(raw_value, date_format))
                 return
