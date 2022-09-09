@@ -46,6 +46,9 @@ from adcm_client.wrappers.api import ADCMApiWrapper
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+
+_TASK_END_STATUSES = {"failed", "success", "aborted"}
+
 ME_FIELDS = (
     'id',
     'username',
@@ -1224,7 +1227,7 @@ class Task(BaseAPIObject):
     IDNAME = "task_id"
     PATH = ["task"]
     FILTERS = ['action_id', 'pid', 'status', 'start_date', 'finish_date']
-    _END_STATUSES = ["failed", "success"]
+    _END_STATUSES = _TASK_END_STATUSES
     action_id = None
     config = None
     hostcomponentmap = None
@@ -1346,7 +1349,7 @@ class Job(BaseAPIObject):
     IDNAME = "job_id"
     PATH = ["job"]
     FILTERS = ['action_id', 'task_id', 'pid', 'status', 'start_date', 'finish_date']
-    _END_STATUSES = ["failed", "success"]
+    _END_STATUSES = _TASK_END_STATUSES
     _WAIT_INTERVAL = 0.2
     id = None
     job_id = None
