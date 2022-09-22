@@ -291,7 +291,6 @@ class EndPoint:
         result = self.list(paging, **args)
         if len(result) == 0:
             return result
-        # TODO: Check comment for `search_one`.
         # I dislike basing on one object,
         # but it's a fair assumption that all objects have the same set of fields.
         # Otherwise we'll need to collect all possible fields from them (e.g. in set)
@@ -303,8 +302,6 @@ class EndPoint:
             return self.read(args[self.idname])
         data = None
         for obj in Paging(self.list, **args):
-            # TODO: Those searches need to  be refactored
-            #  so there won't be such workarounds
             # leave only "object field" keys
             data = search_one([obj], **{k: v for k, v in args.items() if k in obj})
             if data is not None:

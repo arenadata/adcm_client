@@ -89,20 +89,12 @@ def search(data, **attrs):
                 if key in attrs:
                     new_attrs[key] = attrs[key]
 
-        # Check out comment below
-        # If
         if not new_attrs:
             return True
 
         result = [k in new_data and v == new_data[k] for k, v in new_attrs.items()]
         if result:
             return all(result)
-        # Why?
-        # `result` will be empty if nothing matched `new_attrs`,
-        # but in case of filters that don't have corresponding fields in object's body
-        # we've got them filtered out! (e.g. `operation_date` for audit log)
-        # Maybe we want to pass checks if `new_attrs` is empty?
-        # Or there's motivation for not doing that?
         return False
 
     return (item for item in data if filter_data(item))
