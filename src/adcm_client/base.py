@@ -10,21 +10,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # pylint: disable=R0901
+
 import json
-from collections import UserList, OrderedDict
+import warnings
+from abc import abstractmethod
+from collections import OrderedDict, UserList
 from contextlib import contextmanager
+from datetime import date, datetime, timezone
+from enum import Enum
 from functools import wraps
 from pprint import pprint
 from time import sleep
+from typing import Type, Optional
 
 from version_utils import rpm
 
-from adcm_client.util.search import search_one, search
-from adcm_client.wrappers.api import ADCMApiWrapper
+from adcm_client.util.search import search, search_one
 
 # necessary for backward compatibility
 # pylint: disable=unused-import
-from adcm_client.wrappers.api import ActionHasIssues, ResponseTooLong, ADCMApiError
+from adcm_client.wrappers.api import (
+    ActionHasIssues,
+    ADCMApiError,
+    ADCMApiWrapper,
+    ResponseTooLong,
+)
 
 # If we are running the client from tests with Allure we expected that code
 # to trace steps in Allure UI.
@@ -278,7 +288,13 @@ class EndPoint:
 
     def search(self, paging=None, **args):
         # TODO: Add filtering on backend
-        return search(self.list(paging, **args), **args)
+        result = self.list(paging, **args)
+        if len(result) == 0:
+            return result
+        # I dislike basing on one object,
+        # but it's a fair assumption that all objects have the same set of fields.
+        # Otherwise we'll need to collect all possible fields from them (e.g. in set)
+        return search(result, **{k: v for k, v in args.items() if k in result[0]})
 
     def search_one(self, **args):
         # FIXME: paging
@@ -286,7 +302,8 @@ class EndPoint:
             return self.read(args[self.idname])
         data = None
         for obj in Paging(self.list, **args):
-            data = search_one([obj], **args)
+            # leave only "object field" keys
+            data = search_one([obj], **{k: v for k, v in args.items() if k in obj})
             if data is not None:
                 break
         if data is None:
@@ -443,3 +460,103 @@ class BaseAPIListObject(UserList):  # pylint: disable=too-many-ancestors
                 )
             )
         super().__init__(data)
+
+
+##################################################
+#              R I C H L Y   T Y P E D
+##################################################
+
+
+def _simplify_filter(value):
+    """
+    Try to convert complex value like Enum/date/datetime to an int/str,
+    so the API will take it as a filter argument
+    """
+    if isinstance(value, (str, int)):
+        return value
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, date):
+        return value.strftime("%Y-%m-%d")
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return value
+
+
+class RichlyTypedAPIObject(BaseAPIObject):
+    """
+    Use this class instead of `BaseAPIObject` for your objects
+    when you want to convert some fields to a complex objects
+    like Enum, datetime, etc.
+    """
+
+    def __init__(self, *args, **kwargs):
+        # for host cluster_id can be a part of a path of a filter,
+        # but since it's an int, there shouldn't be a problem anyway
+        kwargs.update({k: _simplify_filter(v) for k, v in kwargs.items() if k in self.FILTERS})
+        super().__init__(*args, **kwargs)
+
+    def _register_attrs(self):
+        super()._register_attrs()
+        try:
+            self._convert()
+        except Exception as e:  # pylint: disable=broad-except
+            warnings.warn(f'Some of the fields left was not converted due to error: {e}\n')
+
+    @abstractmethod
+    def _convert(self):
+        """Explicitly convert each field that has complex type after the data was fetched"""
+        raise NotImplementedError
+
+    def _convert_enum(self, field: Optional[str], enum_cls: Type[Enum]):
+        if field is None:
+            return
+        raw_value = getattr(self, field)
+        try:
+            setattr(self, field, enum_cls(raw_value))
+        except ValueError:
+            warnings.warn(
+                f'Failed to convert field {field} to enum {enum_cls}.\n'
+                'You might be using client version not fully compatible with ADCM version.'
+            )
+
+    def _convert_datetime(self, field: str) -> None:
+        """Convert string to datetime in iso format"""
+        raw_value = getattr(self, field)
+        # most likely DRF format
+        try:
+            setattr(
+                self,
+                field,
+                datetime.strptime(raw_value, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc),
+            )
+            return
+        except ValueError:
+            pass
+        try:
+            setattr(self, field, datetime.fromisoformat(raw_value))
+            return
+        except ValueError:
+            pass
+        for date_format in ("%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M:%S%z"):
+            try:
+                setattr(self, field, datetime.strptime(raw_value, date_format))
+                return
+            except ValueError:
+                pass
+        warnings.warn(
+            f'Failed to convert field {field} to datetime.\n'
+            f'Probably no correct datetime format found for the value: {raw_value}.'
+        )
+
+
+class RichlyTypedAPIList(BaseAPIListObject):
+    """That is a richly-typed alternative for basic object for multiple ADCM's object"""
+
+    _ENTRY_CLASS = BaseAPIObject
+
+    def __init__(self, *args, **kwargs):
+        kwargs.update(
+            {k: _simplify_filter(v) for k, v in kwargs.items() if k in self._ENTRY_CLASS.FILTERS}
+        )
+        super().__init__(*args, **kwargs)

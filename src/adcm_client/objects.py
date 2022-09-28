@@ -21,6 +21,7 @@ from typing import List, Union, Optional, Dict, Any
 from coreapi.exceptions import ErrorMessage
 from version_utils import rpm
 
+from adcm_client.audit import AuditOperationList, AuditLoginList, AuditOperation, AuditLogin
 from adcm_client.base import (
     ADCMApiError,
     BaseAPIListObject,
@@ -44,6 +45,9 @@ from adcm_client.wrappers.api import ADCMApiWrapper
 # Init logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+_TASK_END_STATUSES = {"failed", "success", "aborted"}
 
 ME_FIELDS = (
     'id',
@@ -1223,7 +1227,7 @@ class Task(BaseAPIObject):
     IDNAME = "task_id"
     PATH = ["task"]
     FILTERS = ['action_id', 'pid', 'status', 'start_date', 'finish_date']
-    _END_STATUSES = ["failed", "success"]
+    _END_STATUSES = _TASK_END_STATUSES
     action_id = None
     config = None
     hostcomponentmap = None
@@ -1345,7 +1349,7 @@ class Job(BaseAPIObject):
     IDNAME = "job_id"
     PATH = ["job"]
     FILTERS = ['action_id', 'task_id', 'pid', 'status', 'start_date', 'finish_date']
-    _END_STATUSES = ["failed", "success"]
+    _END_STATUSES = _TASK_END_STATUSES
     _WAIT_INTERVAL = 0.2
     id = None
     job_id = None
@@ -1737,6 +1741,7 @@ class Policy(BaseAPIObject):
     FILTERS = ['id', 'name', 'built_in', 'role', 'user', 'group']
     id = None
     name = None
+    description = None
     built_in = None
 
     def object_list(self) -> "List[Union[Cluster, Service, Component, Provider, Host]]":
@@ -1777,13 +1782,19 @@ def new_policy(
     user: UserList,
     group: GroupList = None,
     objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
+    description: str = '',
 ):
     users = [{'id': obj.id} for obj in user]
     groups = [{'id': obj.id} for obj in group or []]
     objects = [{'id': obj.id, 'type': obj.prototype().type} for obj in objects or []]
     try:
         policy = api.objects.rbac.policy.create(
-            name=name, role={'id': role.id}, user=users, group=groups, object=objects
+            name=name,
+            role={'id': role.id},
+            user=users,
+            group=groups,
+            object=objects,
+            description=description,
         )
     except AttributeError as error:
         raise NoSuchEndpointOrAccessIsDenied from error
@@ -2074,9 +2085,10 @@ class ADCMClient:
         user: Union[UserList, List[User]],
         group: Union[GroupList, List[Group]] = None,
         objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
+        description: str = '',
     ) -> "Policy":
         """Create `Policy` object"""
-        return new_policy(self._api, name, role, user, group, objects)
+        return new_policy(self._api, name, role, user, group, objects, description)
 
     @min_server_version('2022.01.31.00')
     def policy(self, **kwargs) -> "Policy":
@@ -2085,5 +2097,25 @@ class ADCMClient:
 
     @min_server_version('2022.01.31.00')
     def policy_list(self, paging=None, **kwargs) -> "PolicyList":
-        """Return list if `Policy` objects"""
+        """Return list of `Policy` objects"""
         return PolicyList(self._api, paging=paging, **kwargs)
+
+    @min_server_version('2022.09.09.00')
+    def audit_operation(self, **kwargs) -> AuditOperation:
+        """Return `AuditOperation` object"""
+        return AuditOperation(self._api, **kwargs)
+
+    @min_server_version('2022.09.09.00')
+    def audit_operation_list(self, paging=None, **kwargs) -> AuditOperationList:
+        """Return list of `AuditOperation` objects"""
+        return AuditOperationList(self._api, paging=paging, **kwargs)
+
+    @min_server_version('2022.09.09.00')
+    def audit_login(self, **kwargs) -> AuditLogin:
+        """Return `AuditLogin` object"""
+        return AuditLogin(self._api, **kwargs)
+
+    @min_server_version('2022.09.09.00')
+    def audit_login_list(self, paging=None, **kwargs) -> AuditLoginList:
+        """Return list of `AuditLoginList` objects"""
+        return AuditLoginList(self._api, paging=paging, **kwargs)
