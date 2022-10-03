@@ -988,6 +988,10 @@ class Component(_BaseObject):
             instance.PATH = None
         return instance
 
+    def cluster(self) -> Cluster:
+        """Return 'Cluster' object"""
+        return Cluster(self._api, id=self.cluster_id)
+
     def prototype(self) -> "Prototype":
         return Prototype(self._api, prototype_id=self.prototype_id)
 
