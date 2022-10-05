@@ -560,3 +560,14 @@ class RichlyTypedAPIList(BaseAPIListObject):
             {k: _simplify_filter(v) for k, v in kwargs.items() if k in self._ENTRY_CLASS.FILTERS}
         )
         super().__init__(*args, **kwargs)
+
+
+class ObjectWithMaintenanceMode:
+    """Mixin for objects with maintenance mode like host, etc."""
+
+    maintenance_mode: bool = None
+    is_maintenance_mode_available: bool = None
+
+    def maintenance_mode_set(self, value: bool) -> None:
+        self._api.objects.host.partial_update(host_id=self.id, maintenance_mode=value)
+        self.reread()
