@@ -10,13 +10,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # pylint: disable=W0611, W0621, W0404, W0212, C1801
+
 import inspect
+import os
+import tarfile
+from pathlib import Path
 
 import allure
 import pytest
+from adcm_pytest_plugin.utils import get_data_dir
+
 from adcm_client.base import ObjectNotFound, Paging
 from adcm_client.objects import ADCMClient, HostList, TaskFailed
-from adcm_pytest_plugin.utils import get_data_dir
 
 
 def test_bundle_upload(sdk_client_fs: ADCMClient):
@@ -342,3 +347,21 @@ def test_adcm_config_url_no_guess(sdk_client_fs: ADCMClient):
     with allure.step("Check adcm config url no guess"):
         conf = sdk_client_fs.adcm().config()
         assert conf["global"]["adcm_url"] == "test_url"
+
+
+def test_task_download(sdk_client_fs: ADCMClient, tmpdir):
+    with allure.step("Create cluster"):
+        bundle = sdk_client_fs.upload_from_fs(get_data_dir(__file__, "cluster"))
+        cluster = bundle.cluster_create(name="sample cluster")
+    with allure.step("Run action and wait for result"):
+        task = cluster.action(name="install").run()
+        task.wait()
+    with allure.step("Download logs and check the result"):
+        custom_download: Path = task.download_logs(tmpdir)
+        assert custom_download.name in os.listdir(tmpdir)
+        assert tarfile.is_tarfile(custom_download)
+        default_download: Path = task.download_logs()
+        assert tarfile.is_tarfile(default_download)
+        assert default_download.name in os.listdir(os.getcwd())
+        assert str(default_download.parent) != str(custom_download.parent)
+        assert default_download.name == custom_download.name

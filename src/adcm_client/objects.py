@@ -12,31 +12,40 @@
 # pylint: disable=too-many-lines, too-many-public-methods, too-many-ancestors
 
 import logging
+import shutil
 import warnings
 from collections import namedtuple
 from io import BytesIO
 from json import dumps
-from typing import List, Union, Optional, Dict, Any
+from os import PathLike
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 from coreapi.exceptions import ErrorMessage
+from coreapi.utils import DownloadedFile
 from version_utils import rpm
 
-from adcm_client.audit import AuditOperationList, AuditLoginList, AuditOperation, AuditLogin
+from adcm_client.audit import (
+    AuditLogin,
+    AuditLoginList,
+    AuditOperation,
+    AuditOperationList,
+)
 from adcm_client.base import (
     ADCMApiError,
     BaseAPIListObject,
     BaseAPIObject,
+    EndPoint,
+    NoSuchEndpointOrAccessIsDenied,
     ObjectNotFound,
     TooManyArguments,
     WaitTimeout,
-    strip_none_keys,
-    min_server_version,
-    allure_step,
-    allure_attach_json,
     allure_attach,
+    allure_attach_json,
+    allure_step,
     legacy_server_implementaion,
-    EndPoint,
-    NoSuchEndpointOrAccessIsDenied,
+    min_server_version,
+    strip_none_keys,
 )
 from adcm_client.util import stream
 from adcm_client.util.config import update
@@ -979,6 +988,10 @@ class Component(_BaseObject):
             instance.PATH = None
         return instance
 
+    def cluster(self) -> Cluster:
+        """Return 'Cluster' object"""
+        return Cluster(self._api, id=self.cluster_id)
+
     def prototype(self) -> "Prototype":
         return Prototype(self._api, prototype_id=self.prototype_id)
 
@@ -1282,6 +1295,14 @@ class Task(BaseAPIObject):
     def cancel(self) -> None:
         """Cancel task"""
         self._subcall("cancel", "update")
+
+    @min_server_version("2022.09.17.00")
+    def download_logs(self, target_directory: PathLike = ".") -> Path:
+        """Download task logs and copy archive to a target directory"""
+        logs_archive: DownloadedFile = self._subcall("download", "list")
+        fullpath = Path(target_directory) / logs_archive.basename
+        shutil.copyfile(logs_archive.name, fullpath)
+        return fullpath.absolute()
 
     def _log_jobs(self, **filters):
         for job in self.job_list(**filters):
