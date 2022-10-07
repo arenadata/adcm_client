@@ -1138,7 +1138,8 @@ class Action(BaseAPIObject):
     allow_to_terminate = None
     partial_execution = None
     host_action = None
-    disabling_cause = None
+    disabling_cause = None  # will be none after ADCM-3065 is merged
+    start_impossible_reason = None  # "new" disabling cause field
 
     def __repr__(self):
         return f"<Action {self.name} at {id(self)}>"
