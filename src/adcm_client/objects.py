@@ -1553,7 +1553,7 @@ def new_group_config(api, **args) -> "GroupConfig":
 #              A D C M
 ##################################################
 class ADCM(_BaseObject):
-    IDNAME = "adcm_id"
+    IDNAME = "adcm_pk"
     PATH = ["adcm"]
     id = None
     name = None
@@ -1826,7 +1826,7 @@ def new_policy(
 #              C L I E N T
 ##################################################
 class ADCMClient:
-    _MIN_VERSION = "2019.02.20.00"
+    _MIN_VERSION = "2022.10.10.00"
 
     def __init__(self, api=None, url=None, user=None, password=None):
         if api is not None:
