@@ -1553,7 +1553,7 @@ def new_group_config(api, **args) -> "GroupConfig":
 #              A D C M
 ##################################################
 class ADCM(_BaseObject):
-    IDNAME = "adcm_pk"
+    IDNAME = "adcm_id"
     PATH = ["adcm"]
     id = None
     name = None
@@ -1561,6 +1561,11 @@ class ADCM(_BaseObject):
     url = None
     prototype_version = None
     bundle_id = None
+
+    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
+        if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
+            self.IDNAME = "adcm_pk"
+        super().__init__(api, path, path_args, **args)
 
     def prototype(self) -> "Prototype":
         """Return 'Prototype' object with id={prototype_id}"""
@@ -1826,7 +1831,7 @@ def new_policy(
 #              C L I E N T
 ##################################################
 class ADCMClient:
-    _MIN_VERSION = "2022.10.10.00"
+    _MIN_VERSION = "2019.02.20.00"
 
     def __init__(self, api=None, url=None, user=None, password=None):
         if api is not None:
