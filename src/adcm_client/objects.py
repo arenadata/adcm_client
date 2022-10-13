@@ -1254,6 +1254,11 @@ class Task(BaseAPIObject):
     object_id = None
     object_type = None
 
+    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
+        if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
+            self.IDNAME = "task_pk"
+        super().__init__(api, path, path_args, **args)
+
     @min_server_version('2020.08.27.00')
     def action(self) -> "Action":
         # for component object method will work after version `2021.03.12.16`
@@ -1353,6 +1358,11 @@ class Log(BaseAPIObject):
     format = None
     content = None
 
+    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
+        if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
+            self.IDNAME = "log_pk"
+        super().__init__(api, path, path_args, **args)
+
 
 class LogList(BaseAPIListObject):
     """List of 'Log' objects from the API"""
@@ -1382,6 +1392,11 @@ class Job(BaseAPIObject):
     display_name = None
     start_date = None
     finish_date = None
+
+    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
+        if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
+            self.IDNAME = "job_pk"
+        super().__init__(api, path, path_args, **args)
 
     def __repr__(self):
         return f"<Job {self.job_id} at {id(self)}>"
