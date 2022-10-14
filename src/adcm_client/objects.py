@@ -1562,6 +1562,11 @@ class ADCM(_BaseObject):
     prototype_version = None
     bundle_id = None
 
+    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
+        if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
+            self.IDNAME = "adcm_pk"
+        super().__init__(api, path, path_args, **args)
+
     def prototype(self) -> "Prototype":
         """Return 'Prototype' object with id={prototype_id}"""
         return Prototype(self._api, id=self.prototype_id)
