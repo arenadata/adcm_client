@@ -764,7 +764,7 @@ class Upgrade(BaseAPIObject):
             data = self._subcall("do", "create", **args)
         task = None
         if data.get('task_id') is not None:
-            task = Task(self._api, task_id=data['task_id'])
+            task = Task(self._api, id=data['task_id'])
         return task
 
 
@@ -1208,7 +1208,7 @@ class Action(BaseAPIObject):
                 )
                 args.pop('verbose')
             data = self._subcall("run", "create", **args)
-            return Task(self._api, task_id=data["id"])
+            return Task(self._api, id=data["id"])
 
 
 class ActionList(BaseAPIListObject):
