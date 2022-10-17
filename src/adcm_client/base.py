@@ -423,7 +423,12 @@ class BaseAPIObject:
         return classname(self._api, **_merge(args, {self.IDNAME: self.id}))
 
     def _parent_obj(self, classname):
-        return classname(self._api, **{classname.IDNAME: self._data[classname.IDNAME]})
+        id_key = (
+            "id"
+            if rpm.compare_versions(self._api.adcm_version, "2022.10.10.10") >= 0
+            else classname.IDNAME
+        )
+        return classname(self._api, **{id_key: self._data[classname.IDNAME]})
 
     def delete(self):
         return self._endpoint.delete(self.id)

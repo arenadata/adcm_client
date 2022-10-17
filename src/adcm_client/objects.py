@@ -1256,6 +1256,8 @@ class Task(BaseAPIObject):
 
     def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
         if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
+            if self.IDNAME in args:
+                args["task_pk"] = args.pop(self.IDNAME)
             self.IDNAME = "task_pk"
         super().__init__(api, path, path_args, **args)
 
@@ -1297,14 +1299,21 @@ class Task(BaseAPIObject):
 
         return status
 
+    @legacy_server_implementaion(
+        lambda obj: obj._subcall("cancel", "update"),  # pylint: disable=protected-access
+        "2022.10.10.10",
+    )
     def cancel(self) -> None:
         """Cancel task"""
-        self._subcall("cancel", "update")
+        self._subcall("cancel")
 
     @min_server_version("2022.09.17.00")
     def download_logs(self, target_directory: PathLike = ".") -> Path:
         """Download task logs and copy archive to a target directory"""
-        logs_archive: DownloadedFile = self._subcall("download", "list")
+        try:
+            logs_archive: DownloadedFile = self._subcall("download", "list")  # old version
+        except NoSuchEndpointOrAccessIsDenied:
+            logs_archive: DownloadedFile = self._subcall("download")
         fullpath = Path(target_directory) / logs_archive.basename
         shutil.copyfile(logs_archive.name, fullpath)
         return fullpath.absolute()
