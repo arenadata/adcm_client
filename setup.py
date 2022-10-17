@@ -66,6 +66,3 @@ setuptools.setup(
     python_requires='>=3.6',
     scripts=['src/bin/adcm_sdk_shell', 'src/bin/adcm_sdk_pack'],
 )
-
-if __name__ == '__main__':
-    v = version_build()

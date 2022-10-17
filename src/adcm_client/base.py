@@ -453,12 +453,13 @@ class BaseAPIListObject(UserList):  # pylint: disable=too-many-ancestors
             api, self._ENTRY_CLASS.IDNAME, path, path_args, self._ENTRY_CLASS.FILTERS
         )
         data = []
+        id_key = (
+            "id"
+            if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0
+            else self._ENTRY_CLASS.IDNAME
+        )
         for i in self._endpoint.search(**args, paging=paging):
-            data.append(
-                self._ENTRY_CLASS(
-                    api, path=path, path_args=path_args, **{self._ENTRY_CLASS.IDNAME: i['id']}
-                )
-            )
+            data.append(self._ENTRY_CLASS(api, path=path, path_args=path_args, **{id_key: i['id']}))
         super().__init__(data)
 
 
