@@ -111,7 +111,7 @@ class Bundle(BaseAPIObject):
 
     def provider_prototype(self) -> "ProviderPrototype":
         """Return ProviderPrototype object"""
-        return self._child_obj(ProviderPrototype)
+        return ProviderPrototype(api=self._api, bundle_id=self.id)
 
     def provider_create(self, name, description=None) -> "Provider":
         """Creates Provider object from the prototype"""
@@ -139,11 +139,11 @@ class Bundle(BaseAPIObject):
 
     def service_prototype(self, **args) -> "ServicePrototype":
         """Return 'ServicePrototype' object"""
-        return self._child_obj(ServicePrototype, **args)
+        return ServicePrototype(api=self._api, **args)
 
     def cluster_prototype(self) -> "ClusterPrototype":
         """Return 'ClusterPrototype' object"""
-        return self._child_obj(ClusterPrototype)
+        return ClusterPrototype(api=self._api, bundle_id=self.id)
 
     def cluster_create(self, name, description=None) -> "Cluster":
         """Creates 'Cluster' object from the 'ClusterPrototype' object"""
@@ -240,7 +240,7 @@ class ClusterPrototype(Prototype):
             raise IncorrectPrototypeType
         return new_cluster(
             self._api,
-            prototype_id=self.prototype_id,
+            prototype_id=self.id,
             name=name,
             description=description,
         )
@@ -322,7 +322,7 @@ class ProviderPrototype(Prototype):
             raise IncorrectPrototypeType
         return new_provider(
             self._api,
-            prototype_id=self.prototype_id,
+            prototype_id=self.id,
             name=name,
             description=description,
         )
@@ -2064,7 +2064,7 @@ class ADCMClient:
         except AttributeError as error:
             raise NoSuchEndpointOrAccessIsDenied from error
         bundle_stream.close()
-        return self.bundle(bundle_id=data['id'])
+        return self.bundle(id=data['id'])
 
     @allure_step('Upload bundle from {dirname}')
     def upload_from_fs(self, dirname, **args) -> Bundle:
