@@ -175,7 +175,10 @@ class Bundle(BaseAPIObject):
 
     def license_accept(self):
         """Provide endpoint to licence/accept/update"""
-        self._subcall("license", "accept", "update")
+        if rpm.compare_versions(self._api.adcm_version, "2022.10.10.10") >= 0:
+            self._subcall("license", "accept_license")
+        else:
+            self._subcall("license", "accept", "update")
 
 
 class BundleList(BaseAPIListObject):
@@ -1353,7 +1356,7 @@ class Task(BaseAPIObject):
             log_func = logger.error if job.status == "failed" else logger.info
             try:
                 action_name = self.action().name
-            except ErrorMessage:
+            except (ErrorMessage, ObjectNotFound):
                 action = EndPoint(self._api, 'action_pk', ['stack', 'action']).read(self.action_id)
                 action_name = action['name']
             log_func("Action: %s", action_name)
