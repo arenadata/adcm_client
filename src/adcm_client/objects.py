@@ -139,7 +139,7 @@ class Bundle(BaseAPIObject):
 
     def service_prototype(self, **args) -> "ServicePrototype":
         """Return 'ServicePrototype' object"""
-        return ServicePrototype(api=self._api, **args)
+        return ServicePrototype(api=self._api, bundle_id=self.id, **args)
 
     def cluster_prototype(self) -> "ClusterPrototype":
         """Return 'ClusterPrototype' object"""
@@ -247,7 +247,7 @@ class ClusterPrototype(Prototype):
 
     def cluster_list(self, paging=None, **args) -> "ClusterList":
         """Return list of 'Cluster' objects"""
-        return self._child_obj(ClusterList, paging=paging, **args)
+        return ClusterList(prototype_id=self.id, api=self._api, paging=paging, **args)
 
     def cluster(self, **args) -> "Cluster":
         """Return 'Cluster' object"""
@@ -1024,7 +1024,7 @@ class Component(_BaseObject):
         return Cluster(self._api, id=self.cluster_id)
 
     def prototype(self) -> "Prototype":
-        return Prototype(self._api, prototype_id=self.prototype_id)
+        return Prototype(self._api, id=self.prototype_id)
 
     @property
     def service_id(self):
@@ -1295,8 +1295,7 @@ class Task(BaseAPIObject):
     @min_server_version('2020.08.27.00')
     def action(self) -> "Action":
         # for component object method will work after version `2021.03.12.16`
-        kwargs = {f'{self.object_type}_id': self.object_id}
-        return TASK_PARENT[self.object_type](self._api, **kwargs).action(action_id=self.action_id)
+        return TASK_PARENT[self.object_type](self._api, id=self.object_id).action(id=self.action_id)
 
     def __repr__(self):
         return f"<Task {self.task_id} at {id(self)}>"
@@ -1355,7 +1354,7 @@ class Task(BaseAPIObject):
             try:
                 action_name = self.action().name
             except ErrorMessage:
-                action = EndPoint(self._api, 'action_id', ['stack', 'action']).read(self.action_id)
+                action = EndPoint(self._api, 'action_pk', ['stack', 'action']).read(self.action_id)
                 action_name = action['name']
             log_func("Action: %s", action_name)
             for file in job.log_files:
