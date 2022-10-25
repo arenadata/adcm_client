@@ -101,12 +101,17 @@ class Bundle(BaseAPIObject):
     version = None
     edition = None
 
+    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
+        if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
+            self.IDNAME = "bundle_pk"
+        super().__init__(api, path, path_args, **args)
+
     def __repr__(self):
         return f"<Bundle {self.name} {self.version} {self.edition} at {id(self)}>"
 
     def provider_prototype(self) -> "ProviderPrototype":
         """Return ProviderPrototype object"""
-        return self._child_obj(ProviderPrototype)
+        return ProviderPrototype(api=self._api, bundle_id=self.id)
 
     def provider_create(self, name, description=None) -> "Provider":
         """Creates Provider object from the prototype"""
@@ -134,11 +139,11 @@ class Bundle(BaseAPIObject):
 
     def service_prototype(self, **args) -> "ServicePrototype":
         """Return 'ServicePrototype' object"""
-        return self._child_obj(ServicePrototype, **args)
+        return ServicePrototype(api=self._api, bundle_id=self.id, **args)
 
     def cluster_prototype(self) -> "ClusterPrototype":
         """Return 'ClusterPrototype' object"""
-        return self._child_obj(ClusterPrototype)
+        return ClusterPrototype(api=self._api, bundle_id=self.id)
 
     def cluster_create(self, name, description=None) -> "Cluster":
         """Creates 'Cluster' object from the 'ClusterPrototype' object"""
@@ -170,7 +175,10 @@ class Bundle(BaseAPIObject):
 
     def license_accept(self):
         """Provide endpoint to licence/accept/update"""
-        self._subcall("license", "accept", "update")
+        if rpm.compare_versions(self._api.adcm_version, "2022.10.10.10") >= 0:
+            self._subcall("license", "accept_license")
+        else:
+            self._subcall("license", "accept", "update")
 
 
 class BundleList(BaseAPIListObject):
@@ -201,6 +209,12 @@ class Prototype(BaseAPIObject):
     actions = None
     url = None
 
+    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
+        if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
+            self.IDNAME = "prototype_pk"
+            self.FILTERS[1] = "bundle_pk"
+        super().__init__(api, path, path_args, **args)
+
     def bundle(self) -> "Bundle":
         """Return 'Bundle' object"""
         return self._parent_obj(Bundle)
@@ -218,20 +232,25 @@ class ClusterPrototype(Prototype):
     PATH = ["stack", "cluster"]
     FILTERS = ["name", "bundle_id"]
 
+    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
+        if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
+            self.FILTERS[1] = "bundle_pk"
+        super().__init__(api, path, path_args, **args)
+
     def cluster_create(self, name, description=None) -> "Cluster":
         """Create 'Cluster' object with relevant parameters"""
         if self.type != 'cluster':
             raise IncorrectPrototypeType
         return new_cluster(
             self._api,
-            prototype_id=self.prototype_id,
+            prototype_id=self.id,
             name=name,
             description=description,
         )
 
     def cluster_list(self, paging=None, **args) -> "ClusterList":
         """Return list of 'Cluster' objects"""
-        return self._child_obj(ClusterList, paging=paging, **args)
+        return ClusterList(prototype_id=self.id, api=self._api, paging=paging, **args)
 
     def cluster(self, **args) -> "Cluster":
         """Return 'Cluster' object"""
@@ -259,6 +278,11 @@ class ServicePrototype(Prototype):
     monitoring = None
     path = None
     bundle_edition = None
+
+    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
+        if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
+            self.FILTERS[1] = "bundle_pk"
+        super().__init__(api, path, path_args, **args)
 
     @min_server_version('2020.09.25.13')
     def service_list(self, paging=None, **args) -> "ServiceList":
@@ -290,13 +314,18 @@ class ProviderPrototype(Prototype):
     bundle_edition = None
     license = None
 
+    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
+        if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
+            self.FILTERS[1] = "bundle_pk"
+        super().__init__(api, path, path_args, **args)
+
     def provider_create(self, name, description=None) -> "Provider":
         """Create 'Provider' object with relevant parameters"""
         if self.type != 'provider':
             raise IncorrectPrototypeType
         return new_provider(
             self._api,
-            prototype_id=self.prototype_id,
+            prototype_id=self.id,
             name=name,
             description=description,
         )
@@ -327,6 +356,11 @@ class HostPrototype(Prototype):
     monitoring = None
     path = None
     bundle_edition = None
+
+    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
+        if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
+            self.FILTERS[1] = "bundle_pk"
+        super().__init__(api, path, path_args, **args)
 
     def host_list(self, paging=None, **args) -> "HostList":
         """Return list of 'Host' objects"""
@@ -993,7 +1027,7 @@ class Component(_BaseObject):
         return Cluster(self._api, id=self.cluster_id)
 
     def prototype(self) -> "Prototype":
-        return Prototype(self._api, prototype_id=self.prototype_id)
+        return Prototype(self._api, id=self.prototype_id)
 
     @property
     def service_id(self):
@@ -1264,8 +1298,7 @@ class Task(BaseAPIObject):
     @min_server_version('2020.08.27.00')
     def action(self) -> "Action":
         # for component object method will work after version `2021.03.12.16`
-        kwargs = {f'{self.object_type}_id': self.object_id}
-        return TASK_PARENT[self.object_type](self._api, **kwargs).action(action_id=self.action_id)
+        return TASK_PARENT[self.object_type](self._api, id=self.object_id).action(id=self.action_id)
 
     def __repr__(self):
         return f"<Task {self.task_id} at {id(self)}>"
@@ -1323,8 +1356,8 @@ class Task(BaseAPIObject):
             log_func = logger.error if job.status == "failed" else logger.info
             try:
                 action_name = self.action().name
-            except ErrorMessage:
-                action = EndPoint(self._api, 'action_id', ['stack', 'action']).read(self.action_id)
+            except (ErrorMessage, ObjectNotFound):
+                action = EndPoint(self._api, 'action_pk', ['stack', 'action']).read(self.action_id)
                 action_name = action['name']
             log_func("Action: %s", action_name)
             for file in job.log_files:
@@ -2033,7 +2066,7 @@ class ADCMClient:
         except AttributeError as error:
             raise NoSuchEndpointOrAccessIsDenied from error
         bundle_stream.close()
-        return self.bundle(bundle_id=data['id'])
+        return self.bundle(id=data['id'])
 
     @allure_step('Upload bundle from {dirname}')
     def upload_from_fs(self, dirname, **args) -> Bundle:
