@@ -231,9 +231,6 @@ class ClusterPrototype(Prototype):
     PATH = ["stack", "cluster"]
     FILTERS = ["name", "bundle_id"]
 
-    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
-        super().__init__(api, path, path_args, **args)
-
     def cluster_create(self, name, description=None) -> "Cluster":
         """Create 'Cluster' object with relevant parameters"""
         if self.type != 'cluster':
@@ -276,9 +273,6 @@ class ServicePrototype(Prototype):
     path = None
     bundle_edition = None
 
-    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
-        super().__init__(api, path, path_args, **args)
-
     @min_server_version('2020.09.25.13')
     def service_list(self, paging=None, **args) -> "ServiceList":
         """Return list of 'Service' objects and check its minimal version"""
@@ -308,9 +302,6 @@ class ProviderPrototype(Prototype):
     path = None
     bundle_edition = None
     license = None
-
-    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
-        super().__init__(api, path, path_args, **args)
 
     def provider_create(self, name, description=None) -> "Provider":
         """Create 'Provider' object with relevant parameters"""
@@ -349,9 +340,6 @@ class HostPrototype(Prototype):
     monitoring = None
     path = None
     bundle_edition = None
-
-    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
-        super().__init__(api, path, path_args, **args)
 
     def host_list(self, paging=None, **args) -> "HostList":
         """Return list of 'Host' objects"""
