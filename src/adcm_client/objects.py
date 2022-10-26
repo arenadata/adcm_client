@@ -2100,7 +2100,7 @@ class ADCMClient:
         bundle = self.bundle(**args)
         with allure_step(f"Delete bundle {bundle.name}"):
             try:
-                self._api.objects.stack.bundle.delete(bundle_id=bundle.bundle_id)
+                self._api.objects.stack.bundle.delete(**{bundle.IDNAME: bundle.id})
             except AttributeError as error:
                 raise NoSuchEndpointOrAccessIsDenied from error
 
