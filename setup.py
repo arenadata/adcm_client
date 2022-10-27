@@ -34,7 +34,7 @@ def version_build():
     elif git_data.get('branch') != 'master':
         postfix = '.dev+' + git_data['branch']
 
-    return version + postfix
+    return (version + postfix).replace('/', '-')
 
 
 setuptools.setup(

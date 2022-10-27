@@ -423,7 +423,12 @@ class BaseAPIObject:
         return classname(self._api, **_merge(args, {self.IDNAME: self.id}))
 
     def _parent_obj(self, classname):
-        return classname(self._api, **{classname.IDNAME: self._data[classname.IDNAME]})
+        id_key = (
+            "id"
+            if rpm.compare_versions(self._api.adcm_version, "2022.10.10.10") >= 0
+            else classname.IDNAME
+        )
+        return classname(self._api, **{id_key: self._data[classname.IDNAME]})
 
     def delete(self):
         return self._endpoint.delete(self.id)
@@ -453,12 +458,13 @@ class BaseAPIListObject(UserList):  # pylint: disable=too-many-ancestors
             api, self._ENTRY_CLASS.IDNAME, path, path_args, self._ENTRY_CLASS.FILTERS
         )
         data = []
+        id_key = (
+            "id"
+            if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0
+            else self._ENTRY_CLASS.IDNAME
+        )
         for i in self._endpoint.search(**args, paging=paging):
-            data.append(
-                self._ENTRY_CLASS(
-                    api, path=path, path_args=path_args, **{self._ENTRY_CLASS.IDNAME: i['id']}
-                )
-            )
+            data.append(self._ENTRY_CLASS(api, path=path, path_args=path_args, **{id_key: i['id']}))
         super().__init__(data)
 
 
