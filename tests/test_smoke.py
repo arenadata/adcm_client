@@ -41,7 +41,7 @@ def test_bundle_delete(sdk_client_fs: ADCMClient):
         with pytest.raises(ObjectNotFound):
             sdk_client_fs.bundle_delete(name="unicorn")
     with allure.step("Upload bundle"):
-        bundle = sdk_client_fs.upload_from_fs(get_data_dir(__file__) + "/cluster")
+        bundle = sdk_client_fs.upload_from_fs(get_data_dir(__file__, "cluster"))
     with allure.step("Delete bundle"):
         sdk_client_fs.bundle_delete(name=bundle.name)
 
@@ -59,14 +59,19 @@ def test_bundle_test_list(sdk_client_fs: ADCMClient):
 
 
 def _assert_attrs(obj):
+    # after the refactoring IDNAME of some objects has "_pk" suffix,
+    # but there's no such field in client's object
+    ignored_attrs = ["prototype_pk"]
     with allure.step(f"Check missed attrs of {obj.__class__}"):
         missed = []
-        for k in obj._data.keys():
+        for k in (k for k in obj._data.keys() if k not in ignored_attrs):
             if not hasattr(obj, k):
                 missed.append(k)
         assert not missed
 
-    ignored_attrs = ["IDNAME", "PATH", "FILTERS", "SUBPATH", "adcm_version"]
+    # after the refactoring some classes still have "_id" suffixed fields,
+    # that are kept for a backward compatibility
+    ignored_attrs = ["IDNAME", "PATH", "FILTERS", "SUBPATH", "adcm_version", "prototype_id"]
     with allure.step(f"Check redundant attrs of {obj.__class__}"):
         redundant = []
         attrs = [
