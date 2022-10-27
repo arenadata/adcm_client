@@ -294,7 +294,7 @@ class EndPoint:
         # I dislike basing on one object,
         # but it's a fair assumption that all objects have the same set of fields.
         # Otherwise we'll need to collect all possible fields from them (e.g. in set)
-        return search(result, **{k: v for k, v in args.items() if k in result[0]})
+        return search(result, **{**{k: v for k, v in args.items() if k in result[0]}, **args})
 
     def search_one(self, **args):
         # FIXME: paging
@@ -303,7 +303,7 @@ class EndPoint:
         data = None
         for obj in Paging(self.list, **args):
             # leave only "object field" keys
-            data = search_one([obj], **{k: v for k, v in args.items() if k in obj})
+            data = search_one([obj], **{**{k: v for k, v in args.items() if k in obj}, **args})
             if data is not None:
                 break
         if data is None:
@@ -476,10 +476,10 @@ def _simplify_filter(value):
         return value
     if isinstance(value, Enum):
         return value.value
-    if isinstance(value, date):
-        return value.strftime("%Y-%m-%d")
     if isinstance(value, datetime):
         return value.isoformat()
+    if isinstance(value, date):
+        return value.strftime("%Y-%m-%d")
     return value
 
 
