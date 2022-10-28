@@ -300,6 +300,8 @@ class EndPoint:
         # FIXME: paging
         if self.idname in args:
             return self.read(args[self.idname])
+        if "id" in args:
+            return self.read(args["id"])
         data = None
         for obj in Paging(self.list, **args):
             # leave only "object field" keys
