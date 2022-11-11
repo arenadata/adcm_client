@@ -19,7 +19,7 @@ from pytz import timezone  # pylint: disable=E0401
 test_deps = [
     'pytest',
 ]
-setup_deps = ['ad_ci_tools==0.1.7', 'pytz', 'setuptools', 'wheel']
+setup_deps = ['ad_ci_tools==0.1.8', 'pytz', 'setuptools', 'wheel']
 extras = {'test': test_deps, 'setup': setup_deps}
 
 
@@ -50,7 +50,7 @@ setuptools.setup(
         'pyyaml',
         'coreapi',
         'ipython',
-        'ad_ci_tools==0.1.7',
+        'ad_ci_tools==0.1.8',
         'docker',
         'jinja2',
         'version_utils',
