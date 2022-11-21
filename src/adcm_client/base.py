@@ -21,8 +21,9 @@ from enum import Enum
 from functools import wraps
 from pprint import pprint
 from time import sleep
-from typing import Type, Optional
+from typing import Optional, Type
 
+from requests import Response, post
 from version_utils import rpm
 
 from adcm_client.util.search import search, search_one
@@ -432,6 +433,16 @@ class BaseAPIObject:
         )
         return classname(self._api, **{id_key: self._data[classname.IDNAME]})
 
+    def _post(self, object_path: str, payload: dict, **kwargs) -> Response:
+        path = f"{self._api.api_url}/{object_path}".replace("//", "/").strip("/")
+        return post(
+            f"{self._api.url}/{path}/",
+            json=payload,
+            headers={"Authorization": f"Token {self._api.api_token}"},
+            timeout=5,
+            **kwargs,
+        )
+
     def delete(self):
         return self._endpoint.delete(self.id)
 
@@ -568,3 +579,19 @@ class RichlyTypedAPIList(BaseAPIListObject):
             {k: _simplify_filter(v) for k, v in kwargs.items() if k in self._ENTRY_CLASS.FILTERS}
         )
         super().__init__(*args, **kwargs)
+
+
+class ObjectWithMaintenanceMode(BaseAPIObject):
+    """For objects with maintenance mode like host, etc."""
+
+    id: int = None
+    maintenance_mode: str = None
+    is_maintenance_mode_available: bool = None
+
+    def maintenance_mode_set(self, value: str) -> Response:
+        response = self._post(
+            object_path=f"{'/'.join(self.PATH)}/{self.id}/maintenance-mode/",
+            payload={"maintenance_mode": value},
+        )
+        self.reread()
+        return response

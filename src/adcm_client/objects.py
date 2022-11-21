@@ -38,6 +38,7 @@ from adcm_client.base import (
     EndPoint,
     NoSuchEndpointOrAccessIsDenied,
     ObjectNotFound,
+    ObjectWithMaintenanceMode,
     TooManyArguments,
     WaitTimeout,
     allure_attach,
@@ -825,7 +826,7 @@ class BindList(BaseAPIListObject):
 ##################################################
 #           S E R V I C E S
 ##################################################
-class Service(_BaseObject):
+class Service(ObjectWithMaintenanceMode, _BaseObject):
     """The 'Service' object from the API"""
 
     IDNAME = "service_id"
@@ -965,7 +966,7 @@ class ServiceList(BaseAPIListObject):
 ##################################################
 #           C O M P O N E N T S
 ##################################################
-class Component(_BaseObject):
+class Component(ObjectWithMaintenanceMode, _BaseObject):
     """The 'Component' object from the API"""
 
     IDNAME = "component_id"
@@ -1049,7 +1050,7 @@ class ComponentList(BaseAPIListObject):
 ##################################################
 #              H O S T
 ##################################################
-class Host(_BaseObject):
+class Host(ObjectWithMaintenanceMode, _BaseObject):
     """The 'Host' object from the API"""
 
     IDNAME = "host_id"
@@ -1065,11 +1066,6 @@ class Host(_BaseObject):
     description = None
     bundle_id = None
     status = None
-    maintenance_mode: str = None
-
-    def maintenance_mode_set(self, value: str) -> None:
-        self._api.objects.host.partial_update(host_id=self.id, maintenance_mode=value)
-        self.reread()
 
     def __repr__(self):
         return f"<Host {self.fqdn} form provider - {self.provider_id} at {id(self)}>"
@@ -1151,7 +1147,8 @@ class Action(BaseAPIObject):
     allow_to_terminate = None
     partial_execution = None
     host_action = None
-    disabling_cause = None
+    disabling_cause = None  # will be none after ADCM-3065 is merged
+    start_impossible_reason = None  # "new" disabling cause field
 
     def __repr__(self):
         return f"<Action {self.name} at {id(self)}>"
