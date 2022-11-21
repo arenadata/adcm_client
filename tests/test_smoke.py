@@ -378,18 +378,12 @@ def test_maintenance_mode_set(sdk_client_fs: ADCMClient):
         cluster = bundle.cluster_create(name="cluster")
     with allure.step("Add service and convert to maintenance mode"):
         service = cluster.service_add(name="some_test_service")
-        res = service.maintenance_mode_set("ON")
-        assert res.status_code == 200
+        service.maintenance_mode_set("ON")
         assert service.maintenance_mode == "ON"
     with allure.step("Turn component MM ON/OFF"):
-        res = service.maintenance_mode_set("OFF")
-        assert res.status_code == 200
+        service.maintenance_mode_set("OFF")
         component = service.component()
-        res = component.maintenance_mode_set("ON")
-        assert res.status_code == 200
+        component.maintenance_mode_set("ON")
         assert component.maintenance_mode == "ON"
         component.maintenance_mode_set("OFF")
         assert component.maintenance_mode == "OFF"
-    with allure.step("Pass wrong MM value"):
-        res = component.maintenance_mode_set("LKDSJFSKL")
-        assert 400 <= res.status_code < 500
