@@ -209,6 +209,10 @@ class Prototype(BaseAPIObject):
     config = None
     actions = None
     url = None
+    license = None
+    license_path = None
+    license_hash = None
+    license_url = None
 
     def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
         if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
@@ -1124,7 +1128,6 @@ class Action(BaseAPIObject):
     FILTERS = ["name"]
 
     action_id = None
-    button = None
     id = None
     name = None
     display_name = None
@@ -1147,8 +1150,7 @@ class Action(BaseAPIObject):
     allow_to_terminate = None
     partial_execution = None
     host_action = None
-    disabling_cause = None  # will be none after ADCM-3065 is merged
-    start_impossible_reason = None  # "new" disabling cause field
+    start_impossible_reason = None
 
     def __repr__(self):
         return f"<Action {self.name} at {id(self)}>"
