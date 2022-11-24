@@ -1001,6 +1001,11 @@ class Component(_BaseObject):
             instance.PATH = None
         return instance
 
+    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
+        if rpm.compare_versions(api.adcm_version, "2022.11.23.09") >= 0:
+            self.IDNAME = "component_pk"
+        super().__init__(api, path, path_args, **args)
+
     def cluster(self) -> Cluster:
         """Return 'Cluster' object"""
         return Cluster(self._api, id=self.cluster_id)
@@ -1626,6 +1631,11 @@ class Concern(BaseAPIObject):
     name = None
     reason = None
     url = None
+
+    def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
+        if rpm.compare_versions(api.adcm_version, "2022.11.23.09") >= 0:
+            self.IDNAME = "concern_pk"
+        super().__init__(api, path, path_args, **args)
 
     def related_objects(self):
         objects = {
