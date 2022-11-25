@@ -15,6 +15,7 @@
   name: test_cluster_name
   version: 1.4
   description: "That is description"
+  allow_maintenance_mode: true
 
   config:
     xxx:
@@ -35,3 +36,6 @@
 - type: service
   name: some_test_service
   version: 1.0
+
+  components:
+    test_component:

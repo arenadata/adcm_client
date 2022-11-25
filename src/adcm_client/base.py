@@ -21,7 +21,7 @@ from enum import Enum
 from functools import wraps
 from pprint import pprint
 from time import sleep
-from typing import Type, Optional
+from typing import Optional, Type
 
 from version_utils import rpm
 
@@ -568,3 +568,15 @@ class RichlyTypedAPIList(BaseAPIListObject):
             {k: _simplify_filter(v) for k, v in kwargs.items() if k in self._ENTRY_CLASS.FILTERS}
         )
         super().__init__(*args, **kwargs)
+
+
+class ObjectWithMaintenanceMode:
+    """Mixin for objects with maintenance mode like host, etc."""
+
+    id: int = None
+    maintenance_mode: str = None
+    is_maintenance_mode_available: bool = None
+
+    def maintenance_mode_set(self, value: str) -> None:
+        self._subcall("maintenance-mode", "create", maintenance_mode=value)
+        self.reread()

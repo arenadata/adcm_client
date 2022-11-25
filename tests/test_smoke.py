@@ -370,3 +370,20 @@ def test_task_download(sdk_client_fs: ADCMClient, tmpdir):
         assert default_download.name in os.listdir(os.getcwd())
         assert str(default_download.parent) != str(custom_download.parent)
         assert default_download.name == custom_download.name
+
+
+def test_maintenance_mode_set(sdk_client_fs: ADCMClient):
+    with allure.step("Create cluster"):
+        bundle = sdk_client_fs.upload_from_fs(get_data_dir(__file__, "cluster"))
+        cluster = bundle.cluster_create(name="cluster")
+    with allure.step("Add service and convert to maintenance mode"):
+        service = cluster.service_add(name="some_test_service")
+        service.maintenance_mode_set("ON")
+        assert service.maintenance_mode == "ON"
+    with allure.step("Turn component MM ON/OFF"):
+        service.maintenance_mode_set("OFF")
+        component = service.component()
+        component.maintenance_mode_set("ON")
+        assert component.maintenance_mode == "ON"
+        component.maintenance_mode_set("OFF")
+        assert component.maintenance_mode == "OFF"
