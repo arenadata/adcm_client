@@ -71,7 +71,15 @@ def _assert_attrs(obj):
 
     # after the refactoring some classes still have "_id" suffixed fields,
     # that are kept for a backward compatibility
-    ignored_attrs = ["IDNAME", "PATH", "FILTERS", "SUBPATH", "adcm_version", "prototype_id"]
+    ignored_attrs = [
+        "IDNAME",
+        "PATH",
+        "FILTERS",
+        "API_ONLY_FILTERS",
+        "SUBPATH",
+        "adcm_version",
+        "prototype_id",
+    ]
     with allure.step(f"Check redundant attrs of {obj.__class__}"):
         redundant = []
         attrs = [
