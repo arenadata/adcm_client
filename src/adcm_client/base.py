@@ -21,7 +21,7 @@ from enum import Enum
 from functools import wraps
 from pprint import pprint
 from time import sleep
-from typing import Optional, Type
+from typing import Collection, Optional, Type
 
 from version_utils import rpm
 
@@ -286,17 +286,22 @@ class EndPoint:
         except AttributeError as error:
             raise NoSuchEndpointOrAccessIsDenied from error
 
-    def search(self, paging=None, **args):
+    def search(self, paging=None, *, api_only_filters: Collection[str] = (), **args):
+        """
+        `api_only_filters` should contain names of filters from `args`
+        that shouldn't be passed to "client side filter"
+        """
         # TODO: Add filtering on backend
         result = self.list(paging, **args)
         if len(result) == 0:
             return result
-        # I dislike basing on one object,
-        # but it's a fair assumption that all objects have the same set of fields.
-        # Otherwise we'll need to collect all possible fields from them (e.g. in set)
-        return search(result, **{**{k: v for k, v in args.items() if k in result[0]}, **args})
+        return search(result, **{k: v for k, v in args.items() if k not in api_only_filters})
 
-    def search_one(self, **args):
+    def search_one(self, *, api_only_filters: Collection[str] = (), **args):
+        """
+        `api_only_filters` should contain names of filters from `args`
+        that shouldn't be passed to "client side filter"
+        """
         # FIXME: paging
         if self.idname in args:
             return self.read(args[self.idname])
@@ -305,7 +310,7 @@ class EndPoint:
         data = None
         for obj in Paging(self.list, **args):
             # leave only "object field" keys
-            data = search_one([obj], **{**{k: v for k, v in args.items() if k in obj}, **args})
+            data = search_one([obj], **{k: v for k, v in args.items() if k not in api_only_filters})
             if data is not None:
                 break
         if data is None:
@@ -339,6 +344,7 @@ class BaseAPIObject:
     IDNAME = None  # Will not be None in child
     PATH = None  # Will not be None in child
     FILTERS = []
+    API_ONLY_FILTERS = ()
 
     def _register_attrs(self):
         for k, v in self._data.items():
@@ -373,7 +379,7 @@ class BaseAPIObject:
         self.adcm_version = self._api.adcm_version
         self._client = api.objects
 
-        self._data = self._endpoint.search_one(**args)
+        self._data = self._endpoint.search_one(**args, api_only_filters=self.API_ONLY_FILTERS)
 
         if self._data is None:
             raise ObjectNotFound
@@ -465,7 +471,9 @@ class BaseAPIListObject(UserList):  # pylint: disable=too-many-ancestors
             if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0
             else self._ENTRY_CLASS.IDNAME
         )
-        for i in self._endpoint.search(**args, paging=paging):
+        for i in self._endpoint.search(
+            **args, paging=paging, api_only_filters=self._ENTRY_CLASS.API_ONLY_FILTERS
+        ):
             data.append(self._ENTRY_CLASS(api, path=path, path_args=path_args, **{id_key: i['id']}))
         super().__init__(data)
 
