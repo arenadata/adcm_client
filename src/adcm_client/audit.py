@@ -124,6 +124,7 @@ class AuditLogin(RichlyTypedAPIObject):
     IDNAME = 'id'
     PATH = ['audit', 'login']
     FILTERS = ['login_result', 'login_date', 'username']
+    API_ONLY_FILTERS = ("username",)
 
     id: Optional[int] = None
     user_id: Optional[int] = None
