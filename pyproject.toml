@@ -1,5 +1,5 @@
 [build-system]
-requires = ['ad_ci_tools==0.1.8',
+requires = ['ad_ci_tools==0.1.9',
             'pytz',
             'setuptools',
             'wheel']
