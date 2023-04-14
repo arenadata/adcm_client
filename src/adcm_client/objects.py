@@ -281,6 +281,7 @@ class ServicePrototype(Prototype):
     monitoring = None
     path = None
     bundle_edition = None
+    requires = None
 
     @min_server_version('2020.09.25.13')
     def service_list(self, paging=None, **args) -> "ServiceList":
@@ -311,6 +312,7 @@ class ProviderPrototype(Prototype):
     path = None
     bundle_edition = None
     license = None
+    requires = None
 
     def provider_create(self, name, description=None) -> "Provider":
         """Create 'Provider' object with relevant parameters"""
@@ -760,6 +762,7 @@ class Upgrade(BaseAPIObject):
     license_url = None
     url = None
     name = None
+    display_name = None
     description = None
     min_version = None
     max_version = None
