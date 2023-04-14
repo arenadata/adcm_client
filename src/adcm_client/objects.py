@@ -509,7 +509,6 @@ class Provider(_BaseObject):
     description = None
     bundle_id = None
     before_upgrade = None
-    requires = None
 
     def __repr__(self):
         return f"<Provider {self.name} at {id(self)}>"
@@ -577,7 +576,6 @@ class Cluster(_BaseObject):
     edition = None
     license = None
     before_upgrade = None
-    requires = None
 
     def __repr__(self):
         return f"<Cluster {self.name} from bundle - {self.bundle_id} at {id(self)}>"
@@ -762,7 +760,6 @@ class Upgrade(BaseAPIObject):
     license_url = None
     url = None
     name = None
-    display_name = None
     description = None
     min_version = None
     max_version = None
