@@ -851,6 +851,7 @@ class Service(ObjectWithMaintenanceMode, _BaseObject):
     cluster_id = None
     status = None
     monitoring = None
+    requires = None
 
     def __new__(cls, *args, **kwargs):
         """
