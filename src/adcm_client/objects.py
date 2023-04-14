@@ -217,6 +217,7 @@ class Prototype(BaseAPIObject):
     license_path = None
     license_hash = None
     license_url = None
+    requires = None
 
     def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
         if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
@@ -281,7 +282,6 @@ class ServicePrototype(Prototype):
     monitoring = None
     path = None
     bundle_edition = None
-    requires = None
 
     @min_server_version('2020.09.25.13')
     def service_list(self, paging=None, **args) -> "ServiceList":
@@ -312,7 +312,6 @@ class ProviderPrototype(Prototype):
     path = None
     bundle_edition = None
     license = None
-    requires = None
 
     def provider_create(self, name, description=None) -> "Provider":
         """Create 'Provider' object with relevant parameters"""
