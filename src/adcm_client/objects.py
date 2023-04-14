@@ -14,12 +14,11 @@
 import logging
 import shutil
 import warnings
-from collections import namedtuple
 from io import BytesIO
 from json import dumps
 from os import PathLike
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, NamedTuple
 
 from coreapi.exceptions import ErrorMessage
 from coreapi.utils import DownloadedFile
@@ -59,20 +58,25 @@ logger.setLevel(logging.DEBUG)
 
 _TASK_END_STATUSES = {"failed", "success", "aborted"}
 
-ME_FIELDS = (
-    'id',
-    'username',
-    'first_name',
-    'last_name',
-    'email',
-    'is_superuser',
-    'password',
-    'profile',
-    'type',
-    'is_active',
-)
 
-Me = namedtuple('Me', ME_FIELDS, defaults=(None,) * len(ME_FIELDS))
+class Me(NamedTuple):
+    id: Optional[int] = None
+    username: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
+    is_superuser: Optional[bool] = None
+    password: Optional[str] = None
+    profile: Optional[dict] = None
+    type: Optional[str] = None
+    is_active: Optional[bool] = None
+
+    @classmethod
+    def from_dict(cls, arguments: Dict[str, Any]) -> "Me":
+        """
+        Build `Me` from "raw API data" by skipping fields that aren't used in this class
+        """
+        return Me(**{name: value for name, value in arguments.items() if name in cls._fields})
 
 
 class NoCredentionsProvided(Exception):
@@ -213,6 +217,7 @@ class Prototype(BaseAPIObject):
     license_path = None
     license_hash = None
     license_url = None
+    requires = None
 
     def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
         if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
@@ -756,6 +761,7 @@ class Upgrade(BaseAPIObject):
     license_url = None
     url = None
     name = None
+    display_name = None
     description = None
     min_version = None
     max_version = None
@@ -847,6 +853,7 @@ class Service(ObjectWithMaintenanceMode, _BaseObject):
     cluster_id = None
     status = None
     monitoring = None
+    requires = None
 
     def __new__(cls, *args, **kwargs):
         """
@@ -1180,7 +1187,6 @@ class Action(BaseAPIObject):
     def run(self, **args) -> "Task":  # pylint: disable=too-many-branches
         attach_to_allure = args.pop("attach_to_allure", True)
         with allure_step(f"Run action {self.name}"):
-
             if 'hc' in args and attach_to_allure:
                 allure_attach_json(args.get('hc'), name="Hostcomponent map")
 
@@ -2091,8 +2097,8 @@ class ADCMClient:
         return GroupConfigList(self._api, paging=paging, **kwargs)
 
     @min_server_version('2022.01.31.00')
-    def me(self) -> "Me":
-        return Me(**self._api.action(['rbac', 'me', 'read']))
+    def me(self) -> Me:
+        return Me.from_dict(self._api.action(['rbac', 'me', 'read']))
 
     @min_server_version('2022.01.31.00')
     def user_create(self, username: str, password: str, **kwargs) -> "User":
