@@ -14,14 +14,19 @@
 import logging
 import shutil
 import warnings
+from enum import Enum
+from functools import partial
 from io import BytesIO
 from json import dumps
 from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, NamedTuple
+from urllib.parse import urljoin
 
+import requests
 from coreapi.exceptions import ErrorMessage
 from coreapi.utils import DownloadedFile
+from requests import HTTPError
 from version_utils import rpm
 
 from adcm_client.audit import (
@@ -146,6 +151,9 @@ class Bundle(BaseAPIObject):
         """Return 'ServicePrototype' object"""
         return ServicePrototype(api=self._api, bundle_id=self.id, **args)
 
+    def service_prototype_list(self, **kwargs) -> "ServicePrototypeList":
+        return ServicePrototypeList(api=self._api, bundle_id=self.id, **kwargs)
+
     def cluster_prototype(self) -> "ClusterPrototype":
         """Return 'ClusterPrototype' object"""
         return ClusterPrototype(api=self._api, bundle_id=self.id)
@@ -176,7 +184,7 @@ class Bundle(BaseAPIObject):
 
     def license(self):
         """Provide endpoint to licence/read"""
-        return self._subcall("license", "read")
+        return self._subcall("license_0")
 
     def license_accept(self):
         """Provide endpoint to licence/accept/update"""
@@ -293,6 +301,9 @@ class ServicePrototype(Prototype):
         """Return 'Service' object and check its minimal version"""
         return self._child_obj(Service, **args)
 
+    def license_accept(self):
+        self._subcall("license", "accept_license")
+
 
 class ServicePrototypeList(BaseAPIListObject):
     """List of 'ServicePrototype' object from the API"""
@@ -364,6 +375,56 @@ class HostPrototypeList(BaseAPIListObject):
     """List of 'HostPrototype' objects from the API"""
 
     _ENTRY_CLASS = HostPrototype
+
+
+##################################################
+#           L I C E N S E
+##################################################
+
+
+class LicenseAcceptanceError(Exception):
+    """Something went wrong during license acceptance process"""
+
+
+class LicenseStatus(Enum):
+    ABSENT = "absent"
+    ACCEPTED = "accepted"
+    UNACCEPTED = "unaccepted"
+
+
+class License:
+    def __init__(self, owner: Prototype, api: ADCMApiWrapper) -> None:
+        self.owner: Prototype = owner
+        self._api = api
+
+        self._license_url = urljoin(
+            urljoin(self._api.url, self._api.api_url), f"stack/prototype/{self.owner.id}/license/"
+        )
+        response = requests.get(self._license_url, headers=self._prepare_headers(), timeout=30)
+        response.raise_for_status()
+        self._data = response.json()
+
+        self.license_status: LicenseStatus = LicenseStatus(self._data.get("license", "unaccepted"))
+        self.text: str = self._data.get("text", None) or ""
+
+    def _prepare_headers(self) -> dict:
+        return {"Authorization": f"Token {self._api.api_token}"}
+
+    def accept(self) -> None:
+        if self.license_status != LicenseStatus.UNACCEPTED:
+            raise LicenseAcceptanceError(
+                f"License can't be accepted, because it is {self.license_status.value}"
+            )
+
+        response = requests.put(
+            urljoin(self._license_url, "accept/"),
+            headers=self._prepare_headers(),
+            timeout=30,
+        )
+        try:
+            response.raise_for_status()
+        except HTTPError as e:
+            raise LicenseAcceptanceError("Request made to accept license failed") from e
 
 
 ##################################################
@@ -694,6 +755,17 @@ class Cluster(_BaseObject):
         """Delete service from cluster"""
         with allure_step(f"Remove service {service.name} from cluster {self.name}"):
             self._subcall("service", "delete", service_id=service.id)
+
+    def get_unaccepted_service_licenses(self) -> List[License]:
+        return list(
+            map(
+                partial(License, api=self._api),
+                filter(
+                    lambda sp: sp.license == LicenseStatus.UNACCEPTED.value,
+                    self.bundle().service_prototype_list(),
+                ),
+            )
+        )
 
     def hostcomponent(self):
         """Provide endpoint to hostcomponent/list"""
