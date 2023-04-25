@@ -15,7 +15,6 @@ import logging
 import shutil
 import warnings
 from enum import Enum
-from functools import partial
 from io import BytesIO
 from json import dumps
 from os import PathLike
@@ -757,15 +756,11 @@ class Cluster(_BaseObject):
             self._subcall("service", "delete", service_id=service.id)
 
     def get_unaccepted_service_licenses(self) -> List[License]:
-        return list(
-            map(
-                partial(License, api=self._api),
-                filter(
-                    lambda sp: sp.license == LicenseStatus.UNACCEPTED.value,
-                    self.bundle().service_prototype_list(),
-                ),
-            )
-        )
+        return [
+            License(owner=prototype, api=self._api)
+            for prototype in self.bundle().service_prototype_list()
+            if prototype.license == LicenseStatus.UNACCEPTED.value
+        ]
 
     def hostcomponent(self):
         """Provide endpoint to hostcomponent/list"""
