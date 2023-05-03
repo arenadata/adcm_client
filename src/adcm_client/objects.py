@@ -14,15 +14,18 @@
 import logging
 import shutil
 import warnings
-from collections import namedtuple
+from enum import Enum
 from io import BytesIO
 from json import dumps
 from os import PathLike
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, NamedTuple
+from urllib.parse import urljoin
 
+import requests
 from coreapi.exceptions import ErrorMessage
 from coreapi.utils import DownloadedFile
+from requests import HTTPError
 from version_utils import rpm
 
 from adcm_client.audit import (
@@ -59,20 +62,25 @@ logger.setLevel(logging.DEBUG)
 
 _TASK_END_STATUSES = {"failed", "success", "aborted"}
 
-ME_FIELDS = (
-    'id',
-    'username',
-    'first_name',
-    'last_name',
-    'email',
-    'is_superuser',
-    'password',
-    'profile',
-    'type',
-    'is_active',
-)
 
-Me = namedtuple('Me', ME_FIELDS, defaults=(None,) * len(ME_FIELDS))
+class Me(NamedTuple):
+    id: Optional[int] = None
+    username: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
+    is_superuser: Optional[bool] = None
+    password: Optional[str] = None
+    profile: Optional[dict] = None
+    type: Optional[str] = None
+    is_active: Optional[bool] = None
+
+    @classmethod
+    def from_dict(cls, arguments: Dict[str, Any]) -> "Me":
+        """
+        Build `Me` from "raw API data" by skipping fields that aren't used in this class
+        """
+        return Me(**{name: value for name, value in arguments.items() if name in cls._fields})
 
 
 class NoCredentionsProvided(Exception):
@@ -142,6 +150,9 @@ class Bundle(BaseAPIObject):
         """Return 'ServicePrototype' object"""
         return ServicePrototype(api=self._api, bundle_id=self.id, **args)
 
+    def service_prototype_list(self, **kwargs) -> "ServicePrototypeList":
+        return ServicePrototypeList(api=self._api, bundle_id=self.id, **kwargs)
+
     def cluster_prototype(self) -> "ClusterPrototype":
         """Return 'ClusterPrototype' object"""
         return ClusterPrototype(api=self._api, bundle_id=self.id)
@@ -172,7 +183,7 @@ class Bundle(BaseAPIObject):
 
     def license(self):
         """Provide endpoint to licence/read"""
-        return self._subcall("license", "read")
+        return self._subcall("license_0")
 
     def license_accept(self):
         """Provide endpoint to licence/accept/update"""
@@ -213,6 +224,7 @@ class Prototype(BaseAPIObject):
     license_path = None
     license_hash = None
     license_url = None
+    requires = None
 
     def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
         if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
@@ -288,6 +300,9 @@ class ServicePrototype(Prototype):
         """Return 'Service' object and check its minimal version"""
         return self._child_obj(Service, **args)
 
+    def license_accept(self):
+        self._subcall("license", "accept_license")
+
 
 class ServicePrototypeList(BaseAPIListObject):
     """List of 'ServicePrototype' object from the API"""
@@ -359,6 +374,56 @@ class HostPrototypeList(BaseAPIListObject):
     """List of 'HostPrototype' objects from the API"""
 
     _ENTRY_CLASS = HostPrototype
+
+
+##################################################
+#           L I C E N S E
+##################################################
+
+
+class LicenseAcceptanceError(Exception):
+    """Something went wrong during license acceptance process"""
+
+
+class LicenseStatus(Enum):
+    ABSENT = "absent"
+    ACCEPTED = "accepted"
+    UNACCEPTED = "unaccepted"
+
+
+class License:
+    def __init__(self, owner: Prototype, api: ADCMApiWrapper) -> None:
+        self.owner: Prototype = owner
+        self._api = api
+
+        self._license_url = urljoin(
+            urljoin(self._api.url, self._api.api_url), f"stack/prototype/{self.owner.id}/license/"
+        )
+        response = requests.get(self._license_url, headers=self._prepare_headers(), timeout=30)
+        response.raise_for_status()
+        self._data = response.json()
+
+        self.license_status: LicenseStatus = LicenseStatus(self._data.get("license", "unaccepted"))
+        self.text: str = self._data.get("text", None) or ""
+
+    def _prepare_headers(self) -> dict:
+        return {"Authorization": f"Token {self._api.api_token}"}
+
+    def accept(self) -> None:
+        if self.license_status != LicenseStatus.UNACCEPTED:
+            raise LicenseAcceptanceError(
+                f"License can't be accepted, because it is {self.license_status.value}"
+            )
+
+        response = requests.put(
+            urljoin(self._license_url, "accept/"),
+            headers=self._prepare_headers(),
+            timeout=30,
+        )
+        try:
+            response.raise_for_status()
+        except HTTPError as e:
+            raise LicenseAcceptanceError("Request made to accept license failed") from e
 
 
 ##################################################
@@ -690,6 +755,13 @@ class Cluster(_BaseObject):
         with allure_step(f"Remove service {service.name} from cluster {self.name}"):
             self._subcall("service", "delete", service_id=service.id)
 
+    def get_unaccepted_service_licenses(self) -> List[License]:
+        return [
+            License(owner=prototype, api=self._api)
+            for prototype in self.bundle().service_prototype_list()
+            if prototype.license == LicenseStatus.UNACCEPTED.value
+        ]
+
     def hostcomponent(self):
         """Provide endpoint to hostcomponent/list"""
         return self._subcall("hostcomponent", "list")
@@ -756,6 +828,7 @@ class Upgrade(BaseAPIObject):
     license_url = None
     url = None
     name = None
+    display_name = None
     description = None
     min_version = None
     max_version = None
@@ -847,6 +920,7 @@ class Service(ObjectWithMaintenanceMode, _BaseObject):
     cluster_id = None
     status = None
     monitoring = None
+    requires = None
 
     def __new__(cls, *args, **kwargs):
         """
@@ -1180,7 +1254,6 @@ class Action(BaseAPIObject):
     def run(self, **args) -> "Task":  # pylint: disable=too-many-branches
         attach_to_allure = args.pop("attach_to_allure", True)
         with allure_step(f"Run action {self.name}"):
-
             if 'hc' in args and attach_to_allure:
                 allure_attach_json(args.get('hc'), name="Hostcomponent map")
 
@@ -2091,8 +2164,8 @@ class ADCMClient:
         return GroupConfigList(self._api, paging=paging, **kwargs)
 
     @min_server_version('2022.01.31.00')
-    def me(self) -> "Me":
-        return Me(**self._api.action(['rbac', 'me', 'read']))
+    def me(self) -> Me:
+        return Me.from_dict(self._api.action(['rbac', 'me', 'read']))
 
     @min_server_version('2022.01.31.00')
     def user_create(self, username: str, password: str, **kwargs) -> "User":
