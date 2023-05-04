@@ -61,7 +61,6 @@ from adcm_client.wrappers.api import ADCMApiWrapper
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-
 _TASK_END_STATUSES = {"failed", "success", "aborted"}
 
 
@@ -1283,7 +1282,7 @@ class Action(BaseAPIObject):
                         args['attr'] = {}
                         for item in self.config["attr"]:
                             args['attr'][item] = (
-                                config_diff['attr'].get(item) or self.config['attr'][item]
+                                    config_diff['attr'].get(item) or self.config['attr'][item]
                             )
                         config_diff = config_diff['config']
                     for item in self.config['config']:
@@ -1767,10 +1766,20 @@ class User(BaseAPIObject):
 
     def change_password(self, password: str) -> None:
         """Changing user password"""
+        need_auth = False
+        # release with RBAC support
+        if adcm_version.compare_adcm_versions(self.adcm_version, "2022.02.01.06") >= 0:
+            # check if we update password for the current user
+            me = self._api.objects.rbac.me.read()
+            if me["id"] == self.id:
+                need_auth = True
         try:
             self._api.objects.rbac.user.partial_update(id=self.id, password=password)
         except AttributeError as error:
             raise NoSuchEndpointOrAccessIsDenied from error
+        if need_auth:
+            # we must auth again if we change password for the current user
+            self._api.auth(self.username, password)
         self.reread()
 
 
@@ -1928,13 +1937,13 @@ class PolicyList(BaseAPIListObject):
 
 @allure_step('Create policy {name}')
 def new_policy(
-    api: ADCMApiWrapper,
-    name: str,
-    role: Role,
-    user: UserList = None,
-    group: GroupList = None,
-    objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
-    description: str = '',
+        api: ADCMApiWrapper,
+        name: str,
+        role: Role,
+        user: UserList = None,
+        group: GroupList = None,
+        objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
+        description: str = '',
 ):
     kwargs = {
         "name": name,
@@ -2232,13 +2241,13 @@ class ADCMClient:
         return RoleList(self._api, paging=paging, **kwargs)
 
     def _policy_create_old(
-        self,
-        name: str,
-        role: Role,
-        user: Union[UserList, List[User]],
-        group: Union[GroupList, List[Group]] = None,
-        objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
-        description: str = '',
+            self,
+            name: str,
+            role: Role,
+            user: Union[UserList, List[User]],
+            group: Union[GroupList, List[Group]] = None,
+            objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
+            description: str = '',
     ) -> "Policy":
         """Create `Policy` object"""
         return new_policy(
@@ -2256,12 +2265,12 @@ class ADCMClient:
         _policy_create_old, "2023.06.15.00"
     )  # TODO update version after fix
     def policy_create(
-        self,
-        name: str,
-        role: Role,
-        group: Union[GroupList, List[Group]],
-        objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
-        description: str = '',
+            self,
+            name: str,
+            role: Role,
+            group: Union[GroupList, List[Group]],
+            objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
+            description: str = '',
     ) -> "Policy":
         """Create `Policy` object"""
         return new_policy(

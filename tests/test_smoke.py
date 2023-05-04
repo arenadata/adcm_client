@@ -395,3 +395,19 @@ def test_maintenance_mode_set(sdk_client_fs: ADCMClient):
         assert component.maintenance_mode == "ON"
         component.maintenance_mode_set("OFF")
         assert component.maintenance_mode == "OFF"
+
+
+def test_self_password_change(sdk_client_fs: ADCMClient, adcm_api_credentials: dict):
+    test_password = "test_password"
+    with allure.step("Change self user password"):
+        user = sdk_client_fs.user(username=adcm_api_credentials["user"])
+        user.change_password(test_password)
+    with allure.step("Check that we still have access with the same ADCMClient"):
+        user = sdk_client_fs.user(username=adcm_api_credentials["user"])
+        assert user.username == adcm_api_credentials["user"]
+    with allure.step("Check access with modified password"):
+        custom_adcm_client = ADCMClient(
+            url=sdk_client_fs.url, user=adcm_api_credentials["user"], password=test_password
+        )
+        user = custom_adcm_client.user(username=adcm_api_credentials["user"])
+        assert user.username == adcm_api_credentials["user"]
