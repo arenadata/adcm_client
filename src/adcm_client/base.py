@@ -132,6 +132,17 @@ class TooOldServerVersion(Exception):
         super().__init__(self.message)
 
 
+class TooRecentServerVersion(Exception):
+    """Incompatible version, not supported for new ADCM"""
+
+    def __init__(self, method_name='', version='', message=None):
+        if message is None:
+            self.message = f'The "{method_name}" method will not work with versions newer {version}'
+        else:
+            self.message = message
+        super().__init__(self.message)
+
+
 def min_server_version(version):
     def decorate(func):
         @wraps(func)
@@ -140,6 +151,19 @@ def min_server_version(version):
             # args[0].adcm_version >= version
             if rpm.compare_versions(args[0].adcm_version, version) < 0:
                 raise TooOldServerVersion(func.__name__, version)
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorate
+
+
+def max_server_version(version):
+    def decorate(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if rpm.compare_versions(args[0].adcm_version, version) > 0:
+                raise TooRecentServerVersion(func.__name__, version)
             return func(*args, **kwargs)
 
         return wrapper
