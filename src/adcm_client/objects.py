@@ -2246,7 +2246,7 @@ class ADCMClient:
 
     @min_server_version('2022.01.31.00')
     @legacy_server_implementaion(
-        _policy_create_old, "2023.06.14.16"
+        _policy_create_old, "2023.06.15.00"
     )  # TODO update version after fix
     def policy_create(
         self,
