@@ -49,6 +49,7 @@ from adcm_client.base import (
     allure_step,
     legacy_server_implementaion,
     min_server_version,
+    max_server_version,
     strip_none_keys,
 )
 from adcm_client.util import stream
@@ -1880,7 +1881,7 @@ def new_role(api: ADCMApiWrapper, name: str, **kwargs):
 class Policy(BaseAPIObject):
     IDNAME = 'id'
     PATH = ['rbac', 'policy']
-    FILTERS = ['id', 'name', 'built_in', 'role', 'user', 'group']
+    FILTERS = ['id', 'name', 'built_in', 'role', 'group']
     id = None
     name = None
     description = None
@@ -1895,6 +1896,8 @@ class Policy(BaseAPIObject):
     def role(self) -> "Role":
         return Role(self._api, id=self._data['role']['id'])
 
+    # TODO update version after fix
+    @max_server_version("2023.06.14.16")
     def user_list(self) -> "UserList":
         users = UserList(self._api)
         data = []
@@ -1921,25 +1924,27 @@ def new_policy(
     api: ADCMApiWrapper,
     name: str,
     role: Role,
-    user: UserList,
+    user: UserList = None,
     group: GroupList = None,
     objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
     description: str = '',
 ):
-    users = [{'id': obj.id} for obj in user]
-    groups = [{'id': obj.id} for obj in group or []]
-    objects = [{'id': obj.id, 'type': obj.prototype().type} for obj in objects or []]
+    kwargs = {
+        "name": name,
+        "role": {'id': role.id},
+        "group": [{'id': obj.id} for obj in group or []],
+        "object": [{'id': obj.id, 'type': obj.prototype().type} for obj in objects or []],
+        "description": description,
+    }
+
+    if user:
+        kwargs["user"] = [{'id': obj.id} for obj in user]
+
     try:
-        policy = api.objects.rbac.policy.create(
-            name=name,
-            role={'id': role.id},
-            user=users,
-            group=groups,
-            object=objects,
-            description=description,
-        )
+        policy = api.objects.rbac.policy.create(**kwargs)
     except AttributeError as error:
         raise NoSuchEndpointOrAccessIsDenied from error
+
     return Policy(api, id=policy['id'])
 
 
@@ -2219,8 +2224,7 @@ class ADCMClient:
         """Return list of `Role` objects"""
         return RoleList(self._api, paging=paging, **kwargs)
 
-    @min_server_version('2022.01.31.00')
-    def policy_create(
+    def _policy_create_old(
         self,
         name: str,
         role: Role,
@@ -2230,7 +2234,37 @@ class ADCMClient:
         description: str = '',
     ) -> "Policy":
         """Create `Policy` object"""
-        return new_policy(self._api, name, role, user, group, objects, description)
+        return new_policy(
+            api=self._api,
+            name=name,
+            role=role,
+            user=user,
+            group=group,
+            objects=objects,
+            description=description,
+        )
+
+    @min_server_version('2022.01.31.00')
+    @legacy_server_implementaion(
+        _policy_create_old, "2023.06.15.00"
+    )  # TODO update version after fix
+    def policy_create(
+        self,
+        name: str,
+        role: Role,
+        group: Union[GroupList, List[Group]],
+        objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
+        description: str = '',
+    ) -> "Policy":
+        """Create `Policy` object"""
+        return new_policy(
+            api=self._api,
+            name=name,
+            role=role,
+            group=group,
+            objects=objects,
+            description=description,
+        )
 
     @min_server_version('2022.01.31.00')
     def policy(self, **kwargs) -> "Policy":
