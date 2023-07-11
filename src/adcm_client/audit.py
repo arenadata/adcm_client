@@ -89,7 +89,8 @@ class AuditOperation(RichlyTypedAPIObject):
     operation_result: Optional[OperationResult] = None
     operation_time: Optional[datetime] = None
 
-    user_id: int = None
+    user_id: Optional[int] = None
+    username: Optional[str] = None
 
     def _convert(self):
         self._convert_enum('object_type', ObjectType)
