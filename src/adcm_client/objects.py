@@ -22,11 +22,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, NamedTuple
 from urllib.parse import urljoin
 
+import adcm_version
 import requests
 from coreapi.exceptions import ErrorMessage
 from coreapi.utils import DownloadedFile
 from requests import HTTPError
-from version_utils import rpm
 
 from adcm_client.audit import (
     AuditLogin,
@@ -51,6 +51,7 @@ from adcm_client.base import (
     min_server_version,
     max_server_version,
     strip_none_keys,
+    is_post_routing_refactoring_adcm_version,
 )
 from adcm_client.util import stream
 from adcm_client.util.config import update
@@ -162,8 +163,9 @@ class Bundle(BaseAPIObject):
     edition = None
 
     def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
-        if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
+        if is_post_routing_refactoring_adcm_version(api.adcm_version):
             self.IDNAME = "bundle_pk"
+
         super().__init__(api, path, path_args, **args)
 
     def __repr__(self):
@@ -238,7 +240,7 @@ class Bundle(BaseAPIObject):
 
     def license_accept(self):
         """Provide endpoint to licence/accept/update"""
-        if rpm.compare_versions(self._api.adcm_version, "2022.10.10.10") >= 0:
+        if is_post_routing_refactoring_adcm_version(self._api.adcm_version):
             self._subcall("license", "accept_license")
         else:
             self._subcall("license", "accept", "update")
@@ -285,8 +287,9 @@ class Prototype(BaseAPIObject):
     requires = None
 
     def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
-        if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
+        if is_post_routing_refactoring_adcm_version(api.adcm_version):
             self.IDNAME = "prototype_pk"
+
         super().__init__(api, path, path_args, **args)
 
     def bundle(self) -> "Bundle":
@@ -940,7 +943,7 @@ class Service(ObjectWithMaintenanceMode, _BaseObject):
         instance = super().__new__(cls)
         # !!! If you change the version, do not forget to change it in the service(), service_list()
         # and service_add() methods of the Cluster class as well as in the comments to them
-        if rpm.compare_versions(wrapper.adcm_version, '2020.09.25.13') < 0:
+        if adcm_version.compare_adcm_versions(wrapper.adcm_version, '2020.09.25.13') < 0:
             instance.PATH = None
         return instance
 
@@ -1045,7 +1048,7 @@ class ServiceList(BaseAPIListObject):
         instance = super().__new__(cls)
         # !!! If you change the version, do not forget to change it in the service(), service_list()
         # and service_add() methods of the Cluster class as well as in the comments to them
-        if rpm.compare_versions(wrapper.adcm_version, '2020.09.25.13') < 0:
+        if adcm_version.compare_adcm_versions(wrapper.adcm_version, '2020.09.25.13') < 0:
             instance.PATH = None
         return instance
 
@@ -1085,7 +1088,7 @@ class Component(ObjectWithMaintenanceMode, _BaseObject):
         instance = super().__new__(cls)
         # !!! If you change the version, do not forget to change it in the component()
         # and component_list() methods of the Service class as well as in the comments to them
-        if rpm.compare_versions(wrapper.adcm_version, '2021.03.12.16') < 0:
+        if adcm_version.compare_adcm_versions(wrapper.adcm_version, '2021.03.12.16') < 0:
             instance.PATH = None
         return instance
 
@@ -1129,7 +1132,7 @@ class ComponentList(BaseAPIListObject):
         instance = super().__new__(cls)
         # !!! If you change the version, do not forget to change it in the component()
         # and component_list() methods of the Service class as well as in the comments to them
-        if rpm.compare_versions(wrapper.adcm_version, '2021.03.12.16') < 0:
+        if adcm_version.compare_adcm_versions(wrapper.adcm_version, '2021.03.12.16') < 0:
             instance.PATH = None
         return instance
 
@@ -1293,7 +1296,7 @@ class Action(BaseAPIObject):
                         elif not subkey and key in config_diff:
                             args['config'][key] = config_diff[key]
             # check backward compatibility for `verbose` option
-            if rpm.compare_versions(self.adcm_version, '2021.02.04.13') >= 0:
+            if adcm_version.compare_adcm_versions(self.adcm_version, '2021.02.04.13') >= 0:
                 args.setdefault('verbose', False)
             elif 'verbose' in args:
                 warnings.warn(
@@ -1349,10 +1352,11 @@ class Task(BaseAPIObject):
     object_type = None
 
     def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
-        if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
+        if is_post_routing_refactoring_adcm_version(api.adcm_version):
             if self.IDNAME in args:
                 args["task_pk"] = args.pop(self.IDNAME)
             self.IDNAME = "task_pk"
+
         super().__init__(api, path, path_args, **args)
 
     @min_server_version('2020.08.27.00')
@@ -1461,8 +1465,9 @@ class Log(BaseAPIObject):
     content = None
 
     def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
-        if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
+        if is_post_routing_refactoring_adcm_version(api.adcm_version):
             self.IDNAME = "log_pk"
+
         super().__init__(api, path, path_args, **args)
 
 
@@ -1496,8 +1501,9 @@ class Job(BaseAPIObject):
     finish_date = None
 
     def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
-        if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
+        if is_post_routing_refactoring_adcm_version(api.adcm_version):
             self.IDNAME = "job_pk"
+
         super().__init__(api, path, path_args, **args)
 
     def __repr__(self):
@@ -1680,8 +1686,9 @@ class ADCM(_BaseObject):
     bundle_id = None
 
     def __init__(self, api: ADCMApiWrapper, path=None, path_args=None, **args):
-        if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0:
+        if is_post_routing_refactoring_adcm_version(api.adcm_version):
             self.IDNAME = "adcm_pk"
+
         super().__init__(api, path, path_args, **args)
 
     def prototype(self) -> "Prototype":
@@ -1996,7 +2003,7 @@ class ADCMClient:
 
     def _check_min_version(self):
         """Check client version and provide information about newer version"""
-        if rpm.compare_versions(self._MIN_VERSION, self._api.adcm_version) > -1:
+        if adcm_version.compare_adcm_versions(self._MIN_VERSION, self._api.adcm_version) > -1:
             raise ADCMApiError(
                 f"The client supports ADCM versions newer than '{self._MIN_VERSION}'"
             )
