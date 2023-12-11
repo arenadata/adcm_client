@@ -199,7 +199,8 @@ def legacy_server_implementaion(oldfunc, turnover_version):
 def is_post_routing_refactoring_adcm_version(version: str) -> bool:
     """
     At some point in ADCM history routing refactoring was performed:
-    in some placed ids became pks and "over-informative" ids became simple ones (e.g. task_id -> id).
+    in some placed ids became pks and "over-informative" ids
+    became simple ones (e.g. task_id -> id).
     If the version is equal to that one or more recent, then True will be returned.
     """
     return adcm_version.compare_adcm_versions(version, "2022.10.10.10") >= 0
