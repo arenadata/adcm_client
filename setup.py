@@ -53,7 +53,7 @@ setuptools.setup(
         'ad_ci_tools==0.1.9',
         'docker',
         'jinja2',
-        'adcm-version~=1.0',
+        'adcm-version<2.0',
     ],
     tests_require=test_deps,
     setup_require=setup_deps,
