@@ -23,7 +23,7 @@ from pprint import pprint
 from time import sleep
 from typing import Collection, Optional, Type
 
-from version_utils import rpm
+import adcm_version
 
 from adcm_client.util.search import search, search_one
 
@@ -149,7 +149,7 @@ def min_server_version(version):
         def wrapper(*args, **kwargs):
             # The ADCM version must be greater than or equal to the method version
             # args[0].adcm_version >= version
-            if rpm.compare_versions(args[0].adcm_version, version) < 0:
+            if adcm_version.compare_adcm_versions(args[0].adcm_version, version) < 0:
                 raise TooOldServerVersion(func.__name__, version)
             return func(*args, **kwargs)
 
@@ -162,7 +162,7 @@ def max_server_version(version):
     def decorate(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            if rpm.compare_versions(args[0].adcm_version, version) > 0:
+            if adcm_version.compare_adcm_versions(args[0].adcm_version, version) > 0:
                 raise TooRecentServerVersion(func.__name__, version)
             return func(*args, **kwargs)
 
@@ -187,13 +187,22 @@ def legacy_server_implementaion(oldfunc, turnover_version):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
             # adcm_version >= turnover_versions
-            if rpm.compare_versions(self.adcm_version, turnover_version) < 0:
+            if adcm_version.compare_adcm_versions(self.adcm_version, turnover_version) < 0:
                 return oldfunc(self, *args, **kwargs)
             return func(self, *args, **kwargs)
 
         return wrapper
 
     return decorator
+
+
+def is_post_routing_refactoring_adcm_version(version: str) -> bool:
+    """
+    At some point in ADCM history routing refactoring was performed:
+    in some placed ids became pks and "over-informative" ids became simple ones (e.g. task_id -> id).
+    If the version is equal to that one or more recent, then True will be returned.
+    """
+    return adcm_version.compare_adcm_versions(version, "2022.10.10.10") >= 0
 
 
 class Paging:
@@ -457,7 +466,7 @@ class BaseAPIObject:
     def _parent_obj(self, classname):
         id_key = (
             "id"
-            if rpm.compare_versions(self._api.adcm_version, "2022.10.10.10") >= 0
+            if is_post_routing_refactoring_adcm_version(self._api.adcm_version)
             else classname.IDNAME
         )
         return classname(self._api, **{id_key: self._data[classname.IDNAME]})
@@ -492,7 +501,7 @@ class BaseAPIListObject(UserList):  # pylint: disable=too-many-ancestors
         data = []
         id_key = (
             "id"
-            if rpm.compare_versions(api.adcm_version, "2022.10.10.10") >= 0
+            if is_post_routing_refactoring_adcm_version(api.adcm_version)
             else self._ENTRY_CLASS.IDNAME
         )
         for i in self._endpoint.search(
