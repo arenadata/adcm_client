@@ -1282,7 +1282,7 @@ class Action(BaseAPIObject):
                         args['attr'] = {}
                         for item in self.config["attr"]:
                             args['attr'][item] = (
-                                    config_diff['attr'].get(item) or self.config['attr'][item]
+                                config_diff['attr'].get(item) or self.config['attr'][item]
                             )
                         config_diff = config_diff['config']
                     for item in self.config['config']:
@@ -1937,13 +1937,13 @@ class PolicyList(BaseAPIListObject):
 
 @allure_step('Create policy {name}')
 def new_policy(
-        api: ADCMApiWrapper,
-        name: str,
-        role: Role,
-        user: UserList = None,
-        group: GroupList = None,
-        objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
-        description: str = '',
+    api: ADCMApiWrapper,
+    name: str,
+    role: Role,
+    user: UserList = None,
+    group: GroupList = None,
+    objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
+    description: str = '',
 ):
     kwargs = {
         "name": name,
@@ -2241,13 +2241,13 @@ class ADCMClient:
         return RoleList(self._api, paging=paging, **kwargs)
 
     def _policy_create_old(
-            self,
-            name: str,
-            role: Role,
-            user: Union[UserList, List[User]],
-            group: Union[GroupList, List[Group]] = None,
-            objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
-            description: str = '',
+        self,
+        name: str,
+        role: Role,
+        user: Union[UserList, List[User]],
+        group: Union[GroupList, List[Group]] = None,
+        objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
+        description: str = '',
     ) -> "Policy":
         """Create `Policy` object"""
         return new_policy(
@@ -2265,12 +2265,12 @@ class ADCMClient:
         _policy_create_old, "2023.06.15.00"
     )  # TODO update version after fix
     def policy_create(
-            self,
-            name: str,
-            role: Role,
-            group: Union[GroupList, List[Group]],
-            objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
-            description: str = '',
+        self,
+        name: str,
+        role: Role,
+        group: Union[GroupList, List[Group]],
+        objects: List[Union[Cluster, Service, Component, Provider, Host]] = None,
+        description: str = '',
     ) -> "Policy":
         """Create `Policy` object"""
         return new_policy(
