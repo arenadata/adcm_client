@@ -61,7 +61,6 @@ from adcm_client.wrappers.api import ADCMApiWrapper
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-
 _TASK_END_STATUSES = {"failed", "success", "aborted"}
 
 
@@ -1767,10 +1766,20 @@ class User(BaseAPIObject):
 
     def change_password(self, password: str) -> None:
         """Changing user password"""
+        need_auth = False
+        # release with RBAC support
+        if adcm_version.compare_adcm_versions(self.adcm_version, "2022.02.01.06") >= 0:
+            # check if we update password for the current user
+            me = self._api.objects.rbac.me.read()
+            if me["id"] == self.id:
+                need_auth = True
         try:
             self._api.objects.rbac.user.partial_update(id=self.id, password=password)
         except AttributeError as error:
             raise NoSuchEndpointOrAccessIsDenied from error
+        if need_auth:
+            # we must auth again if we change password for the current user
+            self._api.auth(self.username, password)
         self.reread()
 
 
