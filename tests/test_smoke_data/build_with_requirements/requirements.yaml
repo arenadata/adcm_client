@@ -1,0 +1,2 @@
+python_mod:
+  - ipython==8.18.1 # it has unexpected (non-yaml) pip show output (Summary: IPython: Productive Interactive Computing)
