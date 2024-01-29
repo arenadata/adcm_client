@@ -14,6 +14,7 @@
 import inspect
 import os
 import tarfile
+import tempfile
 from pathlib import Path
 
 import allure
@@ -419,7 +420,10 @@ def test_bundle_build_with_requirements(sdk_client_fs: ADCMClient):
     inside cluster action we try to import them
     """
     with allure.step("Create cluster"):
-        bundle = sdk_client_fs.upload_from_fs(get_data_dir(__file__) + "/build_with_requirements")
+        with tempfile.TemporaryDirectory(dir=get_data_dir(__file__)) as tmp_dir_name:
+            bundle = sdk_client_fs.upload_from_fs(
+                get_data_dir(__file__) + "/build_with_requirements", workspace=tmp_dir_name
+            )
         cluster = bundle.cluster_create(name="sample cluster")
     with allure.step("Run cluster action: install"):
         install = cluster.action(name="install")
