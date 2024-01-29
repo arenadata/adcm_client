@@ -34,6 +34,39 @@ class NoModulesToInstall(Exception):
         self.errors = errors
 
 
+def _sanitize_pip_show_output(pip_show_output: str) -> "str":
+    """Returns sanitized output of pip show -f
+     pip show returns not valid yaml, e.g. for pip show ipython
+     we can see "Summary: IPython: Productive Interactive Computing" line
+     so we should extract only required fields (Location, Files and children of Files)
+    :param pip_show_output: pip show -f command output
+    :type pip_show_output: str
+    :return: only Location, Files and children of Files lines for every module
+    :rtype: str
+    """
+    # pip show returns not valid yaml, e.g. for pip show ipython
+    # we can see "Summary: IPython: Productive Interactive Computing"
+    # so we should extract only required fields (Location, Files and children of Files)
+    resulting_lines = []
+    # indicates if we try to parse children of Files section
+    in_files_section = False
+    for line in pip_show_output.splitlines():
+        # yaml doc separator or Location
+        if line == "---" or line.startswith("Location"):
+            resulting_lines.append(line)
+            in_files_section = False
+        # we want to pass Files into results and its children
+        elif line.startswith("Files"):
+            resulting_lines.append(line)
+            in_files_section = True
+        # we are inside children of Files
+        elif in_files_section and line.startswith("  "):
+            resulting_lines.append(line)
+        else:
+            in_files_section = False
+    return "\n".join(resulting_lines)
+
+
 def _get_top_dirs(image: Image, prepared_image: Image, client: DockerClient) -> "list":
     """Returns a list of paths to all top level folders
      and files of python module that must be installed in image
@@ -57,11 +90,13 @@ def _get_top_dirs(image: Image, prepared_image: Image, client: DockerClient) -> 
         map(lambda x: x.split('==')[0], set(modified_module_list).difference(default_module_list))
     )
 
-    modules_data = yaml.safe_load_all(
-        client.containers.run(
-            prepared_image, f'pip show -f {" ".join(modules)}', remove=True
-        ).decode("utf-8")
-    )
+    pip_show_output = client.containers.run(
+        prepared_image, f'pip show -f {" ".join(modules)}', remove=True
+    ).decode("utf-8")
+
+    sanitized_pip_show_output = _sanitize_pip_show_output(pip_show_output)
+
+    modules_data = yaml.safe_load_all(sanitized_pip_show_output)
     return list(
         chain.from_iterable(
             map(

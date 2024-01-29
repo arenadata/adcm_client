@@ -14,6 +14,7 @@
 import inspect
 import os
 import tarfile
+import tempfile
 from pathlib import Path
 
 import allure
@@ -411,3 +412,23 @@ def test_self_password_change(sdk_client_fs: ADCMClient, adcm_api_credentials: d
         )
         user = custom_adcm_client.user(username=adcm_api_credentials["user"])
         assert user.username == adcm_api_credentials["user"]
+
+
+def test_bundle_build_with_requirements(sdk_client_fs: ADCMClient):
+    """
+    Test how we can install requirements for a bundle
+    inside cluster action we try to import them
+    """
+    with allure.step("Create cluster"):
+        with tempfile.TemporaryDirectory(dir=get_data_dir(__file__)) as tmp_dir_name:
+            bundle = sdk_client_fs.upload_from_fs(
+                get_data_dir(__file__) + "/build_with_requirements", workspace=tmp_dir_name
+            )
+        cluster = bundle.cluster_create(name="sample cluster")
+    with allure.step("Run cluster action: install"):
+        install = cluster.action(name="install")
+    with allure.step("Check action"):
+        assert install.name == "install"
+        _assert_attrs(install)
+        job = install.run()
+        assert job.wait() == "success"
